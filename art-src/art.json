@@ -1,0 +1,490 @@
+{
+ "quality": 0.84,
+ "items": [
+  {
+   "name": "tile-water",
+   "src": "tile-water-seam.png",
+   "w": 768,
+   "h": 256,
+   "fit": "cover",
+   "quality": 0.8
+  },
+  {
+   "name": "tile-grass",
+   "src": "tile-grass-seam.png",
+   "w": 768,
+   "h": 256,
+   "fit": "cover",
+   "quality": 0.8
+  },
+  {
+   "name": "tile-sand",
+   "src": "tile-sand-seam.png",
+   "w": 768,
+   "h": 256,
+   "fit": "cover",
+   "quality": 0.8
+  },
+  {
+   "name": "tile-path",
+   "src": "tile-path-seam.png",
+   "w": 768,
+   "h": 256,
+   "fit": "cover",
+   "quality": 0.8
+  },
+  {
+   "name": "tile-boardwalk",
+   "src": "tile-boardwalk-seam.png",
+   "w": 768,
+   "h": 256,
+   "fit": "cover",
+   "quality": 0.8
+  },
+  {
+   "name": "tile-straw",
+   "src": "tile-straw-seam.png",
+   "w": 768,
+   "h": 256,
+   "fit": "cover",
+   "quality": 0.8
+  },
+  {
+   "name": "gator-paddler-closed",
+   "src": "gator-paddler-closed.png",
+   "w": 560,
+   "h": 137,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "gator-paddler-open",
+   "src": "gator-paddler-open.png",
+   "w": 560,
+   "h": 154,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "gator-whipper-closed",
+   "src": "gator-whipper-closed.png",
+   "w": 560,
+   "h": 163,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "gator-whipper-open",
+   "src": "gator-whipper-open.png",
+   "w": 560,
+   "h": 176,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "gator-basker-closed",
+   "src": "gator-basker-closed.png",
+   "w": 560,
+   "h": 137,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "gator-basker-open",
+   "src": "gator-basker-open.png",
+   "w": 560,
+   "h": 172,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "gator-sleeper-closed",
+   "src": "gator-sleeper-closed.png",
+   "w": 560,
+   "h": 174,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "gator-sleeper-open",
+   "src": "gator-sleeper-open.png",
+   "w": 560,
+   "h": 201,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "gator-boss-closed",
+   "src": "gator-boss-closed.png",
+   "w": 900,
+   "h": 245,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "gator-boss-open",
+   "src": "gator-boss-open.png",
+   "w": 900,
+   "h": 265,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "gator-hatchling",
+   "src": "gator-hatchling.png",
+   "w": 220,
+   "h": 72,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "gator-swimmer-closed",
+   "src": "gator-swimmer-closed.png",
+   "w": 560,
+   "h": 202,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "gator-swimmer-open",
+   "src": "gator-swimmer-open.png",
+   "w": 560,
+   "h": 219,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "raccoon-up-stand",
+   "src": "raccoon-up-stand.png",
+   "w": 240,
+   "h": 360,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "raccoon-up-hop",
+   "src": "raccoon-up-hop.png",
+   "w": 240,
+   "h": 299,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "raccoon-up3-stand",
+   "src": "raccoon-up3-stand.png",
+   "w": 240,
+   "h": 271,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "raccoon-up3-hop",
+   "src": "raccoon-up3-hop.png",
+   "w": 240,
+   "h": 209,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "raccoon-down-stand",
+   "src": "raccoon-down-stand.png",
+   "w": 240,
+   "h": 251,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "raccoon-down-hop",
+   "src": "raccoon-down-hop.png",
+   "w": 240,
+   "h": 209,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "raccoon-left-stand",
+   "src": "raccoon-left-stand.png",
+   "w": 240,
+   "h": 261,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "raccoon-left-hop",
+   "src": "raccoon-left-hop.png",
+   "w": 240,
+   "h": 183,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "item-pecan",
+   "src": "item-pecan.png",
+   "w": 200,
+   "h": 165,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "item-berry",
+   "src": "item-berry.png",
+   "w": 200,
+   "h": 194,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "item-cap",
+   "src": "item-cap.png",
+   "w": 200,
+   "h": 174,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "item-drum",
+   "src": "item-drum.png",
+   "w": 200,
+   "h": 182,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "item-ball",
+   "src": "item-ball.png",
+   "w": 200,
+   "h": 199,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "item-ticket",
+   "src": "item-ticket.png",
+   "w": 200,
+   "h": 157,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "prop-pool",
+   "src": "prop-pool.png",
+   "w": 260,
+   "h": 183,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "prop-den",
+   "src": "prop-den.png",
+   "w": 420,
+   "h": 310,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "prop-hay",
+   "src": "prop-hay.png",
+   "w": 200,
+   "h": 147,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "prop-pine",
+   "src": "prop-pine.png",
+   "w": 220,
+   "h": 281,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "prop-fence",
+   "src": "prop-fence.png",
+   "w": 260,
+   "h": 183,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "prop-feedstage",
+   "src": "prop-feedstage.png",
+   "w": 300,
+   "h": 265,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "prop-crate",
+   "src": "prop-crate.png",
+   "w": 200,
+   "h": 194,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "prop-lamp",
+   "src": "prop-lamp.png",
+   "w": 200,
+   "h": 237,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "prop-cattails",
+   "src": "prop-cattails.png",
+   "w": 200,
+   "h": 212,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "prop-rock",
+   "src": "prop-rock.png",
+   "w": 200,
+   "h": 146,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "prop-bucket",
+   "src": "prop-bucket.png",
+   "w": 200,
+   "h": 184,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "prop-lantern",
+   "src": "prop-lantern.png",
+   "w": 200,
+   "h": 352,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "prop-eggs",
+   "src": "prop-eggs.png",
+   "w": 200,
+   "h": 155,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "prop-sign",
+   "src": "prop-sign.png",
+   "w": 240,
+   "h": 191,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "prop-railing",
+   "src": "prop-railing.png",
+   "w": 320,
+   "h": 126,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "bandit-cheer",
+   "src": "bandit-cheer.png",
+   "w": 360,
+   "h": 339,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "bandit-sheepish",
+   "src": "bandit-sheepish.png",
+   "w": 360,
+   "h": 394,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "bandit-portrait",
+   "src": "bandit-portrait.png",
+   "w": 360,
+   "h": 345,
+   "fit": "contain",
+   "keyWhite": 18,
+   "trim": true
+  },
+  {
+   "name": "backdrop-day",
+   "src": "backdrop-day.png",
+   "w": 1600,
+   "h": 600,
+   "fit": "cover",
+   "quality": 0.8
+  },
+  {
+   "name": "backdrop-night",
+   "src": "backdrop-night.png",
+   "w": 1600,
+   "h": 600,
+   "fit": "cover",
+   "quality": 0.8
+  },
+  {
+   "name": "backdrop-barn",
+   "src": "backdrop-barn.png",
+   "w": 1600,
+   "h": 600,
+   "fit": "cover",
+   "quality": 0.8
+  },
+  {
+   "name": "title-keyart",
+   "src": "pilot-keyart.png",
+   "w": 1536,
+   "h": 1024,
+   "fit": "cover",
+   "quality": 0.8
+  }
+ ]
+}

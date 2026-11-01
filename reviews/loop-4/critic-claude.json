@@ -1,0 +1,102 @@
+{
+  "scores": {
+    "characters": 7.0,
+    "environment": 5.5,
+    "depth": 5.5,
+    "readability": 6.0,
+    "ui": 6.5,
+    "juice": 5.5,
+    "mobile": 6.5,
+    "authenticity": 6.0
+  },
+  "total": 48.5,
+  "notes": {
+    "characters": "Bandit is an appealing, consistent painted raccoon across play, results and intro (mobile r03-l1-start, r13-results, r15-intro). The gator kinds mostly read apart: gold-striped whippers, banded hatchlings, gaping baskers, closed-eye sleepers, scarred red-eyed boss (desktop r05-whippers, r08-barn, r10-boss). The bruiser variant differs from the paddler mostly by a darker, lumpier back (r04-pond). Bandit uses the same idle sprite in nearly every frame, including the landing in r11b-land. IP gate: pass. No birds, pigs, slingshots, famous mascots or real logos in any capture; the start-row signposts carry only a painted gator and pecan (r03-l1-start, r06-nursery).",
+    "environment": "Every level is the same stack of full-width textured stripes (water, plank, grass, sand) split by grey concrete curbs, with no horizon, backdrop or edge framing in day, noon or night (desktop r03-l1-start, r07-feeding, r12-endless). Props are sparse, small stickers: cattails, a few fences, feeding tables, egg crates. Mobile shows almost none of them (mobile r04-pond, r05-whippers). The barn's plank side walls and windows are the only real set dressing (desktop r08-barn).",
+    "depth": "Baskers cast soft ground shadows and swimmers get waterline wakes (desktop r11-hop, r04-pond). Night adds eyeshine, lantern pools and a flashlight cone (desktop r09-night). Otherwise the board is flat top-down bands, the curbs have no visible height, and day and noon are lit identically (r03-l1-start vs r07-feeding). Draw order is broken in the barn: a timber beam crosses Bandit's body (mobile and desktop r08-barn), and a heat lamp sits on top of a sleeping gator.",
+    "readability": "Warning badges plus red bite rings flag the hazards, and the grass and sand safe rows are obvious (mobile r03-l1-start, r11-hop). Swimmers in two sub-rows of each water band overlap so much that lane membership is ambiguous (mobile r04-pond, desktop r11b-land). At night the badges and rings stack into clutter, two badges overlap at left in desktop r12-endless, and badges sit on Bandit's head (mobile r07-feeding).",
+    "ui": "Cream cards, chunky outlined buttons, a clear primary CTA and consistent typography look designed (mobile r01-title, r13-results, r15-intro). Weak spots: the ring pips read like a battery icon, '0/3 0/4 home' is cryptic (mobile r03-l1-start), the 'map' is a plain list of cards (mobile r02-map), and How to Play is a scrolling wall of text (mobile r14-help).",
+    "juice": "The hop has a tucked pose with speed strokes, and items sparkle (mobile r11-hop, desktop r09-night). The landing still shows only a flat white ellipse and two dots, with no squash, splash or wobble from the gator (mobile r11b-land, desktop r11b-land). Every other gameplay still shows Bandit in a neutral standing pose.",
+    "mobile": "The opaque header and curb footer frame the board cleanly, and the HUD pills are large and tappable (mobile r03-l1-start, r09-night). The curb footer is a large empty grey slab, the title leaves its bottom fifth as blank sand (mobile r01-title), gators at the screen edges are cut off with only heads showing (mobile r10-boss), and the barn beam crosses Bandit (mobile r08-barn).",
+    "authenticity": "Gator signposts, egg incubator crates, feeding tables, fences and steaming spring stones nod to a gator farm in Hot Springs (desktop r06-nursery, r07-feeding, r12-endless), and the menus show an Ouachita-style backdrop with clear 'not affiliated' text (mobile r01-title, r13-results). The play field itself, with concrete-curbed blue pools, reads more like a water park than an Arkansas gator farm. The baseball and bottle-cap pickups lack context (desktop r08-barn, r03-l1-start)."
+  },
+  "gaps": [
+    {
+      "category": "environment",
+      "severity": 5,
+      "capture": "desktop r03-l1-start, r07-feeding, mobile r05-whippers",
+      "issue": "The board is endless full-width flat stripes with no sense of place: no backdrop, no pen walls with thickness, no foliage borders, and mobile has almost no props. Every zone except the barn reads as the same pool.",
+      "fix": "Commission painted per-zone lane tiles: muddy bank edges with roots and stones instead of grey concrete curbs, murky green-brown pond water, and chain-link or cypress-plank pen walls with visible top faces. Add a painted margin strip on both sides (cypress knees, reeds, viewing boardwalk) even on mobile, as a 24-32px parallax-free overlay that hazards pass under. Draw 1-2 dressing props per safe row on mobile too."
+    },
+    {
+      "category": "depth",
+      "severity": 4,
+      "capture": "mobile r08-barn, desktop r08-barn",
+      "issue": "The barn timber beam is drawn over Bandit's torso, and a heat lamp sits on top of a sleeping gator's back. The draw order breaks the 2.5D illusion.",
+      "fix": "Sort the render list by foot y: draw beams in an overhead pass only when they are above the player's row, or make them semi-transparent (alpha 0.35) when within one tile of Bandit or any actor. Anchor lamps to beam positions that never overlap an occupied hay tile, or draw them after actors with a 40px vertical offset so they clearly hang above."
+    },
+    {
+      "category": "readability",
+      "severity": 4,
+      "capture": "mobile r04-pond, desktop r11b-land, desktop r05-whippers",
+      "issue": "Each water band holds two sub-rows of swimmers that overlap vertically by roughly a third of a body, so it is hard to tell which gator is in which lane or which back is safe to land on.",
+      "fix": "Add a 4-6px darker lane divider (rope with floats is already hinted, so make it thicker and higher contrast). Shrink swimmers to 80% of tile height and centre them in their sub-row. Darken the water by 8% in alternating sub-rows so each lane is its own band."
+    },
+    {
+      "category": "juice",
+      "severity": 4,
+      "capture": "mobile r11b-land, desktop r11b-land, mobile r03-l1-start",
+      "issue": "Landing on a gator shows only a white ellipse and dots, and Bandit keeps his neutral standing sprite. The gator does not react, and there is no squash or splash. Idle frames are identical across every level.",
+      "fix": "On landing, scale Bandit to (1.15, 0.85) for 80ms, then ease back. Push the gator down 3px with a ring of 6-8 droplet particles and a foam ring tinted to the water. Commission 3 extra Bandit frames (land crouch, balance with arms out on a gator, look-back idle) and swap in the balance pose while riding."
+    },
+    {
+      "category": "depth",
+      "severity": 4,
+      "capture": "desktop r03-l1-start, desktop r07-feeding, mobile r06-nursery",
+      "issue": "Day and noon look identically lit. The lanes have no top-light gradient, the curbs have no height, and only baskers cast shadows, so the scene reads flat top-down rather than 2.5D.",
+      "fix": "Give each row a vertical gradient (lighter at the top edge, 10% darker at the bottom) and give curbs a lit top face plus a dark 6px front face. For noon, warm the colour grade (+10% saturation, short hard shadows directly under actors). For day, use a cooler morning grade with longer shadows offset to the right. Give swimmers a soft dark underwater silhouette 4px below them."
+    },
+    {
+      "category": "authenticity",
+      "severity": 3,
+      "capture": "desktop r07-feeding, desktop r08-barn, desktop r03-l1-start",
+      "issue": "The play field looks like a water park, and the baseball and bottle-cap pickups have no visible gator-farm or Hot Springs context.",
+      "fix": "Restyle pens as a weathered roadside gator farm: painted plank fences, wire mesh, mossy concrete with algae stains, visitor railings with hand-painted (letterless) warning boards, and steam wisps rising from the spring-fed water. Make pickups farm-plausible or explain them visually: frame the baseball with a small 'spring training' pennant prop in the margin, or swap it for a feed bucket or a gator-tooth token."
+    },
+    {
+      "category": "readability",
+      "severity": 3,
+      "capture": "desktop r12-endless, mobile r07-feeding, desktop r09-night",
+      "issue": "At night and in busy rows, warning badges and red rings stack on top of each other, overlap Bandit's head, and get lost in the dark palette.",
+      "fix": "Allow one badge per gator, clamped so badges never overlap: offset them by 20px when they collide, and hide any badge within 1 tile of Bandit, where the ring alone is enough. At night draw rings with a 2px light outline and additive glow. Raise the ring alpha to 0.9 for the final 300ms before a bite."
+    },
+    {
+      "category": "ui",
+      "severity": 3,
+      "capture": "mobile r02-map, mobile r03-l1-start, mobile r14-help",
+      "issue": "The level 'map' is a plain card list, the HUD's ring pips read like a battery, '0/3 0/4 home' is cryptic, and How to Play is a scrolling wall of text.",
+      "fix": "Replace the list with a painted farm map: a vertical scroll of 5 zone vignettes with numbered stepping stones linked by a dotted path. Draw the rings as small tail-ring icons with a label, and split the snack HUD into a pecan icon with 'paws 0/3' and a den icon with '0/4'. Turn How to Play into 4-5 swipeable cards, each with a gator sprite and one line."
+    },
+    {
+      "category": "mobile",
+      "severity": 3,
+      "capture": "mobile r03-l1-start, mobile r10-boss, mobile r01-title",
+      "issue": "The stone curb footer is a large featureless grey slab (about 10% of the screen), gators are cut off at the edges, and the title screen's bottom fifth is empty sand.",
+      "fix": "Paint the footer as a mossy stone curb with grass tufts and a rope, or shrink it to the Lure button height plus 8px. Add a 12px dark vignette at the left and right screen edges so cropped gators feel intentional. Move the title menu stack 15% lower, or fill the bottom with a reed and raccoon-den foreground layer."
+    },
+    {
+      "category": "characters",
+      "severity": 3,
+      "capture": "desktop r04-pond, desktop r10-boss, mobile r10-boss",
+      "issue": "The bruiser variant reads as a darker paddler rather than a distinct silhouette at phone size. The boss Old Ruthless shows mostly as a head at the screen edge on mobile, which weakens his presence.",
+      "fix": "Push the bruiser silhouette: 20% wider head, a lighter belly stripe and a visible notch in the tail, plus a distinct tint (olive-brown vs the paddler's yellow-green). For the boss, keep him at 1.5x scale, add a dark wake trail and a red eye glow ring, and pan the camera or pin a full-body portrait in the edge marker on mobile."
+    },
+    {
+      "category": "environment",
+      "severity": 2,
+      "capture": "desktop r11-hop, desktop r07-feeding",
+      "issue": "A small tree stands inside a basker sand row overlapping a gator, and a feeding table sits under a basker's head, despite the stated prop-placement rule.",
+      "fix": "Reject prop placement on any row containing actors, and test against actor bounding boxes at spawn time. Move tall props to the margin strip, or allow them only on safe empty rows."
+    }
+  ]
+}

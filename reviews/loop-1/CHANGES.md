@@ -1,0 +1,2 @@
+# Loop 1 changes (facts only)
+First review. Build state: painted art (Codex paint-overs of Blender pose block-outs, style pilot art-src/pilot-keyart.png) for the gators (6 kinds, closed/open), Bandit (3 facings x stand/hop, right = mirrored left), items, props, lane strips and backdrops; vector fallback for the concrete lip, float ropes, badges and FX. 15 levels in 5 zones plus Moonlight Run. Captures: screenshots/review-1/{desktop,mobile}/r01..r15 and sheets in screenshots/review-1/sheets/.

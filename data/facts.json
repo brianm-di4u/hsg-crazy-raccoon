@@ -1,0 +1,32 @@
+{
+  "note": "Player-facing facts. bank: ids from games/trivia/data/questions.json (audited, confirmed). research: from research/alligator-farm.md, each URL cited there. Checked by tools/check-facts.mjs.",
+  "bank": [
+    { "id": "hs-0399", "topic": "farm", "text": "The Arkansas Alligator Farm opened on Whittington Avenue in 1902.", "source": "Wikipedia: Hot Springs, Arkansas" },
+    { "id": "hs-0298", "topic": "farm", "text": "H. L. Campbell founded the farm in 1902, wanting a tourist draw beyond the baths.", "source": "Wikipedia: Arkansas Alligator Farm and Petting Zoo" },
+    { "id": "hs-0483", "topic": "farm", "text": "Campbell brought the first alligators from the Florida Everglades.", "source": "Encyclopedia of Arkansas: Arkansas Alligator Farm and Petting Zoo" },
+    { "id": "hs-0493", "topic": "farm", "text": "Around 1929, under owner Danny Older, it was called the Hot Springs Gator Farm.", "source": "Encyclopedia of Arkansas: Arkansas Alligator Farm and Petting Zoo" },
+    { "id": "hs-0484", "topic": "legend", "text": "The early museum showed a \"Merman,\" said to be a mummified sea creature. (A sideshow legend!)", "source": "Encyclopedia of Arkansas: Arkansas Alligator Farm and Petting Zoo" },
+    { "id": "hs-0183", "topic": "ruth", "text": "On March 17, 1918, Babe Ruth hit a home run that landed in the Alligator Farm.", "source": "Wikipedia: Hot Springs, Arkansas" },
+    { "id": "hs-0195", "topic": "ruth", "text": "Ruth hit that 1918 homer at Whittington Park, right across the street from the farm.", "source": "KNWA/KFTA: The home run that made Babe Ruth a star" }
+  ],
+  "research": [
+    { "id": "r-teeth", "topic": "gator", "text": "An alligator has 74 to 80 teeth at a time and can go through about 3,000 in a lifetime.", "source": "Smithsonian's National Zoo", "sourceUrl": "https://nationalzoo.si.edu/animals/american-alligator" },
+    { "id": "r-nest", "topic": "gator", "text": "Nest temperature decides whether alligator eggs hatch as males or females.", "source": "Smithsonian's National Zoo", "sourceUrl": "https://nationalzoo.si.edu/animals/american-alligator" },
+    { "id": "r-eggs", "topic": "gator", "text": "A mother alligator usually lays 35 to 50 eggs, which hatch after about 65 days.", "source": "Smithsonian's National Zoo", "sourceUrl": "https://nationalzoo.si.edu/animals/american-alligator" },
+    { "id": "r-size", "topic": "gator", "text": "Adult male alligators average about 11.2 feet long; females about 8.2 feet.", "source": "Smithsonian's National Zoo", "sourceUrl": "https://nationalzoo.si.edu/animals/american-alligator" },
+    { "id": "r-holes", "topic": "gator", "text": "Alligators dig \"gator holes\" and mud tunnels up to 65 feet long to ride out hot and cold weather.", "source": "Smithsonian's National Zoo", "sourceUrl": "https://nationalzoo.si.edu/animals/american-alligator" },
+    { "id": "r-ar-1961", "topic": "arkansas", "text": "Arkansas protected its alligators in 1961, when they were left only in the state's southwest corner.", "source": "Arkansas Game and Fish Commission", "sourceUrl": "https://agfc.com/?p=1365" },
+    { "id": "r-ar-restock", "topic": "arkansas", "text": "From 1972 to 1984, Arkansas released 2,841 alligators brought from Louisiana.", "source": "Arkansas Game and Fish Commission", "sourceUrl": "https://agfc.com/?p=1365" },
+    { "id": "r-farm-200", "topic": "farm", "text": "The farm is home to about 200 adult and baby alligators.", "source": "Encyclopedia of Arkansas", "sourceUrl": "https://encyclopediaofarkansas.net/entries/arkansas-alligator-farm-and-petting-zoo-20827/" },
+    { "id": "r-farm-restock", "topic": "farm", "text": "Every 10 to 15 years the farm gets a permit for 12 to 15 baby alligators from Louisiana.", "source": "Encyclopedia of Arkansas", "sourceUrl": "https://encyclopediaofarkansas.net/entries/arkansas-alligator-farm-and-petting-zoo-20827/" },
+    { "id": "r-feeding", "topic": "farm", "text": "Summer feeding shows at noon serve up about 200 pounds of chicken.", "source": "Arkansas Democrat-Gazette, 2013", "sourceUrl": "https://www.arkansasonline.com/news/2013/sep/01/111-year-old-alligator-farm-continues-bring-visito/" },
+    { "id": "r-bands", "topic": "farm", "text": "Small gators held for photos sometimes have their mouths held shut with rubber bands.", "source": "Arkansas Democrat-Gazette, 2013", "sourceUrl": "https://www.arkansasonline.com/news/2013/sep/01/111-year-old-alligator-farm-continues-bring-visito/" },
+    { "id": "r-barn", "topic": "farm", "text": "Hot Springs winters are cold, so the gators spend about six months a year in a barn under heat lamps.", "source": "RoadsideAmerica", "sourceUrl": "https://www.roadsideamerica.com/story/11270" },
+    { "id": "r-parakeets", "topic": "farm", "text": "About 50 parakeets live in a walk-in enclosure, where visitors feed them with seed sticks.", "source": "Encyclopedia of Arkansas", "sourceUrl": "https://encyclopediaofarkansas.net/entries/arkansas-alligator-farm-and-petting-zoo-20827/" },
+    { "id": "r-1965", "topic": "farm", "text": "In 1965 the farm added monkeys, raccoons, loggerhead turtles and a gift shop.", "source": "Encyclopedia of Arkansas", "sourceUrl": "https://encyclopediaofarkansas.net/entries/arkansas-alligator-farm-and-petting-zoo-20827/" },
+    { "id": "r-rings", "topic": "raccoon", "text": "A raccoon's tail has four to six black rings.", "source": "National Wildlife Federation", "sourceUrl": "https://www.nwf.org/Educational-Resources/Wildlife-Guide/Mammals/Raccoon" },
+    { "id": "r-paws", "topic": "raccoon", "text": "Raccoons have nimble, almost hand-like paws that can grasp nuts, fruit and even garbage-can lids.", "source": "National Wildlife Federation", "sourceUrl": "https://www.nwf.org/Educational-Resources/Wildlife-Guide/Mammals/Raccoon" },
+    { "id": "r-night", "topic": "raccoon", "text": "Raccoons are nocturnal: they search for food at night.", "source": "National Wildlife Federation", "sourceUrl": "https://www.nwf.org/Educational-Resources/Wildlife-Guide/Mammals/Raccoon" },
+    { "id": "r-life", "topic": "raccoon", "text": "Wild raccoons can live up to 16 years, though about five is typical.", "source": "National Wildlife Federation", "sourceUrl": "https://www.nwf.org/Educational-Resources/Wildlife-Guide/Mammals/Raccoon" }
+  ]
+}

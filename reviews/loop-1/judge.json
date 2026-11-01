@@ -1,0 +1,110 @@
+{
+  "scores": {
+    "characters": 6.5,
+    "environment": 5.0,
+    "depth": 5.0,
+    "readability": 6.0,
+    "ui": 6.5,
+    "juice": 4.0,
+    "mobile": 6.0,
+    "authenticity": 6.0
+  },
+  "total": 45.0,
+  "rulings": [
+    "juice (Claude 4.0, Codex 5.0): 4.0. In mobile/r11-hop and desktop/r11-hop, Bandit is at standing height with his shadow right under his feet. There is no stretch, takeoff puff, trail or landing ring. Codex's 'raised pose, separated shadow' is not in the capture. Open jaws (r04-pond) and 'z' marks (r08-barn) show state, not feedback. Note: renderer.js already has squash (sq=-0.35*sin, which scales only about 7%), a 0.45-tile arc and dust on landing. The review shot (hop, then step 8 at DT 1/120, u≈0.44) should be near the peak, so either the frame is not re-rendered before the shot or the effect is too weak to read.",
+    "environment (Claude 5.0, Codex 5.5): 5.0. This matches the 5 anchor exactly: painted texture strips with a deliberate vertical tile-seam grid (sand in mobile/r11-hop), a flat vector concrete lip and float-rope lines (r04-pond), flat dimmed desktop side columns with hard white edges (desktop r03, r06, r10), and tiny pines straddling lane borders (r03-l1-start, r06-nursery). The fences (r06) and hay (r08) are the only set dressing.",
+    "depth (Claude 5.0, Codex 5.5): 5.0. Submersion clipping and waterline wakes are good (r04-pond, r11-hop). But the barn lamp glows (alpha 0.16) are invisible in r08-barn, night is a flat multiply with outlined light ellipses (r09-night, r10-boss), and noon looks the same as day (r07-feeding).",
+    "mobile (both 6.0): upheld. Codex is right that the boss is cropped: in mobile/r10-boss the head sits at x=0 with the body off-screen. Claude is right that the HUD covers row content: in mobile/r11-hop and mobile/r04-pond the pills sit over a basker and snacks. The help panel cuts off with no cue (mobile/r14-help).",
+    "readability (both 6.0): upheld, and both critics' causes are confirmed. Warning badges float over gator backs or empty grass with no anchor (mobile/r11-hop, r03-l1-start). High-contrast caustics compete with the gator outlines (r04-pond). At night the eyeshine is drawn above the head, not in the eye (renderer night(): y - s*0.62), so it reads as floating dots (r10-boss, r12-endless). The caps and balls are ambiguous (r06-nursery).",
+    "characters (both 6.5): upheld. The gator cast is appealing and consistent. Bandit only ever appears from behind and is absent from the menus (r01-title, r13-results, r15-intro). A front-facing raccoon-down-stand.webp already exists but is never shown in the captures.",
+    "ui and authenticity (both 6.5 / 6.0): upheld. The menus look designed but the map is a card grid (r02-map). The farm setting lives only in the title key art and fact cards (r01-title, r15-intro); gameplay has no farm infrastructure (r07-feeding, r08-barn).",
+    "IP gate: neither critic reported a sighting, and I found none. The title disclaimer is present (r01-title)."
+  ],
+  "backlog": [
+    {
+      "rank": 1,
+      "category": "juice",
+      "gain": 1.5,
+      "effort": "S",
+      "fix": "Make the hop and its feedback readable in stills, in code only. (a) renderer.drawPlayer: raise the stretch to about ±15–18% (scale x 1-0.15*sin, y 1+0.18*sin during the hop) and the land squash to (1.18, 0.82) decaying over 120 ms. Shrink the ground shadow to 65% and fade it at the arc peak. Add 2–3 short white speed strokes below Bandit during the hop. (b) Events: emit fx.dust at the origin tile on 'hop' (it currently fires only on 'land'). On a ride landing, add a small ring plus 6 droplets on the gator's back. (c) Ambient FX that show in every still: a V wake and periodic small rings at each swimming gator's nose, a slow 2-point twinkle on free snacks, and steam curls on prop-pool/spring stones (fx.steam already exists). (d) Make sure the review harness re-renders after step 8 so r11 shows the mid-arc frame (assert p.state==='hop' before the shot).",
+      "verify": [
+        "r11-hop",
+        "r04-pond",
+        "r05-whippers",
+        "r07-feeding"
+      ]
+    },
+    {
+      "rank": 2,
+      "category": "mobile",
+      "gain": 1.5,
+      "effort": "S",
+      "fix": "Portrait safe areas. (a) Compact the HUD into one top strip on portrait: lives, snacks/home, score, timer and pause in a single row about 64 px tall. Then offset the board (baseY/camFor) so the highest visible row ends below hudBand rather than under the pills. Make the existing gradient band opaque enough (0.7) to read as a header. (b) Reserve a bottom-right gutter for the Lure button so it no longer overlaps the start lane, or reduce it to 64 px on a solid backing. (c) Boss framing: when the boss is within 3 rows of view, bias camXT toward its head (lerp about 50%) and clamp so the head plus about 1.5 tiles of body stay on screen. (d) Map and help screens on mobile: add a bottom fade, a bouncing chevron and a sticky Back button.",
+      "verify": [
+        "r04-pond",
+        "r10-boss",
+        "r11-hop",
+        "r12-endless",
+        "r02-map",
+        "r14-help"
+      ]
+    },
+    {
+      "rank": 3,
+      "category": "readability",
+      "gain": 1.0,
+      "effort": "S",
+      "fix": "Telegraph and contrast pass in renderer.drawGator, night() and drawItem. (a) Anchor each '!' badge just above the threatening head, with a small pointer tail and a white backing disc, and pulse the threatened tile with a 25% red fill so the threat is a place, not a floating icon. (b) Night: move the eyeshine onto the eye position (small yellow dots, no halo above the head), and draw a 2 px light-teal rim behind each gator, using a cached tinted silhouette offset by 1–2 px, so the outlines survive the dark. Give the boss red eyeshine. (c) Lower caustic contrast under the traversal rows (raise the water overlay alpha from 0.32 to about 0.45 and add a darker halo under swimming gators). (d) Give caps and balls (bonus collectibles) a gold ground halo plus a twinkle distinct from the snack shadow, and add their icon to the help screen.",
+      "verify": [
+        "r11-hop",
+        "r03-l1-start",
+        "r10-boss",
+        "r12-endless",
+        "r06-nursery"
+      ]
+    },
+    {
+      "rank": 4,
+      "category": "depth",
+      "gain": 1.0,
+      "effort": "M",
+      "fix": "Zone lighting rework, in code only. (a) Night: render the darkness into an offscreen canvas (navy at about 0.62 alpha) and cut the lights out with destination-out radial gradients: a feathered flashlight pool, a warm cone with gradient falloff, and a soft moon pool around Bandit. Composite over the scene. Delete the stroked beam ellipse and any dashed outline, and keep the hazard edge as a soft pulsing inner glow. Add moonlight glints on water ripples. (b) Barn: draw a dark timber wall band across the top of the board and in the margins, diagonal beam-shadow stripes (multiply, 0.18), and painted-style heat-lamp fixtures (a vector cone hood with a bulb) above each lamps() glow. Raise the glow alpha from 0.16 to about 0.35, and multiply the water toward a muted interior teal. (c) Noon: apply a warm bright grade, tighter darker contact shadows and short shadows directly under sprites.",
+      "verify": [
+        "r09-night",
+        "r10-boss",
+        "r12-endless",
+        "r08-barn",
+        "r07-feeding"
+      ]
+    },
+    {
+      "rank": 5,
+      "category": "environment",
+      "gain": 1.0,
+      "effort": "M",
+      "fix": "Board finish with existing assets plus Canvas2D. (a) Replace the flat P.lip fillRects with a rounded concrete lip: top highlight gradient, a wet dark band at the waterline, and a 1 px ink edge. Draw the float rope as a sagging stroked rope rather than a straight seam. (b) Fade the always-on tile-seam grid to about 30% and show it only near Bandit. Hide strip repetition with seeded per-row x offsets and flips. (c) Desktop margins: replace the 0.28 dim rectangles and white edge lines with a 40–60 px gradient vignette and fade-masked lane traffic. Fill the margins with prop-pine at about 2.5x scale on contact shadows, prop-fence runs, prop-pool with steam, and procedural cattail and lily-pad clusters along the water banks. (d) Keep pines out of the play lanes: margins or dedicated bank rows only, y-sorted.",
+      "verify": [
+        "r03-l1-start",
+        "r04-pond",
+        "r06-nursery",
+        "r10-boss",
+        "r11-hop"
+      ]
+    },
+    {
+      "rank": 6,
+      "category": "authenticity",
+      "gain": 2.0,
+      "effort": "L",
+      "fix": "One image-generation batch, painted to match art-src/pilot-keyart.png. (a) Bandit hero poses (front three-quarter, mask and grin, a pecan in his paws): a cheering pose and a sheepish pose for results and intro, and a large one for the title next to the logo. Until the batch lands, put the existing raccoon-down-stand.webp on title, results and intro. (b) A zone dressing sheet with no real signage or logos: a concrete pit wall with a chain-link section and a generic 'DO NOT FEED' board (Front Pits), incubator crates (Nursery), a raised wooden feeding stage with a bell (Noon Feeding Show), a red barn wall strip (Winter Barn), string lights on posts (Midnight), and a steaming stone spring plus a hills strip for the desktop margins. Place them in the margins and the top den row per theme. Expected gain is spread across categories: authenticity +1, characters +0.5, and about +0.5 combined for ui (portraits on the menus) and environment.",
+      "verify": [
+        "r01-title",
+        "r13-results",
+        "r15-intro",
+        "r07-feeding",
+        "r08-barn",
+        "r09-night"
+      ]
+    }
+  ]
+}

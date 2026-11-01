@@ -1,0 +1,103 @@
+{
+  "scores": {
+    "characters": 7,
+    "environment": 5.5,
+    "depth": 5.5,
+    "readability": 6,
+    "ui": 6.5,
+    "juice": 5.5,
+    "mobile": 6,
+    "authenticity": 6.5
+  },
+  "total": 48.5,
+  "notes": {
+    "characters": "Appealing expressive gators and Bandit portraits reach the shippable anchor, with striped tails, banded hatchling mouths and the scarred boss providing some cast distinction (desktop/r05-whippers.png, desktop/r10-boss.png, mobile/r13-results.png). The repeated swimming silhouette and largely featureless rear gameplay pose limit personality and consistency with the much richer portrait art (mobile/r06-nursery.png, mobile/r15-intro.png).",
+    "environment": "The title has lush painted banks and a convincing enclosure, but gameplay reduces these to repetitive rectangular texture strips with sparse pasted props (desktop/r01-title.png, desktop/r04-pond.png). The nursery fence and barn lamps add identity without making the spaces feel like complete painted locations, especially in the narrow mobile crop (desktop/r06-nursery.png, mobile/r08-barn.png).",
+    "depth": "Pool lips, shaded bodies and ground shadows supply some volume, but rigid horizontal surfaces and detached oval shadows keep the board closer to layered sprites than cohesive 2.5D (desktop/r07-feeding.png, mobile/r11-hop.png). Night pools retain conspicuous ellipse borders and straight translucent beams, while the bright barn water sits awkwardly beside warm straw and floating lamps (mobile/r09-night.png, desktop/r08-barn.png).",
+    "readability": "Water versus land and the main actor are identifiable, and daytime warning triangles attract attention (mobile/r03-l1-start.png, desktop/r11-hop.png). Dense caustics, oversized repeated wake strokes and snacks overlapping gator backs complicate route reading; night grading also darkens warning badges and red bite ellipses (mobile/r04-pond.png, mobile/r09-night.png, desktop/r12-endless.png).",
+    "ui": "Cream panels, teal subheads and large yellow primary buttons form a coherent interface, with clear results and intro layouts (mobile/r13-results.png, mobile/r15-intro.png). Jagged outlined heading edges, text-heavy instructions and ambiguous ring/score HUD symbols fall short of polished mobile presentation (desktop/r14-help.png, mobile/r14-help.png, mobile/r03-l1-start.png).",
+    "juice": "Open jaws, snack sparkles, airborne Bandit and water strokes give the stills some energy (desktop/r11-hop.png, mobile/r09-night.png). The hop capture has little conspicuous takeoff or landing punctuation, and repeated white arcs dominate the visible effects vocabulary; timing, camera response and claimed squash sequences cannot be established from these stills (mobile/r11-hop.png, desktop/r03-l1-start.png).",
+    "mobile": "Portrait keeps Bandit large and preserves generous menu buttons and readable modal copy (mobile/r01-title.png, mobile/r15-intro.png). However, the map's fifth group is concealed below the footer, help ends at the Tail rings heading, and gameplay crops most location props while HUD pills cover upper board content (mobile/r02-map.png, mobile/r14-help.png, mobile/r07-feeding.png); scrolling and camera-follow behavior are unproven by the captures.",
+    "authenticity": "Concrete enclosures, feeding buckets, heat lamps and steaming spring imagery suggest a gator attraction, with explicit Hot Springs wording and a non-affiliation notice (desktop/r01-title.png, desktop/r07-feeding.png, desktop/r08-barn.png). Gameplay's generic repeated pools and portrait's loss of margin props weaken the specific sense of place, leaving much of the Arkansas identity to text (mobile/r07-feeding.png, mobile/r15-intro.png).",
+    "ip_gate": "PASS on the supplied captures: no recognizable commercial-game character resemblance, real logo or real-world venue signage sighted (desktop/r01-title.png, desktop/r10-boss.png, mobile/r13-results.png). The real attraction is named in a non-affiliation notice rather than represented by a venue sign or logo (mobile/r01-title.png), so no severity-5 characters IP gap is triggered."
+  },
+  "gaps": [
+    {
+      "category": "readability",
+      "severity": 4,
+      "capture": "mobile/r09-night.png; desktop/r12-endless.png",
+      "issue": "Night darkness turns yellow warning triangles muddy and bite ellipses dark red, even while decorative eye glows remain bright.",
+      "fix": "Draw threat badges and bite footprints after the darkness pass with fixed high-contrast yellow/ivory fills, dark outlines and a bright dashed inner danger contour. Keep their luminance independent of world lighting."
+    },
+    {
+      "category": "mobile",
+      "severity": 4,
+      "capture": "mobile/r02-map.png; mobile/r14-help.png",
+      "issue": "The map shows only a sliver of its fifth group above Back, and help reaches Tail rings without showing its explanation or Stars; neither capture communicates how to reach the hidden content.",
+      "fix": "Reserve a separate footer rectangle, clip a Canvas2D scroll viewport above it, and render a visible scrollbar plus a bottom continuation chevron. Break help into illustrated pages with page dots so every section has an obvious route."
+    },
+    {
+      "category": "environment",
+      "severity": 4,
+      "capture": "desktop/r04-pond.png; desktop/r06-nursery.png; mobile/r08-barn.png",
+      "issue": "Gameplay is dominated by ruler-straight repeated grass, sand, planks and water strips; the nursery and barn read as texture swaps rather than distinct places.",
+      "fix": "Commission cohesive zone border paintings with worn concrete corners, connected nursery pens and barn posts/rafters. Composite these around preserved collision lanes, varying texture patches and bank contours without obscuring traversable cells."
+    },
+    {
+      "category": "readability",
+      "severity": 3,
+      "capture": "mobile/r03-l1-start.png; mobile/r04-pond.png; mobile/r05-whippers.png",
+      "issue": "High-frequency cyan caustics and repeated pale wake curls compete with gator silhouettes; pecans and berries can merge into the backs beneath them.",
+      "fix": "Lower water texture contrast and saturation beneath actors, replace nose curls with short directional tapered wakes, and render snacks with a consistent dark separation stroke and small offset pedestal halo above rideable backs."
+    },
+    {
+      "category": "depth",
+      "severity": 3,
+      "capture": "desktop/r07-feeding.png; mobile/r11-hop.png; mobile/r06-nursery.png",
+      "issue": "Long hard oval shadows extend away from basking gators, while pool edges and swimming bodies lack convincing local contact and submersion.",
+      "fix": "Use blurred body-shaped contact shadows with a short consistent light offset; mask swimming sprites below a shared waterline and add a translucent submerged-body tint, tight foam contact and faint distorted reflection."
+    },
+    {
+      "category": "juice",
+      "severity": 3,
+      "capture": "desktop/r11-hop.png; mobile/r11-hop.png; mobile/r09-night.png",
+      "issue": "Bandit's airborne pose reads mostly as the same rear sprite lifted from a small oval; the hop still has little visible dust, streaking or impact punctuation.",
+      "fix": "Paint distinct crouch, stretched airborne and compressed landing poses; use Canvas2D transforms around the feet plus a fading takeoff puff, two short speed strokes and a brief landing ring or ride splash. Keep FX behind the actor and away from hazard heads."
+    },
+    {
+      "category": "mobile",
+      "severity": 3,
+      "capture": "mobile/r04-pond.png; mobile/r07-feeding.png; mobile/r10-boss.png",
+      "issue": "HUD pills overlap gators, fences and route content at the top, while horizontal cropping removes feeding props and most of the boss silhouette.",
+      "fix": "Reserve an opaque compact HUD safe area above the board, then fit the visible rows below it. Place one zone-defining prop inside the portrait-safe border and give oversized threats a small edge portrait/arrow when their body is cropped."
+    },
+    {
+      "category": "depth",
+      "severity": 3,
+      "capture": "mobile/r09-night.png; mobile/r10-boss.png; desktop/r08-barn.png",
+      "issue": "Flashlight pools have obvious outlined ellipse boundaries and beams look like translucent polygons; barn lamps hang without visible structural support beside very bright blue water.",
+      "fix": "Build lights with broad radial alpha falloffs and no perimeter stroke, feather cone edges with layered gradients, and paint supporting chains/rafters. Apply a shared warm ambient grade to barn water and props before localized lamp highlights."
+    },
+    {
+      "category": "characters",
+      "severity": 2,
+      "capture": "mobile/r06-nursery.png; mobile/r13-results.png; mobile/r15-intro.png",
+      "issue": "The softly rendered rear gameplay raccoon communicates much less expression than the strongly outlined front portraits, and repeated adult gators share nearly identical body silhouettes.",
+      "fix": "Commission a unified Bandit turnaround with matching fur masses and outline weight, including readable ear/paw poses. Give gator kinds distinct head crests, body proportions or tail silhouettes in addition to bands and color."
+    },
+    {
+      "category": "ui",
+      "severity": 2,
+      "capture": "mobile/r13-results.png; mobile/r14-help.png; desktop/r14-help.png",
+      "issue": "Large outlined headings have conspicuously stepped edges, help is a dense rules wall, and results stars are flat geometric symbols beside richer painted character art.",
+      "fix": "Render headings to a higher-resolution offscreen canvas before downsampling, commission softly shaded star badges, and replace the gator rules wall with compact illustrated cards showing safe backs, dangerous heads and special tails."
+    },
+    {
+      "category": "authenticity",
+      "severity": 2,
+      "capture": "desktop/r07-feeding.png; mobile/r07-feeding.png; mobile/r01-title.png",
+      "issue": "Hot Springs identity relies on title copy; the mobile feeding board loses the buckets and viewing stages that make desktop resemble an operated animal attraction.",
+      "fix": "Commission portrait-safe vignettes of a fictional feeding platform, keeper tools and mineral-stained steaming stonework, with an original Hot Springs, Arkansas location plaque using no real venue branding. Integrate one vignette into each zone's visible bank."
+    }
+  ]
+}

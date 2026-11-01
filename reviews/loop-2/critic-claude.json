@@ -1,0 +1,109 @@
+{
+  "scores": {
+    "characters": 6.5,
+    "environment": 5.5,
+    "depth": 5.5,
+    "readability": 6,
+    "ui": 6.5,
+    "juice": 4.5,
+    "mobile": 6,
+    "authenticity": 6.5
+  },
+  "total": 47,
+  "notes": {
+    "characters": "The painted gators have appeal and the kinds read apart: gold-striped whippers, muzzled hatchlings, sand baskers, sleepers with z's, and a scowling boss (r05-whippers, r06-nursery, r08-barn, r10-boss). In play, though, Bandit is only ever a tiny back view in one pose (mobile r03-l1-start, r10-boss), and the swimming gators are one stamped sprite repeated 20+ times per frame (desktop r04-pond). The strong menu poses (r13-results, r15-intro) never appear in gameplay.",
+    "environment": "The title backdrop is rich and painted (r01-title), but gameplay is flat horizontal tile strips with visible horizontal seams in the water. Desktop has hard-edged dimmed side columns with vertical seams at about x=300 and x=980 (r03-l1-start, r07-feeding). Margin props are pasted over swimming gators: a pine over a gator in r03-l1-start and r05-whippers. The barn is the same outdoor pool with straw lanes and floating lamps, not an interior (r08-barn).",
+    "depth": "Baskers cast soft ground shadows and swimmers have waterlines (r11-hop, r07-feeding). Beyond that the board is flat top-down with only a thin concrete lip. Night is a blue tint with hard-rimmed bright ellipses scattered at random, not a light pool around the player (r09-night, mobile r10-boss). Barn heat lamps hang from nothing and barely light the floor (r08-barn).",
+    "readability": "Pinned warning badges and red bite ellipses help (r03-l1-start, mobile r11-hop). But 3 to 4 stacked water lanes packed with identical gators make rideable backs, biting heads and open water hard to parse at a glance (r04-pond, mobile r04-pond). Night badges turn dark-on-dark, and in r12-endless a badge collides with a tree and lantern props (desktop r12-endless, mobile r09-night).",
+    "ui": "Cream panels, chunky outlined buttons and display headings are consistent and look designed (r02-map, r15-intro, r13-results). Weak spots: on the results screen stars 1 and 3 are lit with 2 grey (r13-results); HUD pills peek out from behind the mobile results panel (mobile r13-results); the help screen is a wall of text cut off at 'Tail rings' (mobile r14-help); the map is a plain list with no farm illustration (r02-map).",
+    "juice": "Almost none of the claimed juice shows in stills. r11-hop shows Bandit standing upright with no stretch, dust or speed strokes, and the shadow is unchanged. Wakes are faint white arcs and steam is a barely visible wisp (r03-l1-start, mobile r12-endless). Snack twinkles are tiny 4-point sparkles (r08-barn).",
+    "mobile": "Portrait framing is legible, with large touch targets on the menus (mobile r01-title, r02-map). In play, the HUD pills sit directly over live lanes with no visible header band in day zones (mobile r04-pond, r06-nursery). The Lure coin covers the bottom-right of the player's own row (mobile r03-l1-start, r11-hop). Bandit sits at the very bottom edge with almost no space behind him.",
+    "authenticity": "Concrete pools with float ropes, fences, feeding stages, hatchling pens, steaming spring stones and the disclaimer plus farm facts all point to a Hot Springs gator farm (r01-title, r07-feeding, r13-results). Gameplay frames still read as generic river lanes with no farm buildings, visitors' boardwalk or Ouachita backdrop (r04-pond, r12-endless). IP gate: clear. No birds, pigs, slingshots, mascots or real logos seen; the bottle caps and baseballs are plain and unbranded."
+  },
+  "gaps": [
+    {
+      "category": "juice",
+      "severity": 5,
+      "capture": "r11-hop (desktop and mobile), r03-l1-start",
+      "issue": "The hop capture shows Bandit in his neutral standing pose: no vertical stretch, no airborne offset, no takeoff dust, no speed strokes, and a full-size shadow. Nothing in the stills says 'jump'.",
+      "fix": "Lift the sprite clearly off its shadow mid-hop (up to 0.4 of a tile), scale it to 0.85x by 1.2y at takeoff and 1.2x by 0.8y on landing, and shrink the shadow to 60% at the peak. Draw three thick cream speed strokes trailing the motion and a 5-puff dust burst on the source tile. Also commission a painted mid-air Bandit frame (legs tucked, tail up) and swap it in during the arc."
+    },
+    {
+      "category": "environment",
+      "severity": 4,
+      "capture": "r03-l1-start, r05-whippers, r07-feeding (desktop)",
+      "issue": "The desktop playfield sits between hard-edged dimmed side columns, leaving visible vertical seams at about x=300 and x=980. Margin trees and cattails are drawn on top of swimming gators.",
+      "fix": "Replace the flat dim rectangles with a 120 px horizontal gradient vignette, or paint dedicated margin banks (grass berms, boardwalk railings) outside the play columns. Clip margin props to land tiles only, and render them in a layer below gators, or keep them out of water rows altogether."
+    },
+    {
+      "category": "readability",
+      "severity": 4,
+      "capture": "r04-pond, r05-whippers (desktop and mobile)",
+      "issue": "Three or four stacked water lanes full of near-identical gators make the frame a green-blue wall. Safe backs, biting heads and open water cannot be told apart at a glance on a phone.",
+      "fix": "Cap water lanes at 3 in a row and add more visible open water between gators (at least 1.5 tiles). Tint each lane's water slightly differently (alternating 4% lightness steps). Draw a pale safe-back highlight band along each gator's spine and keep the head third darker, so 'stand here' and 'avoid' read as two different values."
+    },
+    {
+      "category": "depth",
+      "severity": 4,
+      "capture": "r09-night, r12-endless, mobile r10-boss",
+      "issue": "Night is a uniform blue tint. Bright ellipses with hard rims are scattered on lanes and are not centred on Bandit, so there is no darkness to cut through and no sense of a flashlight.",
+      "fix": "Composite a full-screen darkness layer at 65 to 75% opacity. Cut a feathered radial-gradient hole (radius about 2.5 tiles) centred on Bandit, plus smaller warm holes at lanterns, using globalCompositeOperation 'destination-out'. Remove the stroked ellipse rims entirely. Add a cool rim light on the lane edges nearest each light."
+    },
+    {
+      "category": "characters",
+      "severity": 4,
+      "capture": "r03-l1-start, r10-boss, r12-endless (mobile)",
+      "issue": "In gameplay Bandit is always a small back-view sprite in the same pose, about 0.8 of a tile, with no face visible, and he has far less appeal than the painted menu Bandit.",
+      "fix": "Scale Bandit to about 1.1 tiles and switch to a three-quarter rear view that shows the mask and one eye. Commission four painted directional frames (up, left, right, down) plus a carrying pose with snacks visible above the head. Add a 2 px cream outer stroke so he pops off any lane."
+    },
+    {
+      "category": "environment",
+      "severity": 3,
+      "capture": "r08-barn (desktop and mobile)",
+      "issue": "The Winter Barn is the outdoor pool with straw-textured lanes. Heat lamps hang from short chains attached to nothing over water lanes, and their glow barely tints the floor.",
+      "fix": "Paint a barn treatment: plank walls in the margins, a beam across the top band that the lamp chains hang from, and dark-plank troughs in place of the blue pool water (or murky green water). Draw each lamp's glow as an additive warm radial gradient about 1.5 tiles wide on the floor beneath it."
+    },
+    {
+      "category": "mobile",
+      "severity": 3,
+      "capture": "mobile r04-pond, r06-nursery, r03-l1-start",
+      "issue": "In day zones the HUD pills overlap live lanes with no visible backing band, and gators pass under them. The Lure coin covers part of Bandit's starting row.",
+      "fix": "Make the header band an opaque painted strip (a wood plank or dark-green gradient at 90%+) about 120 px tall, and start lane 0 below it. Move the Lure button into a bottom strip under the playfield, or reserve the right margin column for it, so no playable tile is covered."
+    },
+    {
+      "category": "juice",
+      "severity": 3,
+      "capture": "mobile r03-l1-start, r12-endless, r08-barn",
+      "issue": "The water feedback (wakes, ride rings, steam) is thin white hairline arcs that read as compression noise. Snack twinkles are tiny.",
+      "fix": "Draw wakes as filled white V wedges with 50 to 70% alpha falloff, two per gator, at least 4 px thick. Make spring steam three stacked soft white blobs rising and fading. Give snacks a slow 1.0 to 1.1 bob-scale and an 8-ray star burst at 1.5x the snack's size."
+    },
+    {
+      "category": "ui",
+      "severity": 3,
+      "capture": "r13-results (desktop and mobile)",
+      "issue": "The results stars show 1 and 3 earned with the middle one grey, which reads like a bug. On mobile, HUD pills poke out from behind the panel top.",
+      "fix": "Fill stars left to right by count earned and list which goals were met as icons under the stars. Hide or fade the gameplay HUD whenever a modal panel is open, and add a full-screen 40% dark scrim behind the panel."
+    },
+    {
+      "category": "authenticity",
+      "severity": 3,
+      "capture": "r04-pond, r12-endless, r06-nursery",
+      "issue": "Gameplay frames could be any river crossing. There are no farm cues such as a visitor boardwalk railing, enclosure signage, a feeding-show stage or the Ouachita hills that the title art shows.",
+      "fix": "Put the painted den/hills backdrop at the top of every level with parallax, as already seen on r13. Add an unbranded painted wooden sign ('GATOR POOL 3', 'NURSERY') at each zone's start row and chain-link or railing segments along the margins. Show a few visitor silhouettes behind the railing in the feeding zone."
+    },
+    {
+      "category": "ui",
+      "severity": 2,
+      "capture": "r02-map, mobile r14-help",
+      "issue": "The level map is a text grid with no farm illustration. On mobile the help screen is a long wall of text, cut off at 'Tail rings'.",
+      "fix": "Draw the map as an illustrated farm overhead with five zone vignettes and level coins along a path. Turn the help into icon cards (a gator sprite plus a one-line rule) paged with dots, so nothing is cut off on a phone."
+    },
+    {
+      "category": "readability",
+      "severity": 2,
+      "capture": "r12-endless, mobile r09-night",
+      "issue": "At night the warning badges go dim olive-on-navy, and in desktop r12 one collides with a tree and lantern props. The eye-glow blobs over gators read as fireflies rather than eyes.",
+      "fix": "Exclude badges and danger ellipses from the darkness layer so they draw at full brightness on top. Add a dark outer stroke to the badge. Shrink the eye glow to a tight 6 px additive dot on each painted eye in place of the diffuse blob above the head."
+    }
+  ]
+}

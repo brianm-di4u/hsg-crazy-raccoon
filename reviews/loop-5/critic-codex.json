@@ -1,0 +1,103 @@
+{
+  "scores": {
+    "characters": 7,
+    "environment": 5.5,
+    "depth": 6,
+    "readability": 6.5,
+    "ui": 7,
+    "juice": 6,
+    "mobile": 6,
+    "authenticity": 6
+  },
+  "total": 50,
+  "notes": {
+    "characters": "Bandit has an appealing mask, tail silhouette and expressive celebration, while striped whippers, banded hatchlings and the scarred boss are distinguishable (desktop/r05-whippers.png, desktop/r10-boss.png, mobile/r13-results.png). Repeated identical gator poses and the predominantly sideways hero presentation keep the cast at the shippable threshold.",
+    "environment": "The title establishes a lush painted enclosure, but gameplay reduces it to repetitive full-width texture strips with sparse pasted props (desktop/r01-title.png, desktop/r06-nursery.png). Mobile/r08-barn.png especially reads as alternating straw and pool bands rather than an enclosed barn, below the cohesive 7 anchor.",
+    "depth": "Rounded sprite shading, bank bevels and waterline masks supply some volume, and barn warmth and night beams distinguish zones (desktop/r08-barn.png, desktop/r09-night.png). Uniform horizontal planes, repeated scalloped wakes and conspicuous oval contact shadows still flatten the scene (mobile/r07-feeding.png).",
+    "readability": "Large characters, clear land/water separation and mouth-adjacent warnings help, but safe back versus biting head boundaries remain visually approximate (mobile/r04-pond.png, desktop/r11-hop.png). Busy caustics compete with silhouettes in daylight and dark riding surfaces weaken at night (mobile/r03-l1-start.png, mobile/r12-endless.png).",
+    "ui": "Cream panels, strong button hierarchy and spacious touch targets look designed and remain legible in portrait (desktop/r13-results.png, mobile/r15-intro.png). The text-heavy help and abstract ring capsules require interpretation, and the level selector feels like a generic form rather than a farm map (mobile/r14-help.png, mobile/r02-map.png).",
+    "juice": "The airborne pose and landing ring provide visible action, with a score change corroborating feedback (desktop/r11-hop.png, mobile/r11b-land.png). Bright circular puffs and the waist-height cyan ring look graphic and detached from the actual gator contact; stills cannot establish timing or animation quality.",
+    "mobile": "Portrait keeps Bandit and menus comfortably large, but the boss is mostly cropped away and the barn's enclosing walls disappear (mobile/r10-boss.png, mobile/r08-barn.png). The tall plain header and gray footer consume substantial framing space, while edge-clipped gators and warnings reduce advance context (mobile/r04-pond.png).",
+    "authenticity": "Gators, enclosure banks, a steaming spring and explicit Hot Springs text establish the premise (desktop/r01-title.png, mobile/r01-title.png). Gameplay itself lacks distinctive local visitor-farm architecture or landmarks, and factual cards carry more location identity than the scenery (desktop/r07-feeding.png, mobile/r13-results.png).",
+    "ip_gate": "PASS on the supplied captures: no recognizable commercial-game mascot resemblance or real logo/signage sighting identified (desktop/r01-title.png, mobile/r06-nursery.png, desktop/r10-boss.png). The real venue appears as disclaimer text, with an explicit non-affiliation statement; this is a visual assessment, not provenance verification."
+  },
+  "gaps": [
+    {
+      "category": "mobile",
+      "severity": 4,
+      "capture": "mobile/r10-boss.png, desktop/r10-boss.png",
+      "issue": "Portrait shows only the boss's head at the left edge, losing the giant body silhouette and encounter focal point visible on desktop.",
+      "fix": "Use a portrait encounter camera with a bounded horizontal lead toward the boss, or scale the boss and its lane together so the complete threat silhouette is visible before the crossing."
+    },
+    {
+      "category": "readability",
+      "severity": 4,
+      "capture": "mobile/r04-pond.png, desktop/r11-hop.png",
+      "issue": "Warning rings indicate a snout area, but the precise dangerous head and safe riding back remain difficult to separate among overlapping sprites and wakes.",
+      "fix": "Draw a consistent red jaw danger wedge clipped to the actual bite footprint and a subtle pale rim along the usable back; keep indicators above neighboring sprites and inside viewport bounds."
+    },
+    {
+      "category": "environment",
+      "severity": 4,
+      "capture": "desktop/r03-l1-start.png, desktop/r06-nursery.png, mobile/r07-feeding.png",
+      "issue": "Repeated grass, sand and water bands dominate the image, with abrupt ruler-straight joins and little environmental composition.",
+      "fix": "Commission broad low-contrast ground variants and bank edge pieces; layer irregular moss, soil and grass transitions along non-collision edges and reserve detailed clusters for safe margins."
+    },
+    {
+      "category": "depth",
+      "severity": 3,
+      "capture": "desktop/r04-pond.png, mobile/r05-whippers.png",
+      "issue": "Identical scalloped wake strokes and minimally submerged bodies make gators resemble stickers laid onto a luminous water texture.",
+      "fix": "Composite a translucent water tint over the lower body, add a tight soft underwater shadow and trailing tapered wake, and vary wake spacing and opacity by direction and body size."
+    },
+    {
+      "category": "readability",
+      "severity": 3,
+      "capture": "mobile/r12-endless.png, mobile/r10-boss.png, desktop/r09-night.png",
+      "issue": "Night grading suppresses back and tail boundaries against dark water while pickups and the hero stay disproportionately bright.",
+      "fix": "Apply a selective moonlit rim and lighter local back value after the night overlay, reduce water microcontrast, and preserve a minimum luminance separation around every rideable silhouette."
+    },
+    {
+      "category": "mobile",
+      "severity": 3,
+      "capture": "mobile/r03-l1-start.png, mobile/r12-endless.png",
+      "issue": "The large plain dark header and tall gray paneled footer occupy a substantial share of portrait height and look less finished than the painted playfield.",
+      "fix": "Compact the HUD into a shallower layout, reduce the footer to a narrow painted bank ledge, and anchor the Lure control in a small integrated wooden or stone inset."
+    },
+    {
+      "category": "environment",
+      "severity": 3,
+      "capture": "mobile/r08-barn.png, desktop/r08-barn.png",
+      "issue": "Portrait loses the barn walls and windows; cropped beam ends and lamps over broad straw bands provide weak interior context.",
+      "fix": "Paint narrow perspective timber jambs and roof-shadow corners sized specifically for portrait margins, with hanging fixtures behind the HUD and warm bounce light on adjacent banks."
+    },
+    {
+      "category": "juice",
+      "severity": 3,
+      "capture": "desktop/r11b-land.png, mobile/r11b-land.png, mobile/r11-hop.png",
+      "issue": "Landing feedback surrounds Bandit's torso with a thick cyan ring while round white trail puffs hang over the sand, weakening the impression of weight on water.",
+      "fix": "Place a flattened splash ellipse at the foot-to-back contact, emit tapered blue-white droplets outward from that point, and replace circular trail blobs with fading directional streaks; squash Bandit around the feet."
+    },
+    {
+      "category": "ui",
+      "severity": 3,
+      "capture": "mobile/r14-help.png, desktop/r14-help.png, mobile/r03-l1-start.png",
+      "issue": "Help explains many gator rules in prose, while the HUD life capsules do not visually resemble Bandit's tail rings.",
+      "fix": "Replace the gator paragraph list with compact painted specimen diagrams showing safe backs and dangerous mouths; draw five recognizable striped tail-ring icons in the HUD."
+    },
+    {
+      "category": "authenticity",
+      "severity": 3,
+      "capture": "desktop/r07-feeding.png, mobile/r06-nursery.png, desktop/r01-title.png",
+      "issue": "The active fields could belong to a generic cartoon reptile park; the Hot Springs setting depends largely on title text and informational cards.",
+      "fix": "Commission original Ozark stonework, spring-fed channels and modest visitor feeding-platform scenery for safe margins, plus fictional hand-painted location boards without real venue branding."
+    },
+    {
+      "category": "characters",
+      "severity": 2,
+      "capture": "desktop/r05-whippers.png, desktop/r06-nursery.png, mobile/r03-l1-start.png",
+      "issue": "Rows reuse nearly identical gator expressions and body poses, and the northbound raccoon is presented sideways, reducing character performance and directional intent.",
+      "fix": "Commission matching three-quarter north-facing hop and anticipation poses for Bandit and two or three eye, head and tail variations per gator type, preserving each gameplay silhouette."
+    }
+  ]
+}

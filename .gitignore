@@ -1,0 +1,15 @@
+node_modules/
+shared/test-harness/.tmp/
+/screenshots/
+/reference-samples/
+*.log
+.DS_Store
+Thumbs.db
+# raw art sources (packed outputs live in assets/)
+art-src/**/*.png
+art-src/**/*.blend1
+art-src/**/renders/
+# build scratch
+tools/out/
+# review captures (regenerated from screenshots)
+reviews/**/*.png

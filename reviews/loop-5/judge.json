@@ -1,0 +1,71 @@
+{
+  "scores": {
+    "characters": 7.5,
+    "environment": 6.0,
+    "depth": 6.5,
+    "readability": 6.5,
+    "ui": 7.0,
+    "juice": 6.5,
+    "mobile": 7.0,
+    "authenticity": 6.5
+  },
+  "total": 53.5,
+  "rulings": [
+    "Capture validity: all 32 captures are valid. Desktop r04-pond, r09-night and r10-boss place Bandit mid-board as CHANGES.md says. Mobile r10-boss and r12-endless still show him on the start row (mobile r10-boss x≈320–460 y≈1355–1510), so I judge those as start-row frames. Because the desktop compositions changed, I calibrated those shots region by region against review-4, not frame against frame.",
+    "CHANGES.md claims that are verified in the pixels: (1) Barn beams no longer cross the actors. The solid timber stops at x≈300 and x≈980, and nothing on a lane is covered (desktop r08-barn y≈720 is clear across Bandit; mobile r08-barn y≈1390–1420 is clear). (2) Tall props are gone from gator rows. The pines in the basker sand rows are gone (desktop r11-hop x≈190–260 y≈360–470 and y≈640–710; desktop r12-endless x≈1040–1130 y≈540–650). (3) Land gators cast tight contact shadows in place of the long ovals (desktop r11-hop x≈90–430 y≈395–425 against review-4). (4) Mobile start rows have an edge signpost (mobile r03-l1-start, r05-whippers, r07-feeding, r10-boss, r12-endless, at x≈15–115 y≈1430–1505). (5) The night backs are lifted. A measured region around the mobile r10-boss bruisers (x≈560–780 y≈890–980) has about 20% more luminance contrast than in review-4, and the bruisers in desktop r10-boss x≈930–1160 y≈635–680 separate from the water. (6) The landing now has droplets and a larger ring (desktop and mobile r11b-land).",
+    "CHANGES.md claims that are contradicted or only partly true, so they get no credit or partial credit: (1) 'Heat-lamp fixtures hang outside the playfield ... or at the screen edge (portrait).' On desktop the lamps hang on beam stubs inside the board edge, at x≈980–1030 and x≈260–300 (desktop r08-barn y≈190–230, 490–530, 730–770). That is acceptable, since no actor is covered. On mobile, two lamps are still drawn on top of sleepers' heads (mobile r08-barn x≈715–775 y≈440–515 and y≈975–1050). (2) 'Warning badges ... never under the header.' The clamp now pushes a badge a full row below its mouth ring, leaving orphan badges with no ring under them (desktop r04-pond x≈840–875 y≈80–120, whose ring is at y≈18; desktop r10-boss x≈755–790 y≈78–118). Badges still stack (desktop r12-endless x≈115–160 y≈290–390). (3) 'Day has a faint cool grade and noon a warm one, so the two read differently.' A sample of the board shifts by under 8 levels per channel (desktop r03-l1-start against r07-feeding), so the two zones look the same at a glance. (4) 'Portrait footer: the curb is shorter.' It is about 10 px shorter (mobile r03-l1-start top edge at y≈1530 against y≈1520 before). The mossy lip and tufts are real. (5) Prop rule: the noon feeding stage, its tables and its railing were deleted, not moved (desktop r07-feeding x≈70–175 y≈60–120 and y≈600–720 against review-4), so the noon zone lost its only feeding-show dressing.",
+    "characters (Claude 7.0, Codex 7.0): 7.5, held. The sprites are unchanged since loop 4. Bandit stays the same appealing model in gameplay, results and intro (mobile r03-l1-start, r13-results, r15-intro). Bruisers, whippers, hatchlings and baskers stay distinct (desktop r05-whippers, r06-nursery, r11-hop). The critics re-raise known gaps: one idle pose, and the boss overlapping a paddler in its own row (desktop r10-boss x≈250–450 y≈400–440). Neither is a regression, so the score holds. IP gate: clear. Both critics and I find no mascot, bird, pig or slingshot, and no real logo. The signposts are a letterless gator and pecan (mobile r12-endless x≈15–115 y≈1430–1505).",
+    "environment (Claude 6.0, Codex 5.5): 6.0, held. Gains: props no longer collide with baskers (desktop r11-hop, r12-endless). Portrait start rows get a signpost, and the footer has a mossy lip with tufts (mobile r03-l1-start, r08-barn y≈1505–1540). Losses that offset them: the noon feeding stage, tables and railing were deleted instead of moved, so desktop r07-feeding is now generic stripes with rocks and cattails. The board is still flat full-width strips split by grey curbs (desktop r03-l1-start, mobile r05-whippers). The barn water is still the same bright teal as day (desktop r08-barn, mobile r08-barn). The barn windows are still flat tan squares, and portrait barn walls are still missing (mobile r08-barn). Net: no half-step.",
+    "depth (Claude 6.0, Codex 6.0): 6.5, up 0.5. Loop 4 held this at 6 because of the barn layering defect and the long hard basker ovals. Both are fixed on desktop. No beam crosses an actor (desktop r08-barn, mobile r08-barn y≈1400). Tight contact shadows seat the baskers on the sand (desktop r11-hop x≈200–430 y≈400–420, mobile r07-feeding x≈205–575 y≈1285–1305). The night backs carry a moonlit rim (desktop r10-boss, mobile r10-boss), which adds a layer between the actors and the night water. The top-lit land rows show faintly as a lighter far half in the sand rows (mobile r07-feeding y≈770–975). What keeps it under 7: two mobile heat lamps drawn over sleepers (mobile r08-barn), barn water lit like day, a day/noon grade too small to see, and curbs with no front face. The critics' 6.0 ignores the removal of both defects that pinned loop 4.",
+    "readability (Claude 6.0, Codex 6.5): 6.5, held. Gains: badges sit tight beside the mouth (desktop r11-hop x≈745–790 y≈170–255, desktop r09-night x≈745–810 y≈425–510). The cut-off top badge in endless is now inside the board (mobile r12-endless x≈105–210 y≈235–355). No badge sits on Bandit's head (mobile r07-feeding). The night backs read better (mobile r10-boss bruisers). Offsetting losses and leftovers: the header clamp creates orphan badges a row from their rings (desktop r04-pond, r10-boss). Badges still stack (desktop r12-endless x≈115–160 y≈290–390). Swimmers in a band's two sub-lanes still overlap by about a third of a body (mobile r04-pond x≈0–300 y≈590–770, mobile r07-feeding x≈145–575 y≈580–770). The gate is not met, short by 0.5.",
+    "ui (Claude 6.5, Codex 7.0): 7.0, held; gate met. The menus, map, results, help and intro pixels are unchanged since loop 4 (mobile r01-title, r02-map, r13-results, r14-help, r15-intro). The known polish gaps remain: the 'scroll for more' pill sits on card 14's stars (desktop r02-map) and on the 'Tail rings' heading (mobile r14-help); the ring pips look like a battery; and the outlined headings are stair-stepped.",
+    "juice (Claude 6.0, Codex 6.0): 6.5, up 0.5; gate met, at the floor. Loop 4 withheld 6.5 because the landing frame showed no squash, splash, droplets or dip. Loop 5's landing frame changes in three of those four. Six to eight white-cyan droplets now burst around Bandit (desktop r11b-land x≈605–700 y≈600–650, mobile r11b-land x≈390–520 y≈1200–1260). The impact ring is about 1.5x larger and brighter. Bandit is about 6% shorter than in the review-4 landing frame, a faint squash. The hop's speed strokes and wakes still read (desktop r11-hop, mobile r11-hop), and snack sparkles read at night (desktop r10-boss, r12-endless). The critics are right that it is weaker than it should be. The ring and droplets ring his waist, not his feet on the gator's back. The takeoff puffs are larger and still hang on the sand (desktop r11b-land x≈615–660 y≈670–760). No gator dip is visible. This is the minimum credit for real new pixels; one more S pass (remaining rank 3) would make it solid.",
+    "mobile (Claude 6.5, Codex 6.0): 7.0, held; gate met. Gains: the top endless badge is inside the board (mobile r12-endless). Gator heads no longer poke over the footer (mobile r07-feeding). The footer has a painted lip and tufts (mobile r03-l1-start). No beam crosses Bandit (mobile r08-barn). Leftovers: the boss is still cropped to its head at the left edge (mobile r10-boss x≈0–215 y≈815–930). Lamps sit on sleepers at the right edge (mobile r08-barn). The barn has no walls in portrait. The footer is still a tall grey slab (mobile r04-pond y≈1530–1688). The critics count the boss crop and barn heavily, as in loop 4. Nothing regressed, so the score holds.",
+    "authenticity (Claude 6.0, Codex 6.0): 6.5, held; gate met. Gains are small: letterless signposts on the portrait start rows and a mossy footer lip (mobile r03-l1-start, r12-endless). One loss: the noon feeding stage and railing were deleted (desktop r07-feeding), and they were one of the few farm-specific pieces in play. The two cancel out. Hot Springs still shows mainly on the title, help and results backdrops (desktop r01-title, r13-results), with no Ouachita backdrop or steam in gameplay. The baseball and bottle cap are still off-theme (desktop r08-barn, r09-night).",
+    "Total 53.5, a new best (loop 4: 52.5, +1.0). Gates met: characters 7.5, ui 7.0, juice 6.5, mobile 7.0 and authenticity 6.5 (5 of 8). Not met: environment 6.0 (needs 1.0 more), depth 6.5 (0.5) and readability 6.5 (0.5). This was loop 5 of 5, so the campaign stops here under the stop rule. The remaining list ranks the post-release polish by gain on the unmet gates."
+  ],
+  "remaining": [
+    {
+      "rank": 1,
+      "category": "readability",
+      "effort": "S",
+      "fix": "Badge solver v2. (a) Never move a badge out of its gator's row. If the badge rect would cross headerBottom, draw it beside the mouth (left or right of the ring, same y as the snout), or hide it and keep only the red ring. Fixes the orphans in desktop r04-pond x≈840–875 y≈80–120 and r10-boss x≈755–790 y≈78–118. (b) Run an overlap pass each frame: sort badge rects by y, and when two intersect, shift the later one sideways by its width plus 4 px toward its own snout. Fixes the stack in desktop r12-endless x≈115–160 y≈290–390. (c) Sub-lane split: spawn swimmers so that bodies in a band's two sub-lanes never overlap by more than 15% of the body length (offset the phase of the second sub-lane by half a spacing). Tint the far sub-lane 6% darker, and draw the float rope 3 px thicker with 1.5x floats (mobile r04-pond x≈0–300 y≈590–770).",
+      "verify": ["r04-pond", "r10-boss", "r12-endless", "r07-feeding"]
+    },
+    {
+      "rank": 2,
+      "category": "depth",
+      "effort": "S",
+      "fix": "Finish the barn. (a) Portrait lamps: choose the lamp x from hay-row columns that are free of sleeper bounding boxes plus 0.5 tile, or hang the lamps in the HUD band and draw only their glow on the floor, so no fixture sits on a sleeper (mobile r08-barn x≈715–775 y≈440–515 and y≈975–1050). (b) Murk the barn water: draw rgba(47,90,80,0.45) with 'multiply' over the water rows and halve the caustic alpha, so the indoor water stops matching day teal (desktop and mobile r08-barn). (c) In portrait, draw a 14–18 px plank post strip down both screen edges with a dark rafter band under the HUD, so the barn reads as an interior on phones. The environment score should also gain from (b) and (c).",
+      "verify": ["r08-barn"]
+    },
+    {
+      "rank": 3,
+      "category": "juice",
+      "effort": "S",
+      "fix": "Put the landing at the feet. (a) Draw the impact ring at Bandit's foot y on the gator's back, as a flattened ellipse (1.0 to 1.6 tiles wide, 0.35 tiles tall) instead of around the waist (desktop r11b-land x≈605–700 y≈615–650). (b) Emit the droplets from the gator's waterline, the scallop y, in tapered arcs outward and up, not from his torso. (c) Raise the squash to scale(1.18, 0.82), anchored at the feet, for the first 120 ms. (d) Dip the gator 4 px with a darker water overlay on its back for 150 ms. (e) Fade the takeoff puffs within 150 ms so they are gone by the landing frame (desktop r11b-land x≈615–660 y≈670–760). Extend the r11b-land test to assert ring y within 6 px of foot y and scaleY ≤ 0.85.",
+      "verify": ["r11b-land", "r11-hop"]
+    },
+    {
+      "rank": 4,
+      "category": "environment",
+      "effort": "M",
+      "fix": "Turn the stripes into farm pens, and restore the noon dressing. (a) Along every water/land boundary, draw a seeded procedural bank strip 10–14 px tall under the actors. Give it an irregular top edge, mossy stone blobs (#7d7a6e, #5f6b4a, 1 px highlight) and reed tufts hanging 4–8 px over the water. Keep a plain concrete edge only in the feeding zone. (b) Put the deleted feeding stage, tables and railing back on rows with no actor lanes, or in the desktop margins and empty safe rows, instead of dropping them (desktop r07-feeding against review-4). (c) Above the den row in the day and noon zones, add a thin dark-green treeline silhouette with a soft haze, standing in for the Ouachita backdrop (authenticity spillover).",
+      "verify": ["r04-pond", "r05-whippers", "r07-feeding", "r03-l1-start"]
+    },
+    {
+      "rank": 5,
+      "category": "depth",
+      "effort": "M",
+      "fix": "Make the zones and curbs read in 2.5D. (a) Curbs: give each a 3 px lit top face (#e8e4da) and an 8 px dark front face (rgba(0,0,0,0.28)), with a soft 6 px shadow onto the row below. (b) Strengthen the zone grade until a board sample differs by at least 15 levels per channel. Noon: a warm 'soft-light' fill rgba(255,200,120,0.18) with shorter, darker contact shadows. Day: a cool rgba(180,210,255,0.12). Desktop r03-l1-start and r07-feeding currently differ by under 8. (c) Mobile night: raise the edge darkness from about 0.55 to 0.7 so a lit pool around Bandit reads in portrait (mobile r09-night, r12-endless).",
+      "verify": ["r03-l1-start", "r07-feeding", "r09-night", "r12-endless"]
+    },
+    {
+      "rank": 6,
+      "category": "mobile",
+      "effort": "M",
+      "fix": "Frame the boss in portrait. Reserve the boss lane so no paddler spawns within 1 tile of it (desktop r10-boss x≈250–450 y≈400–440). In portrait, pick a boss path phase that keeps at least 70% of its body on screen at the shot time, or scale the boss to 0.8x in portrait so its whole silhouette fits (mobile r10-boss x≈0–215 y≈815–930). Fix the mobile r10-boss and r12-endless shot scripts to place Bandit mid-board as desktop does, so the night framing is judged on the intended rows.",
+      "verify": ["r10-boss", "r12-endless"]
+    }
+  ]
+}

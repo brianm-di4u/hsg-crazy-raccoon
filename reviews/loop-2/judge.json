@@ -1,0 +1,76 @@
+{
+  "scores": {
+    "characters": 7.0,
+    "environment": 5.5,
+    "depth": 5.5,
+    "readability": 6.0,
+    "ui": 6.5,
+    "juice": 4.5,
+    "mobile": 6.0,
+    "authenticity": 6.5
+  },
+  "total": 47.5,
+  "rulings": [
+    "Capture validity: r11-hop (desktop and mobile) is not a hop still. The scripted hop was blocked by a basker's closed mouth, so Bandit stands after a bump with his shadow under his feet. The test has since been fixed. Juice is judged on the other captures, and r11 is used only for readability and HUD evidence.",
+    "characters (Claude 6.5, Codex 7.0): 7.0. The painted Bandit poses now appear on the menus and fix loop 1's main gap: winking on r15-intro, cheering on r13-results, desktop and mobile. The gator kinds read apart: gold-striped whippers (r05-whippers), banded hatchlings (r06-nursery), sleepers with z's (r08-barn) and the scowling scarred boss (r10-boss). Claude is right that the in-play Bandit is still a soft, small rear view in one pose that does not match the outlined portraits (mobile r03-l1-start, r10-boss), and that the swimmers are one repeated sprite (mobile r04-pond). This meets the 7 anchor at its floor. The next gain needs in-game Bandit art.",
+    "environment (both 5.5): upheld. The rounded lip and the red-and-white float ropes show in mobile r04-pond, and the margin props per zone show in r07-feeding (stage, bucket table) and r08-barn (hay, bucket, lanterns). But the desktop still has flat dimmed side columns with hard vertical seams at about x=300 and x=980 (desktop r09-night, r10-boss, r11-hop). Margin pines stand inside lanes and over gators (desktop r11-hop at x=230 and x=1140, desktop r10-boss at x=230). The barn is the outdoor pool with straw strips and bright cyan water (desktop r08-barn).",
+    "depth (both 5.5): upheld. Basker ground shadows and swimmer waterlines are good (desktop r11-hop, r07-feeding). The night work is not visible as described. In desktop r09-night the light pools are bright, hard-rimmed ellipses scattered on lanes, with none on Bandit. In desktop r10-boss and mobile r10-boss there is only a flat blue tint and no light pool at all, so the darkness layer and the flashlight pool are either missing or far too weak. The barn heat lamps hang on short chains from nothing, and their floor glow is barely visible (desktop r08-barn). Faint diagonal shafts show in mobile r08-barn. Noon reads only slightly warmer than day (r07-feeding).",
+    "readability (both 6.0): upheld. The day telegraphs are a real gain: in mobile r03-l1-start the badges sit above the head with a pointer tail and a red ellipse on the bite tile. At night the same badges go dark olive on navy (desktop r09-night, mobile r12-endless), and the eye glow is a diffuse blob over every gator that reads as fireflies (desktop r10-boss). Four stacked water lanes of identical swimmers still blur together (mobile r04-pond, desktop r05-whippers).",
+    "ui (both 6.5): upheld. The panels, buttons and headings are consistent and designed (r13-results, r15-intro, r14-help). On the results screen, stars 1 and 3 lit with star 2 grey is by design (independent goals), and the 'Cleared, Snacks left behind, Beat par' line explains it. It still reads like a bug at a glance, because nothing ties each star to its goal. The HUD pills peek out above the mobile results panel (mobile r13-results). The map is a list, and its fifth group is clipped behind Back on both desktop and mobile (r02-map). Mobile help ends at 'Tail rings' with no scroll cue (mobile r14-help).",
+    "juice (Claude 4.5, Codex 5.5): 4.5. Codex's 'airborne Bandit' comes from the invalid r11 capture, so I set it aside. What shows: nose wakes as thin white arcs (mobile r03-l1-start, desktop r09-night), 4-point snack twinkles (mobile r04-pond pecan, desktop r08-barn), halos on bonus items (mobile r04-pond baseball and berries), and a faint steam wisp over the spring stone (mobile r03-l1-start). These are present but hairline. At phone size they read as texture, not feedback. That is +0.5 on loop 1. No capture yet proves the stretch, dust, speed strokes or ride ring.",
+    "mobile (both 6.0): upheld. The header band works only when the board sits at its start: in mobile r03-l1-start the pills sit over a backdrop strip and the first pool begins below them. Once the board scrolls, the pills sit straight over live gator lanes with no visible band (mobile r04-pond, r07-feeding, r11-hop). The Lure coin overlaps Bandit's own row, and Bandit sits at the bottom edge with no room behind him (mobile r03-l1-start, r04-pond). The map and help screens are still cut off with no cue (mobile r02-map, r14-help). The menus keep large touch targets (mobile r01-title, r15-intro).",
+    "authenticity (both 6.5): upheld, and the gate is met. The concrete pools with float ropes, the feeding stage and bucket table, the hatchling fences, heat lamps, hay, lanterns and the steaming spring stone read as an operated gator farm (r07-feeding, r06-nursery, r08-barn, mobile r03-l1-start). The disclaimer and the sourced farm facts are present (r01-title, r13-results). Most gameplay frames still lack a visitor boardwalk, signage or the Ouachita hills (r04-pond, r12-endless).",
+    "IP gate: clear. Neither critic reported a sighting and I found none. The caps and baseballs are unbranded, and the real farm is named only in the non-affiliation notice (r01-title).",
+    "Total 47.5, a new best (loop 1: 45.0). Gates met: characters (7.0) and authenticity (6.5). Not met: environment, depth, readability, ui, juice and mobile."
+  ],
+  "backlog": [
+    {
+      "rank": 1,
+      "category": "depth",
+      "gain": 1.0,
+      "effort": "S",
+      "fix": "Make the night lighting real. The pixels show no darkness layer and rimmed ellipses, so first check that the offscreen composite runs at all. (a) Fill an offscreen canvas the size of the view with navy rgba(8,14,40,0.68) every frame. Cut holes with globalCompositeOperation='destination-out' and radial gradients (inner stop alpha 1, outer stop 0, no stroke): a 2.5-tile pool centred on Bandit, a 1.5-tile warm pool per lantern, and the flashlight cone as a gradient-filled wedge. Draw it over the world layer. (b) Delete the filled and stroked beam ellipses, which show as bright discs in r09. (c) Draw the warning badges, bite ellipses and snack halos after the darkness pass at full brightness, with a 2 px dark outline on each badge. (d) Replace the eye-glow blob with a 4–6 px additive yellow dot on each painted eye (red for the boss), and keep the moonlit rim. This also gives readability about +0.5.",
+      "verify": ["r09-night", "r10-boss", "r12-endless"]
+    },
+    {
+      "rank": 2,
+      "category": "juice",
+      "gain": 1.5,
+      "effort": "S",
+      "fix": "Make the FX read at phone size, and prove the hop in stills. (a) Re-run the fixed r11 capture. Assert p.state==='hop' and an arc height of at least 0.35 tile at the shot, so the stretch (0.85x, 1.2y), the 60% shadow, the takeoff dust and the speed strokes are all in frame. Add an r11b capture on a ride landing to show the squash, the ring and the droplets. (b) Draw the nose wakes as two filled, tapered white wedges per swimmer, 4–6 px wide at the nose and fading to 0 over about 1 tile, in place of the hairline arcs. (c) Snack twinkle: an 8-ray star at 1.4x the snack's width, pulsing over 1.2 s, plus a 1.0–1.08 bob-scale. (d) Spring steam: three soft white radial blobs, 0.3–0.5 tile, rising and fading at alpha 0.5.",
+      "verify": ["r11-hop", "r03-l1-start", "r04-pond", "r08-barn"]
+    },
+    {
+      "rank": 3,
+      "category": "mobile",
+      "gain": 1.0,
+      "effort": "S",
+      "fix": "Portrait safe areas that hold while the board scrolls. (a) Draw the header band as a fixed screen-space rect, the full width and as tall as both HUD pill rows plus 8 px, using an opaque dark-green gradient (alpha 0.9 or more) with a 2 px bottom edge. Clamp the camera so no lane row draws above it (or clip the world to below it). (b) Move the Lure coin into a bottom gutter strip, or shrink it to 56 px and push it into the right margin. Lift the board by about 0.5 tile so Bandit's row has space below it and nothing overlaps it. (c) When any modal is open, hide the gameplay HUD and draw a 45% black scrim. Under the result stars, label each star with a small goal icon (den, snack, clock), greyed when missed. (d) For the map and help on portrait, add a clipped scroll viewport above a fixed Back footer, a bottom fade and a bouncing chevron. Split help into pages with dots.",
+      "verify": ["r04-pond", "r07-feeding", "r03-l1-start", "r13-results", "r02-map", "r14-help"]
+    },
+    {
+      "rank": 4,
+      "category": "environment",
+      "gain": 1.0,
+      "effort": "M",
+      "fix": "Desktop margins and prop layering. (a) Replace the 0.28 dim rectangles and their hard edges at x≈300 and x≈980 with an 80–120 px horizontal gradient vignette. Paint the margin banks as continuous grass or boardwalk strips that do not repeat the lane textures. (b) Allow margin props only in the margin columns, and on land rows only. Never place a pine in a lane, and keep the r11 pines at x=230 and x=1140 out entirely. Draw the props in the y-sorted actor pass with contact shadows, so gators never pass under a tree canopy. (c) Water readability: alternate the water tint by ±4% lightness per stacked lane, and make the rope line slightly heavier, so 4 stacked lanes read as 4 lanes.",
+      "verify": ["r11-hop", "r10-boss", "r03-l1-start", "r04-pond", "r05-whippers"]
+    },
+    {
+      "rank": 5,
+      "category": "depth",
+      "gain": 0.5,
+      "effort": "M",
+      "fix": "Make the barn an interior. (a) Draw a dark timber beam band across the top of the board, with vertical posts in the desktop margins. Hang each heat-lamp chain from a crossbeam drawn above it, so no lamp floats. (b) Multiply the barn water toward murky teal (#2f6f6a at 0.45) and warm-grade the whole board before drawing the lamp highlights. (c) Draw each lamp's floor glow as a 'lighter' radial gradient about 1.5 tiles wide at alpha 0.35, plus a soft cone from the bulb. (d) Add diagonal rafter shadow stripes (multiply, 0.15) on desktop as well as mobile. This also gives environment about +0.5.",
+      "verify": ["r08-barn"]
+    },
+    {
+      "rank": 6,
+      "category": "characters",
+      "gain": 1.5,
+      "effort": "L",
+      "fix": "Commission a painted batch to match the menu poses and the key art. (a) In-game Bandit, matching the outline weight of the r13 and r15 portraits: a three-quarter rear idle that shows the mask and one eye, left and right side views, a crouch, an airborne frame (legs tucked, tail up), a landing squash, and a carrying pose with snacks visible. Draw him at about 1.0–1.1 tiles with a 2 px cream outer stroke. (b) Two swimmer variants (a darker one and a scarred one) to break up the repeats. (c) Unbranded zone dressing: a visitor boardwalk railing strip, generic wooden zone boards ('POOL 3', 'NURSERY', 'FEEDING SHOW'), and an Ouachita hills strip for the den row at the top of each level. The gain is spread across categories: characters +0.5, juice +0.5, authenticity +0.5.",
+      "verify": ["r03-l1-start", "r10-boss", "r11-hop", "r04-pond", "r12-endless", "r07-feeding"]
+    }
+  ]
+}

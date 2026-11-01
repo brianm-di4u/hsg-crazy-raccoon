@@ -1,0 +1,76 @@
+{
+  "scores": {
+    "characters": 7.0,
+    "environment": 5.5,
+    "depth": 5.5,
+    "readability": 6.5,
+    "ui": 7.0,
+    "juice": 5.5,
+    "mobile": 6.5,
+    "authenticity": 6.5
+  },
+  "total": 50.0,
+  "rulings": [
+    "Capture validity: all 30 captures are valid. r11-hop (desktop and mobile) is a real mid-hop frame this time: Bandit is airborne in the leap pose, with snacks in his paws, speed strokes and a takeoff puff. There is still no ride-landing capture, so squash, ring and splash cannot be judged.",
+    "Claims in CHANGES.md that the pixels contradict, so they get no credit: (1) 'Desktop margins fade out softly with no hard seam.' A lighter centre rectangle with hard vertical edges at about x=300 and x=980 still cuts through every land row (desktop r11-hop grass row y≈430–480, r08-barn hay rows, r12-endless sand row y≈610–660, r09-night grass row y≈430–480). (2) 'Night darkness gradient clear around Bandit.' The night frames are evenly dim, with no clear pool around Bandit (desktop r09-night, r10-boss, mobile r09-night). (3) 'Opaque header band.' Gator art shows through it on mobile (mobile r04-pond x≈330–420 y≈130, mobile r07-feeding). It is opaque only where the backdrop behind it is dark (mobile r10-boss).",
+    "characters (Claude 6.5, Codex 7.0): 7.0, held. The new in-play Bandit is a painted three-quarter rear view that shows the mask and an eye. It matches the menu portraits in line and palette (desktop r10-boss, mobile r10-boss against mobile r13-results and r15-intro), which closes loop 2's main gap. The kinds read apart: gold-tailed whippers, banded hatchlings, sleepers with z's, and the scowling boss (desktop r05-whippers, r08-barn, r10-boss). Claude is right that Bandit is small next to the gators and uses one idle pose in every non-hop frame (desktop r03-l1-start, r09-night, r12-endless). The 'scarred' swimmer is the same silhouette darker and blotched, so it reads as dirty shading, not a new character (mobile r04-pond). This holds the 7 floor without raising it. IP gate: clear. Neither critic found a sighting and I found none. The caps and baseballs are unbranded, and the real farm is named only in the non-affiliation line (r01-title).",
+    "environment (both 5.5): upheld. Gains: stacked water lanes now alternate faintly in tone, the float ropes are heavier (mobile r04-pond, desktop r11-hop), and pines no longer stand right below water rows. But the hard centre-rectangle seam remains on every desktop land row (see the claims ruling), and tall props still overlap baskers on sand (desktop r11-hop pines at x≈230 y≈380–470 and x≈210 y≈650–710). The barn is still the outdoor layout with hay strips. Its 'crossbeams' are 3 px lines on the row boundaries, and lamps hang mid-water over swimmers (desktop r08-barn at x≈565 y≈320–365). The barn water is bright teal, not murky (desktop r08-barn, mobile r08-barn). Props stay sparse, and a pirate chest is off-theme (desktop r05-whippers, r06-nursery).",
+    "depth (Claude 5.0, Codex 5.5): 5.5, held. Better: eyeshine is now a tight dot on each painted eye (desktop r09-night, r12-endless). Basker ground shadows and swimmer waterlines still read (desktop r11-hop, r07-feeding), and the barn has a warm grade (desktop r08-barn). New defect, which both critics saw: at night every swimmer sits inside a lighter rectangle the size of its sprite box (desktop r10-boss x≈70–310 y≈130–185, desktop r12-endless, mobile r10-boss), so the build process shows. The flashlight is a hard-edged trapezoid ending in a feathered oval (desktop r09-night x≈560–1050). Lanterns cast no pool (desktop r09-night x≈1155 and x≈1045, desktop r10-boss x≈1135). The boss's red eyeshine sits on the brow, not in the eye (desktop r10-boss x≈405 y≈378, mobile r10-boss x≈15 y≈860). The barn lamp floor glow is barely visible (desktop r08-barn). The gains and the new rectangle defect cancel out, so it stays at 5.5. Claude's 5.0 would be a regression the pixels do not show.",
+    "readability (Claude 6.0, Codex 6.5): 6.5. Loop 2's main readability gap was night badges going olive on navy, and it is fixed: night badges and bite footprints now draw at full brightness above the darkness (desktop r12-endless, mobile r12-endless). Day telegraphs stay clear (mobile r03-l1-start, desktop r11-hop), and the alternating water tone helps lanes separate. What still holds it under 7: the mobile Lure coin covers an open-jawed basker (mobile r07-feeding x≈480–780 y≈1510–1680); badges stack on the left edge (desktop r12-endless x≈135 y≈270–360); swimmers overlap the sub-lane above them (desktop r05-whippers); and hatchlings blend into the busy grass texture (mobile r06-nursery).",
+    "ui (Claude 6.5, Codex 7.0): 7.0, gate met. All four of loop 2's UI gaps are addressed in the pixels. The result stars carry Den, Snacks and Par labels (mobile r13-results). No HUD pills show under the panels, which sit behind a darker scrim (mobile r13-results, r15-intro). Map and help both show a scroll cue (desktop r02-map, mobile r02-map, mobile r14-help). The menus stay consistent and designed (mobile r01-title, r15-intro). What is left is polish: the 'scroll for more' pill sits on card 14's stars (desktop r02-map) and crowds the 'Tail rings' heading (mobile r14-help); the 'Home free!' title is left-aligned under a centred mascot (mobile r13-results); the ring meter is a row of unlabeled grey capsules (mobile r03-l1-start); and the outlined headings show stair-stepped edges (r02-map, r14-help).",
+    "juice (Claude 5.5, Codex 6.0): 5.5, up 1.0 on loop 2. Proven now: a real mid-hop pose with speed strokes and a takeoff puff (desktop r11-hop, mobile r11-hop), and 8-ray sparkles on snacks (desktop r10-boss pecan, desktop r09-night baseball, mobile r07-feeding berries). Not enough for 6.5: the speed strokes sit above Bandit, in front of his travel, where trails should be behind him (desktop r11-hop x≈620–660 y≈600–640). The nose wakes are still close to invisible at phone size (mobile r04-pond, mobile r05-whippers). No still shows a landing squash, ripple ring, splash or gator dip. The spring steam is faint (mobile r03-l1-start). Codex's 6.0 gives credit for one capture's worth of motion. The rest of the frames are static.",
+    "mobile (both 6.5): upheld, up 0.5. The dark header band sits behind both HUD rows, and the board starts below it in every gameplay capture (mobile r03-l1-start, r05-whippers, r10-boss). The start row sits higher. Still short of 7: the band lets gator art show through (mobile r04-pond, r07-feeding). The Lure coin still reaches into the board and covers hazards (mobile r07-feeding). The boss is cropped to its head at the left edge in portrait (mobile r10-boss x≈0–215 y≈850–990). A right-edge badge is clipped (mobile r11-hop x≈1085 y≈530). The menus keep large touch targets (mobile r01-title, r13-results).",
+    "authenticity (Claude 6.5, Codex 6.0): 6.5, held; gate met. Nothing in this loop changed it, and nothing regressed. The concrete pens with float ropes, feeding tables, hatchling fences, hay and heat lamps, the steaming spring stones and the sourced farm facts read as an operated gator farm (desktop r07-feeding, r06-nursery, r08-barn, mobile r15-intro). Codex is right that gameplay never shows a Hot Springs or Ouachita backdrop, a visitor path or signage, and that the baseball, bottle cap and pirate chest are off-theme (desktop r05-whippers, r06-nursery). These keep it at the gate, not above it.",
+    "Total 50.0, a new best (loop 2: 47.5, loop 1: 45.0). Gates met: characters 7.0, ui 7.0 and authenticity 6.5. Not met: environment 5.5 (needs 1.5 more), depth 5.5 (1.5), readability 6.5 (0.5), juice 5.5 (1.0) and mobile 6.5 (0.5). This is loop 3 of at most 5. Meeting every gate needs +5.0 in two loops, so loop 4 should take every S item, and the painted batch (rank 6) should be commissioned now so it can land by loop 5."
+  ],
+  "backlog": [
+    {
+      "rank": 1,
+      "category": "depth",
+      "gain": 1.0,
+      "effort": "S",
+      "fix": "Fix the night composite. (a) Remove the sprite-box rectangles behind swimmers. Whatever fill draws the submersion tint, waterline or per-gator night tint must be clipped to the sprite's alpha: draw it on a small offscreen canvas, first the sprite, then the tint with globalCompositeOperation='source-atop', then blit. Or drop the per-sprite tint and rely on the single full-screen darkness pass. Check desktop r10-boss x≈70–310 y≈130–185 afterwards. (b) Make the darkness pass visibly non-uniform. Use one offscreen canvas filled with rgba(6,12,36,0.62) and cut destination-out radial gradients into it: Bandit at inner 1.2 tiles alpha 1, outer 3.5 tiles alpha 0; each lantern a warm hole of 1.5 tiles, then a 'lighter' pass of rgba(255,190,90,0.25) for a visible amber pool on the ground; the flashlight as a wedge path filled with a linear gradient along its axis, with the edges softened by drawing it twice (ctx.filter='blur(10px)', then sharp at 0.5 alpha). Delete the trapezoid's hard polygon stroke and fill. (c) Move the boss eyeshine anchor about 25 px right and 27 px down at 1280 px width, onto the painted pupil (desktop r10-boss x≈430 y≈405). Store per-sprite eye anchors in sprite metadata, not hand-tuned offsets. Readability also gains about 0.5 at night.",
+      "verify": ["r09-night", "r10-boss", "r12-endless"]
+    },
+    {
+      "rank": 2,
+      "category": "juice",
+      "gain": 1.0,
+      "effort": "S",
+      "fix": "Make the motion read in the stills. (a) Add an r11b-land capture taken 1–2 frames after Bandit lands on a swimmer's back. Assert the landing state, and that the squash (1.2x, 0.8y), an expanding white ripple ellipse (1.0 to 1.6 tiles, alpha 0.8 to 0), 6–8 droplet arcs and a 3 px gator dip are all on screen. (b) Draw the speed strokes behind the travel direction, below Bandit when he hops up. Use 3 tapered strokes 10–18 px long, alpha 0.7 fading to 0, along the arc tangent. (c) Nose wakes: two filled wedges per swimmer, 8 px wide at the nose, 1.2 tiles long, rgba(255,255,255,0.75) fading to 0, plus a small foam blob at the nose. They must be visible in mobile r04-pond at 780 px wide. (d) Give the spring steam three blobs of 0.4–0.6 tile at alpha 0.6.",
+      "verify": ["r11-hop", "r11b-land", "r04-pond", "r05-whippers", "r03-l1-start"]
+    },
+    {
+      "rank": 3,
+      "category": "mobile",
+      "gain": 0.5,
+      "effort": "S",
+      "fix": "Make the portrait safe areas real. (a) Header: fill the band with a fully opaque colour (#1f3a2c, then the gradient on top), and clip world drawing to y ≥ band bottom with ctx.save, rect, clip, so no gator can show through (mobile r04-pond y≈130). (b) Bottom gutter: reserve a strip as tall as the Lure coin's diameter plus 16 px below the last board row, and draw the curb there. Place the Lure coin fully inside it, and clamp the camera so no lane row draws into it. Mobile r07-feeding must show the basker at x≈480–700 uncovered. (c) Boss staging in portrait: when the boss is on screen and the view is narrower than about 9 tiles, lerp the camera x or zoom to 0.85 so the head and at least half the torso show, and draw an edge arrow before it enters (mobile r10-boss). (d) Clamp warning badges inside view.width−24 px, with a small pointer toward an off-screen snout (mobile r11-hop x≈1085). Readability also gains about 0.5 from (b) and (d).",
+      "verify": ["r04-pond", "r07-feeding", "r10-boss", "r11-hop", "r05-whippers"]
+    },
+    {
+      "rank": 4,
+      "category": "environment",
+      "gain": 0.5,
+      "effort": "S",
+      "fix": "Remove the desktop centre rectangle. Something still draws a lighter rect or a dim side rect at the board columns (edges at x≈300 and x≈980 on 1280 px). Find and delete it: grep for the margin dim fillRect, and for any per-board tint, highlight or 'board' rect drawn after the lane textures. Draw every land texture edge to edge at one tone. Then draw one full-width horizontal linearGradient overlay: alpha 0 over the board columns, ramping to rgba(10,20,10,0.35) across 160 px into each margin. Desktop r11-hop, r08-barn and r12-endless must show no vertical edge in the grass, sand or hay rows. While there, keep tall props (pines) off any row that holds a basker, or draw them in the y-sorted actor pass (desktop r11-hop x≈230).",
+      "verify": ["r11-hop", "r08-barn", "r12-endless", "r09-night", "r07-feeding"]
+    },
+    {
+      "rank": 5,
+      "category": "environment",
+      "gain": 1.0,
+      "effort": "M",
+      "fix": "Make the barn read as an interior. The gain is spread: environment +0.5, depth +0.5. (a) Replace the 3 px boundary lines with a timber beam band 14–18 px tall: a dark brown #4a2e1a fill, a 2 px highlight on top and a soft multiply shadow below. Hang the lamps only above land (hay) rows, from these beams, so no lamp sits over a swimmer (desktop r08-barn x≈565 y≈320–365). (b) In the desktop margins, draw dark plank wall strips with vertical posts and a small window glow. On mobile, draw a 10 px post at each side edge. (c) Murky water: multiply the barn water by #2f6f6a at 0.5 and drop the caustic alpha by half. (d) Draw each lamp's floor pool on the hay below it as a 'lighter' radial gradient, 1.6 tiles, rgba(255,170,70,0.35). Add plank stall dividers (a short fence sprite reused from the nursery, re-tinted) at the hay-row ends.",
+      "verify": ["r08-barn"]
+    },
+    {
+      "rank": 6,
+      "category": "authenticity",
+      "gain": 1.5,
+      "effort": "L",
+      "fix": "Commission a painted batch now so it lands by loop 5. The gain is spread: authenticity +0.5, characters +0.5, environment +0.5. (a) A den-row backdrop strip for the top of each level: Ouachita wooded ridge, a farm gate, a visitor boardwalk railing, and invented zone boards ('POOL 3', 'NURSERY', 'FEEDING SHOW', no real logos), in 3 zone tints (day, barn, night). (b) On-theme pickups to replace the baseball, bottle cap and pirate chest: a feed bucket, a spring-water jug, a souvenir postcard and a corn cob. (c) A scarred swimmer with its own silhouette: a notched tail, one squinting scarred eye, a broader snout. (d) Bandit extras at the in-play scale and angle: a 2-frame idle (breath, tail flick), a landing squash, and a 1.25x scale pass with a 2 px cream rim so he holds his own against the gators. Verify that gameplay frames read as Hot Springs without the title text.",
+      "verify": ["r03-l1-start", "r04-pond", "r05-whippers", "r06-nursery", "r07-feeding", "r12-endless"]
+    }
+  ]
+}

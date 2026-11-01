@@ -1,0 +1,17 @@
+{
+  "name": "hsg-crazy-raccoon",
+  "private": true,
+  "type": "module",
+  "description": "Crazy Raccoon: Gator Farm Dash, an original lane-crossing arcade game at the Arkansas Alligator Farm in Hot Springs, Arkansas",
+  "license": "MIT",
+  "scripts": {
+    "setup": "cd shared/test-harness && npm install && npx playwright install chromium",
+    "build": "node shared/tools/inline.mjs .",
+    "check": "node tools/check-levels.mjs",
+    "facts": "node tools/check-facts.mjs",
+    "balance": "node tools/balance.mjs",
+    "sim": "node --test tests-node/",
+    "art": "node shared/test-harness/art-pack.mjs .",
+    "test": "node shared/test-harness/run.mjs ."
+  }
+}

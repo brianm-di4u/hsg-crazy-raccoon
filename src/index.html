@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#2B8FA3">
+  <meta name="description" content="Crazy Raccoon: Gator Farm Dash. Hop a made-up raccoon across lanes of swimming, basking and snoozing alligators at the real Arkansas Alligator Farm in Hot Springs, Arkansas. Open source (MIT).">
+  <title>Crazy Raccoon: Gator Farm Dash · Hot Springs Games</title>
+  <link rel="stylesheet" href="styles/main.css">
+</head>
+<body data-scene="boot">
+  <canvas id="view" aria-label="The farm: rows of grass, sand, boardwalk and gator ponds, with Bandit the raccoon near the bottom"></canvas>
+  <div id="hud" class="hud"></div>
+  <div id="screens" class="screens"></div>
+  <div id="live" class="sr-only" aria-live="polite"></div>
+  <p id="boot-error" class="boot-error" role="alert" hidden></p>
+  <noscript><p class="boot-error">Crazy Raccoon needs JavaScript.</p></noscript>
+  <!-- @inline ../data/levels.json as LEVELDATA -->
+  <!-- @inline ../data/facts.json as FACTS -->
+  <!-- @inline ../assets/manifest.json as MANIFEST -->
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
