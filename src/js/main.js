@@ -88,7 +88,7 @@ function beginPlay() {
   screens.hide(); setEnabled(true); App.paused = false;
   const L = App.run.L;
   App.say(L.n ? `Level ${L.n}, ${L.name}. Reach the den.` : 'Moonlight Run. Go!');
-  hud.hint(App.save.settings.hints && L.n === 1 ? (matchMedia('(pointer: coarse)').matches ? 'Swipe or tap to hop' : 'Arrow keys or WASD to hop') : '');
+  hud.hint(App.save.settings.hints && L.n === 1 ? (matchMedia('(pointer: coarse)').matches ? 'Tap where to hop' : 'Arrow keys or WASD to hop') : '');
   kick();
 }
 
@@ -313,7 +313,7 @@ initInput((e) => {
   if ((e.code === 'Escape' || e.code === 'KeyP') && !e.repeat && App.scene === 'play' && App.run && App.run.phase === 'play') { pauseGame(); return true; }
   return false;
 });
-initTouch(canvas);
+initTouch(canvas, () => (App.run ? renderer.playerScreen(App.run) : null));
 initAudio(App.save.settings);
 window.addEventListener('resize', kick);
 window.addEventListener('blur', () => { if (!window.__TEST__) pauseGame(); });

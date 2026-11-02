@@ -133,12 +133,26 @@ export const tests = [
       p = (await t.state()).run.player; t.equal(p.row, before.row + 1, 'swipe up');
       await t.touchDrag([cx, cy], [cx, cy + 90], { steps: 6 }); await t.waitFrames(20);
       p = (await t.state()).run.player; t.equal(p.row, before.row, 'swipe down');
-      await t.tap([cx, cy]); await t.waitFrames(20);
-      p = (await t.state()).run.player; t.equal(p.row, before.row + 1, 'tap hops up');
+      await t.tap((await t.state()).camera.player); await t.waitFrames(20);
+      p = (await t.state()).run.player; t.equal(p.row, before.row + 1, 'tap on Bandit hops up');
       const lb = await t.page.$eval('#h-lure', (b) => { const r = b.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2, r.width]; });
       t.expect(lb[2] >= 64, 'lure button ≥ 64 px');
       await t.tap([lb[0], lb[1]]); await t.waitFrames(4);
       t.equal((await t.state()).run.lures, 0, 'lure button (pointerup)');
+    },
+  },
+  {
+    name: 'touch: tap beside Bandit hops that way',
+    viewports: ['mobile'],
+    async run(t) {
+      await t.game('newGame', { level: 'l4' });
+      for (const [dir, ox, oy, dc, dr] of [['right', 1.2, 0, 1, 0], ['left', -1.2, 0, -1, 0], ['up', 0.3, -1.2, 0, 1], ['down', -0.3, 1.2, 0, -1]]) {
+        const s = await t.game('setState', { player: { row: 1, col: 4 } });
+        const [x, y] = s.camera.player, k = s.camera.tile;
+        await t.tap([x + ox * k, y + oy * k]); await t.waitFrames(20);
+        const p = (await t.state()).run.player;
+        t.equal([p.col, p.row], [4 + dc, 1 + dr], `tap ${dir} of Bandit`);
+      }
     },
   },
   {

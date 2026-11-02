@@ -96,11 +96,11 @@ Eyeshine (zone 5) is a **rendering** mode, not a kind: gators draw dark with glo
 ## 9. Input
 | action | keyboard | gamepad | touch |
 |---|---|---|---|
-| hop ↑↓←→ | Arrows / WASD | D-pad, left stick (edge), A = ↑ | swipe ≥ 24 px in a direction; a short tap on the board = ↑ |
+| hop ↑↓←→ | Arrows / WASD | D-pad, left stick (edge), A = ↑ | tap beside Bandit = hop that way (dominant axis from his centre; on him = ↑); swipe ≥ 24 px in a direction |
 | lure | Space, E | X, B, LB | Lure button (bottom right, 64 px) |
 | pause | P, Esc | Start | Pause button (top right, 48 px) |
 
-Touch acts on `pointerup` (LESSONS). Swipe direction is the dominant axis of the drag. Menus use real `<button>`s with arrow-key and d-pad focus. Keys repeat-guard: one hop per keydown, with `e.repeat` ignored.
+Touch acts on `pointerup` (LESSONS). Swipe direction is the dominant axis of the drag; a tap (< 24 px, < 600 ms) uses the axis from Bandit's screen centre to the tap. Menus use real `<button>`s with arrow-key and d-pad focus. Keys repeat-guard: one hop per keydown, with `e.repeat` ignored.
 
 ## 10. Rendering (Canvas2D, 2.5D)
 - **Projection:** a ¾ top-down camera. A row is `RH = 0.80 T` tall on screen. Objects stand upright at full height `T`, anchored at their foot point. Draw order:
