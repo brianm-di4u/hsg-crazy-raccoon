@@ -1,6 +1,6 @@
 // Input: keyboard, gamepads (polled once per frame) and touch folded into latched hop and lure edges for the
 // fixed step. Structure after games/Cart Racing/src/js/ui/input.js (Hot Springs Games, MIT). Hops are edges, not
-// held keys: one hop per keydown, e.repeat ignored. Touch: swipe for a direction, a short tap hops up; acts on
+// held keys: one hop per keydown, e.repeat ignored. Touch: tap beside Bandit to hop that way, or swipe; acts on
 // pointerup (shared/LESSONS.md).
 
 const KEYS = {
@@ -53,8 +53,10 @@ export function pollGamepads() {
   return any;
 }
 
-// Touch on the play area: swipe ≥ 24 px picks the dominant axis; a short tap (< 12 px, < 300 ms) hops up.
-export function initTouch(zone) {
+// Touch on the play area: swipe ≥ 24 px picks the dominant axis of the drag. A tap (shorter, < 600 ms) picks the
+// dominant axis from Bandit's screen centre (aim() → [x, y] or null) to the tap; on or near Bandit it hops up.
+const dirOf = (dx, dy) => Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
+export function initTouch(zone, aim) {
   const st = { id: null, x: 0, y: 0, t: 0 };
   zone.addEventListener('pointerdown', (e) => {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
@@ -67,8 +69,12 @@ export function initTouch(zone) {
     const dx = e.clientX - st.x, dy = e.clientY - st.y, d = Math.hypot(dx, dy);
     if (!enabled) return;
     if (e.pointerType !== 'mouse') I.last = 'touch';
-    if (d >= 24) I.hop = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
-    else if (d < 12 && e.timeStamp - st.t < 300) I.hop = 'up';
+    if (d >= 24) I.hop = dirOf(dx, dy);
+    else if (e.timeStamp - st.t < 600) {
+      const a = aim && aim(), r = zone.getBoundingClientRect();
+      const tx = e.clientX - r.left - (a ? a[0] : 0), ty = e.clientY - r.top - (a ? a[1] : 0);
+      I.hop = a && Math.hypot(tx, ty) > 28 ? dirOf(tx, ty) : 'up';
+    }
   };
   zone.addEventListener('pointerup', end);
   zone.addEventListener('pointercancel', (e) => { if (e.pointerId === st.id) st.id = null; });

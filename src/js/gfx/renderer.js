@@ -73,6 +73,8 @@ export class Renderer {
   sx(x) { return this.bx + x * this.k; }
   sy(r) { return this.baseY - (r - this.cam) * this.rh; }
   proj = (x, r) => [this.sx(x), this.sy(r)];
+  // Bandit's body centre in CSS px (feet as in drawPlayer, up half the painted height), for aiming touch taps
+  playerScreen(run) { const pose = playerPose(run.p); return [this.sx(pose.x), this.sy(pose.row) + this.rh * 0.3 - this.tile * 0.63]; }
 
   snap(row, x) { this.cam = this.camT = this.camFor(row); if (x != null) { this.camX = this.camXT = x; this.placeX(); } }
   camFor(row) { return Math.max(row, (this.h - this.baseY) / this.rh - (this.footBand ? (this.footBand + this.rh * 0.55) / this.rh : 0.7)); }

@@ -152,7 +152,7 @@ const TEMPLATES = {
     <div class="panel wide" role="dialog" aria-label="How to play">
       <h2>How to Play</h2>
       <div class="cols">
-        <section><h3>Move</h3><p><b>Arrows</b> / <b>WASD</b>, the <b>d-pad</b>, or <b>swipe</b>. A quick <b>tap</b> hops forward. One hop = one tile.</p>
+        <section><h3>Move</h3><p><b>Arrows</b> / <b>WASD</b>, the <b>d-pad</b>, or <b>tap</b> beside Bandit to hop that way (<b>swipes</b> work too). One hop = one tile.</p>
           <h3>Gators</h3><ul>
           <li><b>Paddlers</b>: ride their backs across the water. Heads bite when the jaws open. A <b>⚠!</b> badge warns first.</li>
           <li><b>Whippers</b> (gold stripes): land on the tail and get flung two rows!</li>

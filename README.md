@@ -10,7 +10,7 @@ history and the gator and raccoon facts on the fact cards are real, and each car
 
 ## Play
 Open `index.html` (it works from `file://` too).
-- **Hop:** arrow keys or WASD, swipe, or tap to hop forward. Gamepad: d-pad or stick, A hops up.
+- **Hop:** arrow keys or WASD, or on phones tap beside Bandit to hop that way (swipes work too). Gamepad: d-pad or stick, A hops up.
 - **Lure:** Space or E, or the Lure button. It tosses a drumstick two rows ahead, and the gators in that row rush to it.
 - **Pause:** Esc or P, the pause button, or Start.
 

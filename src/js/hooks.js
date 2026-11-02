@@ -13,7 +13,7 @@ export function installHooks(App, api) {
       scene: App.scene, screen: App.screens.cur, ready: App.ready, loading: App.loading, paused: App.paused || App.testPaused, mode: run ? run.mode : null,
       level: L ? { id: L.id, n: L.n, zone: L.zone, name: L.name, rows: run.N, par: L.par || null, theme: L.theme || null } : null,
       run: run ? run.summary() : null,
-      camera: { row: +App.renderer.cam.toFixed(2), tile: +App.renderer.tile.toFixed(2), bx: +App.renderer.bx.toFixed(1), w: App.renderer.w, h: App.renderer.h },
+      camera: { row: +App.renderer.cam.toFixed(2), tile: +App.renderer.tile.toFixed(2), bx: +App.renderer.bx.toFixed(1), w: App.renderer.w, h: App.renderer.h, player: run ? App.renderer.playerScreen(run).map((v) => +v.toFixed(1)) : null },
       settings: App.save.settings, reduced: App.reduced, art: !!App.renderer.art,
       save: { unlocked: App.save.unlocked, endlessUnlocked: App.save.endless.unlocked, top: App.save.endless.top, progress: App.save.progress, notebook: App.save.notebook.length, merman: App.save.merman },
       audio: api.audioState(), steps: App.steps, said: App.lastSaid, fx: App.renderer.fx.count(),
