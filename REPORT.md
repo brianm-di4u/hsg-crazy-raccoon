@@ -108,3 +108,12 @@ The new shared file is `research/alligator-farm.md`. It covers:
 - prices and hours, marked unverified
 
 It also extends five existing files: `fish-and-wildlife.md` (raccoon and alligator natural history, Arkansas's alligator restoration), `other-attractions.md`, `SOURCES.md`, `game-hooks.md` and `visual-style-guide.md`. Every fact card in the game passes `tools/check-facts.mjs` and shows its source.
+
+## Update: repainted backgrounds (v1.2.0, 2026-11-02)
+
+The title key art and the day and night backdrop panoramas were repainted. The old key art, which the batch prompts
+name as their style reference, is kept as `art-src/pilot-keyart-old.png`. The new source PNGs replace the
+`art-src/art.json` sources (git-ignored; the workspace keeps copies of the old and new paintings in
+`reference/backgrounds/`) and were packed with the usual tools.
+
+`npm test`: 62/62 passed.
