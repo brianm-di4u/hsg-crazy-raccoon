@@ -207,13 +207,13 @@
   "file": "backdrop-day.webp",
   "w": 1600,
   "h": 600,
-  "bytes": 184866
+  "bytes": 179148
  },
  "backdrop-night": {
   "file": "backdrop-night.webp",
   "w": 1600,
   "h": 600,
-  "bytes": 157656
+  "bytes": 148704
  },
  "backdrop-barn": {
   "file": "backdrop-barn.webp",
@@ -225,7 +225,7 @@
   "file": "title-keyart.webp",
   "w": 1536,
   "h": 1024,
-  "bytes": 283140
+  "bytes": 401378
  },
  "prop-feedstage": {
   "file": "prop-feedstage.webp",
