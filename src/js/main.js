@@ -45,7 +45,7 @@ function applySettings() {
   document.body.classList.toggle('reduced', App.reduced);
   setAudio(s);
 }
-function persist() { writeSave(App.save); }
+function persist(options) { writeSave(App.save, options); applySettings(); }
 
 // ---------------------------------------------------------------------------------------------------------------
 // runs
@@ -168,10 +168,10 @@ App.onMenu = (act, d = {}) => {
     case 'title': return showTitle();
     case 'set': {
       const v = d.v === 'true' ? true : d.v === 'false' ? false : d.v === 'null' ? null : +d.v;
-      s.settings[d.k] = v; applySettings(); persist(); return screens.refresh();
+      s.settings[d.k] = v; persist(); return screens.refresh();
     }
     case 'resetSave': return screens.show('confirmReset', { from: 'settings' });
-    case 'resetYes': App.save = DEFAULT_SAVE(); persist(); applySettings(); return showTitle();
+    case 'resetYes': App.save = DEFAULT_SAVE(); persist({ reset: true }); return showTitle();
     case 'resume': return resumeGame();
     case 'restart': if (App.run && App.run.mode === 'endless') return startEndless({ intro: false }); if (App.level) return startLevel(App.level, { intro: false }); return;
     case 'next': { const L = LEVELS.find((x) => x.n === App.level.n + 1); if (L) startLevel(L); return; }
