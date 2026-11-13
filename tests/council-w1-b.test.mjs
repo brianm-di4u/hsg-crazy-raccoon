@@ -3,17 +3,21 @@
 // A scripted AudioContext that records every oscillator started as "type:frequency" (runs before the page scripts).
 const fakeAudio = () => {
   const log = window.__aud = { osc: [] };
+  const param = (value) => ({ value, setValueAtTime() {}, exponentialRampToValueAtTime() {}, linearRampToValueAtTime() {}, setTargetAtTime() {}, cancelScheduledValues() {} });
   class Node {
-    connect() { return this; }
-    get gain() { return this._g || (this._g = { value: 1, setValueAtTime() {}, exponentialRampToValueAtTime() {}, setTargetAtTime() {} }); }
-    get frequency() { return this._f || (this._f = { value: 0, setValueAtTime: (v) => { this.hz = v; }, exponentialRampToValueAtTime() {} }); }
+    connect() { return this; } disconnect() {}
+    get gain() { return this._g || (this._g = param(1)); }
+    get frequency() { return this._f || (this._f = { value: 0, setValueAtTime: (v) => { this.hz = v; }, exponentialRampToValueAtTime() {}, setTargetAtTime() {} }); }
     get Q() { return { value: 0 }; }
+    get pan() { return this._p || (this._p = param(0)); } get detune() { return this._d || (this._d = param(0)); } get delayTime() { return this._dt || (this._dt = param(0)); }
+    get threshold() { return { value: 0 }; } get knee() { return { value: 0 }; } get ratio() { return { value: 0 }; } get attack() { return { value: 0 }; } get release() { return { value: 0 }; }
   }
   class Osc extends Node { start() { log.osc.push((this.type || 'noise') + ':' + Math.round(this.hz || 0)); } stop() {} }
   window.AudioContext = class {
     constructor() { this.state = 'running'; this.sampleRate = 8000; this.destination = new Node(); this.onstatechange = null; }
     get currentTime() { return performance.now() / 1000; }
     createGain() { return new Node(); } createBiquadFilter() { return new Node(); } createOscillator() { return new Osc(); }
+    createDelay() { return new Node(); } createStereoPanner() { return new Node(); } createDynamicsCompressor() { return new Node(); }
     createBufferSource() { return new Osc(); }
     createBuffer(c, n) { return { getChannelData: () => new Float32Array(n) }; }
     resume() { return Promise.resolve(); } suspend() { return Promise.resolve(); }

@@ -3,14 +3,14 @@
 // games/Furious Squirrels/src/js/main.js (Hot Springs Games, MIT).
 import { DT } from './sim/const.js';
 import { Run } from './sim/run.js';
-import { warnings } from './sim/world.js';
+import { warnings, liveSurges } from './sim/world.js';
 import { Bot } from './sim/bot.js';
 import { Renderer } from './gfx/renderer.js';
 import { loadArt } from './gfx/art.js';
 import { Hud } from './ui/hud.js';
 import { Screens } from './ui/screens.js';
 import { initInput, initTouch, pollGamepads, readIntent, consumePause, consumeMenu, setEnabled } from './ui/input.js';
-import { initAudio, setAudio, sfx, playTheme, audioState, holdMusic, suspendAudio, resumeAudio } from './ui/audio.js';
+import { initAudio, setAudio, sfx, playTheme, setTension, setAmbience, duckMusic, audioState, audioList, renderAudio, holdMusic, suspendAudio, resumeAudio } from './ui/audio.js';
 import { loadSave, writeSave, DEFAULT_SAVE } from './save.js';
 import { makeRng, hashStr } from './rng.js';
 import { installHooks } from './hooks.js';
@@ -19,6 +19,8 @@ import { installHooks } from './hooks.js';
 const LEVELS = typeof LEVELDATA !== 'undefined' ? LEVELDATA.levels : [];
 const ALLFACTS = typeof FACTS !== 'undefined' ? [...FACTS.bank, ...FACTS.research] : [];
 const THEME_MUSIC = { day: 'day', noon: 'noon', barn: 'barn', night: 'night' };
+// the ambience scene for each level theme (the music has the theme's own name)
+const THEME_SCENE = { day: 'meadow', noon: 'showground', barn: 'loft', night: 'midnight' };
 
 const App = {
   scene: 'boot', ready: false, loading: 0, paused: false, testPaused: false, time: 0, clock: null, steps: 0,
@@ -82,7 +84,7 @@ function enterPlay() {
   App.paused = false; App.endAt = 0;
   renderer.fx.clear(); renderer.snap(0, App.run.p.x);
   hud.show(true); hud.update(App.run);
-  playTheme(THEME_MUSIC[App.run.L.theme] || 'day');
+  playTheme(THEME_MUSIC[App.run.L.theme] || 'day', THEME_SCENE[App.run.L.theme] || 'meadow');
   kick();
 }
 function beginPlay() {
@@ -100,7 +102,7 @@ function showTitle() {
   const L = LEVELS[0];
   if (L) { App.demo = new Run(JSON.parse(JSON.stringify(L)), { seed: 3 }); App.demoBot = new Bot(App.demo, makeRng(11), 'good'); renderer.snap(0); }
   screens.show('title');
-  playTheme('title');
+  playTheme('title', 'meadow');
   kick();
 }
 
@@ -142,6 +144,7 @@ function levelDone(run) {
   const next = LEVELS.find((x) => x.n === L.n + 1);
   screens.show('win', { L, res, fact: f, next: !!next, best, assist: App.save.settings.assist });
   setEnabled(false);
+  playTheme('results'); duckMusic(8, 1600);
   sfx('win'); res.stars.forEach((b, i) => { if (b) setTimeout(() => sfx('star', i), 500 + i * 220); });
 }
 
@@ -156,7 +159,7 @@ App.onMenu = (act, d = {}) => {
   sfx('menu');
   const s = App.save;
   switch (act) {
-    case 'play': return screens.show('map', { levels: LEVELS });
+    case 'play': playTheme('map', 'meadow'); return screens.show('map', { levels: LEVELS });
     case 'level': { const L = levelById(d.v); if (L) startLevel(L); return; }
     case 'locked': return;
     case 'go': return beginPlay();
@@ -176,7 +179,7 @@ App.onMenu = (act, d = {}) => {
     case 'resume': return resumeGame();
     case 'restart': if (App.run && App.run.mode === 'endless') return startEndless({ intro: false }); if (App.level) return startLevel(App.level, { intro: false }); return;
     case 'next': { const L = LEVELS.find((x) => x.n === App.level.n + 1); if (L) startLevel(L); return; }
-    case 'map': App.scene = 'title'; App.run = null; hud.show(false); showTitle(); return screens.show('map', { levels: LEVELS });
+    case 'map': App.scene = 'title'; App.run = null; hud.show(false); showTitle(); playTheme('map', 'meadow'); return screens.show('map', { levels: LEVELS });
     case 'quit': return App.run && App.run.mode === 'endless' ? screens.show('confirmQuit', { from: 'pause' }) : App.onMenu('map');
     case 'quitYes': return showTitle();
     case 'saveScore': {
@@ -217,6 +220,7 @@ function stepOnce(input = {}) {
   App.steps++;
   handleEvents(run);
   cueHazards(run);
+  feelTension(run);
 }
 App.stepOnce = stepOnce;
 
@@ -238,6 +242,31 @@ function cueHazards(run) {
     c.feed.add(w);
     if (Math.abs(w.row - near) <= 6) sfx('feed');
   }
+  // the crowd at the feeding show swells with a toss
+  const crowd = liveSurges(run.world).length ? 1 : warnings(run.world).length ? 0.7 : 0.3;
+  if (c.crowd !== crowd) { c.crowd = crowd; setAmbience('crowd', crowd); }
+}
+
+// How hunted Bandit is, 0 to 1, for the music and the ambience: the lantern a few rows behind (Moonlight Run), a
+// flashlight beam within three rows, the boss within four, the last tail ring, the last third of the level. It
+// rises over about half a second and eases off over two.
+let tension = 0, tensionRun = null;
+function tensionTarget(run) {
+  const p = run.p;
+  let x = 0;
+  if (run.phase !== 'play' || p.state === 'dead') return 0;
+  if (run.beam != null) { const gap = p.row - run.beam; x = gap <= 3 ? 1 : gap <= 8 ? 0.9 - (gap - 3) * 0.14 : 0; }
+  for (const b of run.L.beams || []) { const d = p.row < b.r0 ? b.r0 - p.row : p.row > b.r1 ? p.row - b.r1 : 0; if (d <= 3) x = Math.max(x, 1 - d * 0.12); }
+  for (const g of run.world.gators) if (g.k === 'boss' && Math.abs(g.row - p.row) <= 4) x = Math.max(x, 1);
+  if (run.rings === 1) x = Math.max(x, 0.6);
+  if (run.L.n && p.row >= run.N * 0.67) x = Math.max(x, 0.35);
+  return x;
+}
+function feelTension(run) {
+  if (tensionRun !== run) { tensionRun = run; tension = 0; }
+  const to = tensionTarget(run);
+  tension += (to - tension) * (to > tension ? 0.02 : 0.005);
+  if (run.steps % 12 === 0 || to === 0) setTension(tension < 0.03 ? 0 : tension);
 }
 
 function handleEvents(run) {
@@ -360,7 +389,7 @@ document.addEventListener('visibilitychange', () => {
 });
 
 applySettings();
-installHooks(App, { stepOnce, startLevel, startEndless, showTitle, pauseGame, resumeGame, levelDone, levelById, persist, applySettings, audioState });
+installHooks(App, { stepOnce, startLevel, startEndless, showTitle, pauseGame, resumeGame, levelDone, levelById, persist, applySettings, audioState, audioList, audioRender: renderAudio });
 App.loading++;
 loadArt(typeof MANIFEST !== 'undefined' ? MANIFEST : null, App).then((art) => { renderer.art = art; }).finally(() => { App.loading--; kick(); });
 showTitle();

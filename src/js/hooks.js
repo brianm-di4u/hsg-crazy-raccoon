@@ -21,6 +21,8 @@ export function installHooks(App, api) {
   };
   window.__game = {
     seed(n) { App.nextSeed = n >>> 0; return true; },
+    audioList() { return api.audioList(); },
+    audioRender(name, seconds, wantWav, opts) { return api.audioRender(name, seconds, wantWav, opts); },
     getState: summary,
     setState(s = {}) {
       if (s.settings) { Object.assign(App.save.settings, s.settings); api.applySettings(); }

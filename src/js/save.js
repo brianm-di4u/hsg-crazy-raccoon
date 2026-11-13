@@ -7,7 +7,7 @@ let pendingReset = false;
 
 export const DEFAULT_SAVE = () => ({
   v: 1,
-  settings: { sound: true, music: true, volume: 0.5, reducedMotion: null, textScale: 1, assist: false, hints: true },
+  settings: { sound: true, music: true, ambience: true, volume: 0.5, reducedMotion: null, textScale: 1, assist: false, hints: true },
   progress: {}, // levelId → { stars: [b, b, b], best, bestT, ball }
   unlocked: 1, // highest playable level number
   notebook: [], // fact ids seen
@@ -26,6 +26,7 @@ const num = (v, fallback) => (typeof v === 'number' && Number.isFinite(v) ? v : 
 // Wrong-typed fields (hand edits, an older build's shape) are repaired on load so one bad value cannot break a
 // level clear or the scores screen and then be written back for good.
 function sanitize(d) {
+  d.settings.ambience = d.settings.ambience !== false; // saves from before the Ambience setting have none: on
   d.settings.volume = Math.min(1, Math.max(0, num(d.settings.volume, 0.5)));
   if (![1, 1.25, 1.5].includes(d.settings.textScale)) d.settings.textScale = 1;
   if (!object(d.progress)) d.progress = {};

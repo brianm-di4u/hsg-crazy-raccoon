@@ -4,7 +4,13 @@
 // started and every suspend()/resume() call. Runs before the page scripts.
 const fakeAudio = () => {
   const log = window.__aud = { sources: 0, resumes: 0, suspends: 0, ctx: null };
-  class Node { connect() { return this; } get gain() { return this._g || (this._g = { value: 1, setValueAtTime() {}, exponentialRampToValueAtTime() {}, setTargetAtTime() {} }); } get frequency() { return this._f || (this._f = { value: 0, setValueAtTime() {}, exponentialRampToValueAtTime() {} }); } get Q() { return { value: 0 }; } }
+  const param = (value) => ({ value, setValueAtTime() {}, exponentialRampToValueAtTime() {}, linearRampToValueAtTime() {}, setTargetAtTime() {}, cancelScheduledValues() {} });
+  class Node {
+    connect() { return this; } disconnect() {}
+    get gain() { return this._g || (this._g = param(1)); } get frequency() { return this._f || (this._f = param(0)); } get Q() { return { value: 0 }; }
+    get pan() { return this._p || (this._p = param(0)); } get detune() { return this._d || (this._d = param(0)); } get delayTime() { return this._dt || (this._dt = param(0)); }
+    get threshold() { return { value: 0 }; } get knee() { return { value: 0 }; } get ratio() { return { value: 0 }; } get attack() { return { value: 0 }; } get release() { return { value: 0 }; }
+  }
   class Osc extends Node { start() { log.sources++; } stop() {} }
   window.AudioContext = class {
     constructor() {
@@ -13,6 +19,7 @@ const fakeAudio = () => {
     get currentTime() { return this.state === 'running' ? this._t + (performance.now() - this._at) / 1000 : this._t; }
     _set(s) { if (this.state === 'running') this._t = this.currentTime; this.state = s; this._at = performance.now(); if (this.onstatechange) this.onstatechange(); }
     createGain() { return new Node(); } createBiquadFilter() { return new Node(); } createOscillator() { return new Osc(); }
+    createDelay() { return new Node(); } createStereoPanner() { return new Node(); } createDynamicsCompressor() { return new Node(); }
     createBufferSource() { return new Osc(); }
     createBuffer(c, n) { return { getChannelData: () => new Float32Array(n) }; }
     resume() { log.resumes++; if (!log.refuse) this._set('running'); return Promise.resolve(); }
@@ -114,11 +121,12 @@ export const tests = [
       await t.page.dispatchEvent('body', 'pointerup');
       await t.page.waitForTimeout(300);
       t.expect((await aud(t)).sources > 0, 'music is playing before the stall');
-      // freeze the page's timers for 3 s the way a background tab does, while the audio clock keeps running
-      await t.page.evaluate(() => { const end = performance.now() + 3000; while (performance.now() < end); window.__aud.mark = window.__aud.sources; });
+      // freeze the page's timers for 6 s the way a background tab does, while the audio clock keeps running (the music
+      // is scheduled a bar at a time, about 2 s: a clump of past-due bars would be three of them)
+      await t.page.evaluate(() => { const end = performance.now() + 6000; while (performance.now() < end); window.__aud.mark = window.__aud.sources; });
       await t.page.waitForTimeout(200);
       const burst = await t.page.evaluate(() => window.__aud.sources - window.__aud.mark);
-      t.expect(burst < 20, 'catch-up burst after a 3 s stall is small (got ' + burst + ' sources)');
+      t.expect(burst < 50, 'catch-up after a 6 s stall is one bar, not the bars it missed (got ' + burst + ' sources)');
     },
   },
   {
