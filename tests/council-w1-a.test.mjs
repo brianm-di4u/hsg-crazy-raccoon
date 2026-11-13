@@ -213,4 +213,63 @@ export const tests = [
       t.equal(await t.page.$$eval('#boot-error button', (b) => b.length), 2, 'recovery buttons present');
     },
   },
+  {
+    name: 'S6-05 the save loader repairs wrong-typed fields',
+    node: true,
+    async run(t) {
+      const KEY = 'hsg-crazy-raccoon-v1';
+      const { loadSave, writeSave } = await import('../src/js/save.js');
+      const store = new Map();
+      globalThis.window = { localStorage: { getItem: (k) => store.get(k) ?? null, setItem: (k, v) => store.set(k, v) } };
+      const load = (patch) => { store.set(KEY, JSON.stringify({ v: 1, ...patch })); return loadSave(); };
+      const good = { stars: [true, false, true], best: 900, bestT: 12.5, ball: true };
+      let s;
+      for (const bad of ['oops', null, 7, [1, 2]]) { s = load({ progress: bad }); t.expect(s.progress && typeof s.progress === 'object' && !Array.isArray(s.progress), 'progress ' + JSON.stringify(bad) + ' becomes an object'); }
+      s = load({ progress: { l1: 'x', l2: null, l3: { stars: 'abc', best: 'high', bestT: 'fast' }, l4: good } });
+      t.equal(s.progress.l1, undefined, 'a non-object progress entry is dropped');
+      t.equal(s.progress.l2, undefined, 'a null progress entry is dropped');
+      t.equal(JSON.stringify(s.progress.l3), JSON.stringify({ stars: [false, false, false], best: 0, bestT: null, ball: false }), 'bad entry fields get safe values');
+      t.equal(JSON.stringify(s.progress.l4), JSON.stringify(good), 'a good entry is untouched');
+      for (const bad of ['text', null, 5, { a: 1 }]) { s = load({ notebook: bad }); t.expect(Array.isArray(s.notebook), 'notebook ' + JSON.stringify(bad) + ' becomes an array'); }
+      s = load({ notebook: ['hs-1', 7, null, 'hs-2'] });
+      t.equal(s.notebook.join(), 'hs-1,hs-2', 'non-string notebook ids are dropped');
+      for (const bad of ['text', null, 5]) { s = load({ endless: { unlocked: true, top: bad } }); t.expect(Array.isArray(s.endless.top), 'endless.top ' + JSON.stringify(bad) + ' becomes an array'); }
+      s = load({ endless: { top: [{ initials: 'ABC', score: 50, rows: 4, date: '2026-01-01' }, { initials: 'NOS' }, { score: 'x', initials: 'BAD' }, 'zzz', null] } });
+      t.equal(s.endless.top.length, 1, 'score entries without a finite score and initials are dropped');
+      t.equal(s.endless.top[0].score, 50, 'the good score entry is kept');
+      s = load({ endless: 'nope', stats: 'nope', settings: 'nope' });
+      t.expect(object(s.endless) && Array.isArray(s.endless.top) && object(s.stats) && object(s.settings), 'string sections fall back to defaults');
+      t.equal(s.settings.sound, true, 'and do not spread into characters');
+      s = load({ unlocked: 99 }); t.equal(s.unlocked, 15, 'unlocked above 15 is clamped');
+      s = load({ unlocked: 'many' }); t.equal(s.unlocked, 1, 'a non-number unlocked becomes 1');
+      s = load({ unlocked: 0 }); t.equal(s.unlocked, 1, 'unlocked below 1 is clamped');
+      s = load({ unlocked: 3.7 }); t.equal(s.unlocked, 3, 'unlocked is an integer');
+      s = load({ settings: { volume: 50 } }); t.equal(s.settings.volume, 1, 'volume above 1 is clamped');
+      s = load({ settings: { volume: -2 } }); t.equal(s.settings.volume, 0, 'volume below 0 is clamped');
+      s = load({ settings: { volume: 'loud' } }); t.equal(s.settings.volume, 0.5, 'non-number volume falls back');
+      s = load({ settings: { textScale: 0 } }); t.equal(s.settings.textScale, 1, 'textScale 0 becomes 1');
+      s = load({ settings: { textScale: 1e9 } }); t.equal(s.settings.textScale, 1, 'textScale 1e9 becomes 1');
+      s = load({ settings: { textScale: 1.25 } }); t.equal(s.settings.textScale, 1.25, 'a listed textScale is kept');
+      s = load({ progress: 'oops', notebook: null, endless: { top: 'x' } });
+      t.equal(writeSave(s), true, 'a repaired save writes back');
+      t.equal(JSON.parse(store.get(KEY)).progress.constructor, Object, 'and the stored value is repaired');
+      function object(v) { return v && typeof v === 'object' && !Array.isArray(v); }
+    },
+  },
+  {
+    name: 'S6-05 a corrupt stored save no longer breaks a level clear or the scores screen',
+    viewports: ['desktop'],
+    initScript: () => {
+      localStorage.setItem('hsg-crazy-raccoon-v1', JSON.stringify({ v: 1, progress: 'oops', notebook: null, unlocked: '4', settings: { volume: 50, textScale: 0 }, endless: { unlocked: true, top: 'x' } }));
+    },
+    async run(t) {
+      await t.game('scene', 'scores');
+      t.equal((await t.state()).screen, 'scores', 'the scores screen opens');
+      await t.game('scene', 'win');
+      const s = await t.state();
+      t.equal(s.screen, 'win', 'clearing a level reaches the results screen');
+      t.expect(s.save.progress.l1 && s.save.progress.l1.stars.length === 3, 'progress was recorded');
+      t.expect(s.settings.volume <= 1 && s.settings.textScale === 1, 'settings are in range');
+    },
+  },
 ];
