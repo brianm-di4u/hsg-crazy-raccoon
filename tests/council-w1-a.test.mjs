@@ -121,4 +121,36 @@ export const tests = [
       t.expect(burst < 20, 'catch-up burst after a 3 s stall is small (got ' + burst + ' sources)');
     },
   },
+  {
+    name: 'S1-04 a hop pressed during a bump or a fling is kept and fires afterwards',
+    node: true,
+    async run(t) {
+      const { makePlayer, stepPlayer } = await import('../src/js/sim/player.js');
+      const { DT, BUMP_T, FLING_T, colX } = await import('../src/js/sim/const.js');
+      const level = { rows: [{ t: 'ground' }, { t: 'fence', gaps: [] }, { t: 'ground' }, { t: 'ground' }] };
+      const world = { gators: [] };
+      const stepsFor = (secs) => Math.ceil(secs / DT) + 2;
+
+      // bump: up into a closed fence, then a sideways retry 83 ms in (the seat-1 probe)
+      let p = makePlayer(level), ev = [];
+      stepPlayer(p, world, level, { hop: 'up' }, ev);
+      t.equal(p.state, 'bump', 'the blocked hop bumps');
+      for (let i = 0; i < 10; i++) stepPlayer(p, world, level, {}, ev);
+      stepPlayer(p, world, level, { hop: 'left' }, ev);
+      t.expect(p.state === 'bump' || p.state === 'hop', 'still wiggling or already hopping');
+      for (let i = 0; i < stepsFor(BUMP_T) && p.state !== 'hop'; i++) stepPlayer(p, world, level, {}, ev);
+      t.equal(p.state, 'hop', 'the queued hop starts when the bump ends');
+      t.equal(p.facing, 'left', 'in the direction pressed');
+      t.equal(p.to.x, colX(3), 'one column to the left');
+
+      // fling: a hop pressed mid-flight starts on landing
+      p = makePlayer(level); ev = [];
+      p.row = 0; p.from = { row: 0, x: p.x }; p.to = { row: 2, x: p.x }; p.state = 'fling'; p.t = 0;
+      stepPlayer(p, world, level, { hop: 'left' }, ev);
+      for (let i = 0; i < stepsFor(FLING_T) && p.state === 'fling'; i++) stepPlayer(p, world, level, {}, ev);
+      t.equal(p.row, 2, 'the fling lands');
+      t.equal(p.state, 'hop', 'the hop pressed during the fling starts on landing');
+      t.equal(p.facing, 'left', 'facing the pressed direction');
+    },
+  },
 ];

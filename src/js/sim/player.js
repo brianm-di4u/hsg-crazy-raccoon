@@ -127,16 +127,22 @@ export function stepPlayer(p, world, level, input, ev, dt = DT) {
       return;
     case 'fling':
       p.t += dt;
+      if (hop) p.queue = hop;
       if (p.t >= FLING_T) land(p, world, level, ev);
       return;
     case 'bump':
       p.t += dt;
+      if (hop) p.queue = hop; // a retry pressed during the wiggle fires when it ends
       if (p.t >= BUMP_T) p.state = 'idle';
       else break;
     // falls through to idle handling once the bump wiggle ends
     default: break;
   }
-  if (p.state === 'idle' && hop) { if (startHop(p, world, level, hop, ev)) return; }
+  if (p.state === 'idle' && (hop || p.queue)) {
+    const h = hop || p.queue;
+    p.queue = null;
+    if (startHop(p, world, level, h, ev)) return;
+  }
   const grounded = p.state === 'idle' || p.state === 'bump';
   // riding
   if (p.on != null) {
