@@ -3,6 +3,7 @@
 // games/Furious Squirrels/src/js/main.js (Hot Springs Games, MIT).
 import { DT } from './sim/const.js';
 import { Run } from './sim/run.js';
+import { warnings } from './sim/world.js';
 import { Bot } from './sim/bot.js';
 import { Renderer } from './gfx/renderer.js';
 import { loadArt } from './gfx/art.js';
@@ -215,8 +216,29 @@ function stepOnce(input = {}) {
   run.step(input);
   App.steps++;
   handleEvents(run);
+  cueHazards(run);
 }
 App.stepOnce = stepOnce;
+
+// the hazard telegraph is heard as well as seen: a jaw warning ('tele') the step a gator near Bandit starts one,
+// and the feeding-show cue ('feed') the step a drumstick shadow appears. Tracked here, not in the sim.
+const cued = new WeakMap();
+function cueHazards(run) {
+  let c = cued.get(run);
+  if (!c) cued.set(run, c = { tele: new Set(), feed: new WeakSet() });
+  const near = run.p.row;
+  for (const g of run.world.gators) {
+    if (g.jaw !== 'tele') { c.tele.delete(g.id); continue; }
+    if (c.tele.has(g.id)) continue;
+    c.tele.add(g.id);
+    if (Math.abs(g.row - near) <= 4) sfx('tele');
+  }
+  for (const w of warnings(run.world)) {
+    if (w.src !== 'feed' || c.feed.has(w)) continue;
+    c.feed.add(w);
+    if (Math.abs(w.row - near) <= 6) sfx('feed');
+  }
+}
 
 function handleEvents(run) {
   for (const e of run.drain()) {

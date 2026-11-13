@@ -1,5 +1,34 @@
 // Council wave 1, batch B: input, rules and play, screens and words (S1-01, S5-01, S1-06, S3-06, S4-10, S5-20, S2-15, P-N01).
 
+// A scripted AudioContext that records every oscillator started as "type:frequency" (runs before the page scripts).
+const fakeAudio = () => {
+  const log = window.__aud = { osc: [] };
+  class Node {
+    connect() { return this; }
+    get gain() { return this._g || (this._g = { value: 1, setValueAtTime() {}, exponentialRampToValueAtTime() {}, setTargetAtTime() {} }); }
+    get frequency() { return this._f || (this._f = { value: 0, setValueAtTime: (v) => { this.hz = v; }, exponentialRampToValueAtTime() {} }); }
+    get Q() { return { value: 0 }; }
+  }
+  class Osc extends Node { start() { log.osc.push((this.type || 'noise') + ':' + Math.round(this.hz || 0)); } stop() {} }
+  window.AudioContext = class {
+    constructor() { this.state = 'running'; this.sampleRate = 8000; this.destination = new Node(); this.onstatechange = null; }
+    get currentTime() { return performance.now() / 1000; }
+    createGain() { return new Node(); } createBiquadFilter() { return new Node(); } createOscillator() { return new Osc(); }
+    createBufferSource() { return new Osc(); }
+    createBuffer(c, n) { return { getChannelData: () => new Float32Array(n) }; }
+    resume() { return Promise.resolve(); } suspend() { return Promise.resolve(); }
+  };
+};
+const heard = (t, key) => t.page.evaluate((k) => window.__aud.osc.filter((o) => o === k).length, key);
+const cue = async (t, level, key, ticks) => {
+  await t.page.dispatchEvent('body', 'pointerdown');
+  await t.game('newGame', { level });
+  await t.game('pause');
+  await t.page.evaluate(() => { window.__aud.osc.length = 0; });
+  for (let i = 0; i < ticks / 60; i++) await t.game('step', 60);
+  return heard(t, key);
+};
+
 const setUp = async (t) => {
   await t.game('newGame', { level: 'l4' });
   return t.game('setState', { player: { row: 1, col: 4 } });
@@ -43,6 +72,26 @@ export const tests = [
       await t.touchDrag([x, y], [x, y], { steps: 1, holdEndMs: 750 });
       await t.waitFrames(20);
       t.equal((await player(t)).row, 2, 'a 750 ms press on Bandit hops up');
+    },
+  },  {
+    name: 'S5-01 the jaw warning is heard when a nearby gator starts to telegraph',
+    viewports: ['desktop'],
+    initScript: fakeAudio,
+    async run(t) {
+      const n = await cue(t, 'l1', 'square:880', 1200);
+      t.expect(n >= 2, 'the tele cue plays as gators near the start begin their warnings (heard ' + n + ')');
+      const total = await t.page.evaluate(() => window.__aud.osc.filter((o) => o === 'square:880').length);
+      t.expect(total <= 60, 'one cue per warning, not one per step (heard ' + total + ' in 20 s)');
+    },
+  },
+  {
+    name: 'S5-01 the feeding-show cue plays when a drumstick shadow appears',
+    viewports: ['desktop'],
+    initScript: fakeAudio,
+    async run(t) {
+      const n = await cue(t, 'l7', 'square:392', 480);
+      t.expect(n >= 1, 'the feed cue plays when the first toss is announced (heard ' + n + ')');
+      t.expect(n <= 3, 'one cue per toss (heard ' + n + ')');
     },
   },
 ];
