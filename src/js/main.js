@@ -70,7 +70,7 @@ function startLevel(L, { seed, intro = true } = {}) {
 }
 function startEndless({ seed, intro = true } = {}) {
   App.level = null;
-  App.run = new Run({ id: 'endless' }, { mode: 'endless', seed: seed ?? App.nextSeed ?? (Date.now() & 0xffffff), assist: App.save.settings.assist });
+  App.run = new Run({ id: 'endless' }, { mode: 'endless', seed: seed ?? App.nextSeed ?? (Date.now() & 0xffffff), assist: false }); // Assist is for the levels: the top-10 board is shared
   enterPlay();
   App.fact = ALLFACTS.length ? ALLFACTS[(Date.now() >> 10) % ALLFACTS.length] : null;
   if (intro) { screens.show('intro', { L: { ...App.run.L, intro: 'Night falls. Hop as far as you can before the keeper\'s lantern catches up. Three tail rings.', rings: 3 }, fact: App.fact, assist: false }); setEnabled(false); }

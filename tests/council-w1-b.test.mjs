@@ -93,5 +93,22 @@ export const tests = [
       t.expect(n >= 1, 'the feed cue plays when the first toss is announced (heard ' + n + ')');
       t.expect(n <= 3, 'one cue per toss (heard ' + n + ')');
     },
+  },  {
+    name: 'S3-06 Assist does not leak into Moonlight Run',
+    viewports: ['desktop'],
+    async run(t) {
+      const trace = async (assist) => {
+        await t.game('newGame', { mode: 'endless', seed: 11, assist });
+        await t.game('pause');
+        const have = (await t.state()).run.steps; // the live loop may have stepped a few ticks before pause
+        await t.game('step', 400 - have);
+        return (await t.state()).run;
+      };
+      const on = await trace(true), off = await trace(false);
+      t.equal(on.gators.map((g) => g.x), off.gators.map((g) => g.x), 'gators move the same with Assist on or off');
+      t.equal(on.gators.map((g) => g.jaw), off.gators.map((g) => g.jaw), 'jaw warnings last as long with Assist on or off');
+      t.equal(on.rings, 3, 'three tail rings either way');
+      await t.game('setState', { settings: { assist: false } });
+    },
   },
 ];
