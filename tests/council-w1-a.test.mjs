@@ -180,4 +180,37 @@ export const tests = [
       t.equal(s.run, null, 'the run is gone');
     },
   },
+  {
+    name: 'S6-02 a frame exception leaves a way out: Reload and Back to title',
+    allowConsoleErrors: true,
+    async run(t) {
+      await t.page.evaluate(() => { const r = window.__CR.renderer; window.__origDraw = r.draw; r.draw = () => { throw new Error('boom-secret-detail'); }; });
+      await t.game('newGame', { level: 'l1' });
+      await t.page.waitForSelector('#boot-error:not([hidden])');
+      const txt = await t.page.$eval('#boot-error', (e) => e.textContent);
+      t.expect(!txt.includes('boom-secret-detail'), 'the raw exception message is not shown to the player');
+      t.equal(await t.page.$$eval('#boot-error button', (b) => b.map((x) => x.textContent).join('|')), 'Reload|Back to title', 'two actions offered');
+      await t.shot('s6-02-error');
+      await t.checkLayout();
+      await t.page.evaluate(() => { window.__CR.renderer.draw = window.__origDraw; });
+      await t.page.click('#boot-error button:nth-of-type(2)');
+      await t.waitFrames(3);
+      const s = await t.state();
+      t.equal(s.scene, 'title', 'back on the title scene');
+      t.equal(s.screen, 'title', 'with a live menu');
+      t.expect(await t.page.$eval('#boot-error', (e) => e.hidden), 'the banner is gone');
+      await t.game('newGame', { level: 'l1' });
+      t.equal((await t.state()).scene, 'play', 'a new level starts normally afterwards');
+    },
+  },
+  {
+    name: 'S6-02 an unhandled promise rejection shows the same recovery banner',
+    viewports: ['desktop'],
+    allowConsoleErrors: true,
+    async run(t) {
+      await t.page.evaluate(() => { Promise.reject(new Error('late-failure')); });
+      await t.page.waitForSelector('#boot-error:not([hidden])');
+      t.equal(await t.page.$$eval('#boot-error button', (b) => b.length), 2, 'recovery buttons present');
+    },
+  },
 ];

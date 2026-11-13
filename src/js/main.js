@@ -295,11 +295,26 @@ function frame(now) {
   inFrame = false;
 }
 
+// Any exception ends up here: the detail goes to the console, the player gets a way out (reload, or back to a live title).
 function showError(err) {
-  const el = document.getElementById('boot-error');
-  el.hidden = false; el.textContent = 'Something went wrong: ' + (err && err.message ? err.message : err);
   console.error(err);
+  const el = document.getElementById('boot-error');
+  if (!el) return;
+  el.textContent = 'Something went wrong with the game. ';
+  const add = (label, fn) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.addEventListener('click', fn); el.append(b, ' '); };
+  add('Reload', () => location.reload());
+  add('Back to title', () => {
+    try {
+      cancelAnimationFrame(rafId); rafId = 0; inFrame = false; acc = 0;
+      screens.hide(); App.paused = false; App.endAt = 0; App.lureReq = false;
+      showTitle();
+      el.hidden = true;
+    } catch (e2) { console.error(e2); }
+  });
+  el.hidden = false;
 }
+window.addEventListener('error', (e) => { if (e.error) showError(e.error); });
+window.addEventListener('unhandledrejection', (e) => showError(e.reason));
 
 // ---------------------------------------------------------------------------------------------------------------
 // boot

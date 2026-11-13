@@ -15,6 +15,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #2B8FA3; col
 #view { position: fixed; inset: 0; width: 100vw; height: 100vh; height: 100dvh; display: block; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .boot-error { position: fixed; inset: auto 16px 16px; padding: 12px 16px; background: #5a1a12; color: #fff; border-radius: 10px; z-index: 50; }
+.boot-error button { min-height: 44px; padding: 8px 14px; margin-top: 8px; border: 0; border-radius: 8px; background: #fff; color: #5a1a12; font: inherit; font-weight: 700; cursor: pointer; }
 button, input { font-family: var(--font-ui); }
 button:focus-visible, input:focus-visible { outline: 4px solid #FFFFFF; outline-offset: 2px; box-shadow: 0 0 0 7px var(--ink); }
 
