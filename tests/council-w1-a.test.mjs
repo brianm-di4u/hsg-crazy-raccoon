@@ -153,4 +153,31 @@ export const tests = [
       t.equal(p.facing, 'left', 'facing the pressed direction');
     },
   },
+  {
+    name: 'S2-17 quitting a Moonlight Run from Pause asks first',
+    async run(t) {
+      await t.game('newGame', { mode: 'endless' });
+      await t.game('pause');
+      await t.game('scene', 'pause');
+      t.equal((await t.state()).screen, 'pause', 'pause panel up');
+      await t.page.click('[data-act="quit"]');
+      let s = await t.state();
+      t.equal(s.screen, 'confirmQuit', 'Quit to title opens a confirm');
+      t.equal(s.scene, 'play', 'the run is still there behind it');
+      await t.shot('s2-17-confirm');
+      await t.checkLayout();
+      await t.page.keyboard.press('Escape');
+      await t.waitFrames(3);
+      s = await t.state();
+      t.equal(s.screen, 'pause', 'Esc keeps the run and returns to Pause');
+      await t.page.click('[data-act="quit"]');
+      await t.page.click('[data-act="back"]');
+      t.equal((await t.state()).screen, 'pause', 'Keep running returns to Pause');
+      await t.page.click('[data-act="quit"]');
+      await t.page.click('[data-act="quitYes"]');
+      s = await t.state();
+      t.equal(s.scene, 'title', 'Leave goes to the title');
+      t.equal(s.run, null, 'the run is gone');
+    },
+  },
 ];

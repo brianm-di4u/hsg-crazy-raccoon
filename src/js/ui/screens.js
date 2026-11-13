@@ -190,6 +190,12 @@ const TEMPLATES = {
       <nav class="menu row">${btn('back', 'Keep my progress', 'autofocus data-back', 'btn primary')}${btn('resetYes', 'Erase', '', 'btn danger')}</nav>
     </div>`,
 
+  confirmQuit: () => `
+    <div class="panel" role="alertdialog" aria-label="Leave this run?">
+      <h2>Leave this run?</h2><p class="lead">Your Moonlight Run will end and this score will not be saved.</p>
+      <nav class="menu row">${btn('back', 'Keep running', 'autofocus data-back', 'btn primary')}${btn('quitYes', 'Leave', '', 'btn danger')}</nav>
+    </div>`,
+
   notebook: (app, { facts }) => `
     <div class="panel wide" role="dialog" aria-label="Farm Notebook">
       <h2>Farm Notebook</h2>

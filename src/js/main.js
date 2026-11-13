@@ -176,7 +176,8 @@ App.onMenu = (act, d = {}) => {
     case 'restart': if (App.run && App.run.mode === 'endless') return startEndless({ intro: false }); if (App.level) return startLevel(App.level, { intro: false }); return;
     case 'next': { const L = LEVELS.find((x) => x.n === App.level.n + 1); if (L) startLevel(L); return; }
     case 'map': App.scene = 'title'; App.run = null; hud.show(false); showTitle(); return screens.show('map', { levels: LEVELS });
-    case 'quit': return App.run && App.run.mode === 'endless' ? showTitle() : App.onMenu('map');
+    case 'quit': return App.run && App.run.mode === 'endless' ? screens.show('confirmQuit', { from: 'pause' }) : App.onMenu('map');
+    case 'quitYes': return showTitle();
     case 'saveScore': {
       const inp = document.getElementById('ini');
       const ini = ((inp && inp.value) || 'BAN').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3) || 'BAN';
