@@ -200,7 +200,7 @@ const TEMPLATES = {
     <div class="panel wide" role="dialog" aria-label="Farm Notebook">
       <h2>Farm Notebook</h2>
       <p class="sub">Real facts about the farm, its gators and raccoons. You collect a new card each time you clear a level. ${app.save.notebook.length}/${facts.length} found.</p>
-      <div class="cards">${facts.map((f) => app.save.notebook.includes(f.id) ? `<article class="card"><p>${esc(f.text)}</p><small>${esc(f.source)}</small></article>` : '<article class="card locked" aria-label="Locked fact"><p>?</p></article>').join('')}
+      <div class="cards">${facts.map((f) => app.save.notebook.includes(f.id) ? `<article class="card"><p>${esc(f.text)}</p><small>${esc(f.source)}</small></article>` : '<article class="card locked" aria-label="Locked fact"><p>?</p><small>Clear a level to find it</small></article>').join('')}
         ${app.save.merman ? `<article class="card legend"><b>The Merman (legend)</b><p>The farm's barn keeps a stuffed "half-fish, half-monkey" in a tank. The sign says it was caught about 500 miles off Hong Kong. It's a classic sideshow gaff, but a beloved one.</p><small>RoadsideAmerica; Encyclopedia of Arkansas</small></article>` : '<article class="card locked" aria-label="Locked legend card"><p>🎟?</p><small>Find the ticket in level 9</small></article>'}
       </div>
       <p class="sub">Balls found: ${Object.values(app.save.progress).filter((p) => p.ball).length}/15 ⚾</p>

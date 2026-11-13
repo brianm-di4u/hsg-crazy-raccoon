@@ -110,5 +110,26 @@ export const tests = [
       t.equal(on.rings, 3, 'three tail rings either way');
       await t.game('setState', { settings: { assist: false } });
     },
+  },  {
+    name: 'S4-10 the Farm Notebook grid does not stretch a row around one card',
+    viewports: ['desktop', 'mobile'],
+    async run(t) {
+      const id = await t.page.evaluate(() => FACTS.bank[0].id);
+      await t.game('setState', { save: { notebook: [id] } });
+      await t.game('scene', 'notebook');
+      await t.waitForStable();
+      const r = await t.page.evaluate(() => {
+        const cards = [...document.querySelectorAll('.cards .card')];
+        const found = cards.find((c) => !c.classList.contains('locked'));
+        const locked = cards.filter((c) => c.getAttribute('aria-label') === 'Locked fact').map((c) => Math.round(c.getBoundingClientRect().height));
+        return { found: Math.round(found.getBoundingClientRect().height), locked };
+      });
+      t.expect(r.locked.length > 2, 'locked slots are shown');
+      t.expect(new Set(r.locked).size === 1, 'every locked slot is the same height (heights ' + [...new Set(r.locked)].join(', ') + ')');
+      t.expect(r.locked[0] < 120, 'a locked slot is a small stamp (' + r.locked[0] + ' px)');
+      await t.shot('s4-10-notebook-one-card');
+      await t.checkLayout({ allowScrollY: true });
+      await t.game('setState', { save: { notebook: [] } });
+    },
   },
 ];

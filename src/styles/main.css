@@ -115,11 +115,12 @@ body[data-screen]:not([data-screen='title']) .hud { visibility: hidden; }
 .tip { background: #FFF9E0; border-radius: 12px; padding: 8px 10px; border: 2px solid var(--ink); font-weight: 700; }
 
 /* notebook, help, scores */
-.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; align-items: start; }
 .card { border: 3px solid var(--ink); border-radius: 14px; padding: 8px 10px; background: #FFFFFF; }
 .card p { margin: 0 0 4px; font-weight: 700; font-size: calc(14px * var(--text-scale)); }
 .card small { color: #4A4436; }
-.card.locked { display: grid; place-items: center; background: #E6DECB; color: #4A4436; min-height: 72px; font: 900 22px var(--font-head); }
+.card.locked { display: grid; place-items: center; border-style: dashed; background: #E6DECB; color: #4A4436; min-height: 72px; font: 900 22px var(--font-head); }
+.card.locked small { font: 700 calc(12px * var(--text-scale)) var(--font-ui); text-align: center; }
 .card.legend { background: #F1E6FF; }
 .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 0 20px; }
 .cols ul { padding-left: 18px; margin: 4px 0; }
