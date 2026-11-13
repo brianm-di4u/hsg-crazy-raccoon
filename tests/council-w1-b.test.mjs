@@ -131,5 +131,26 @@ export const tests = [
       await t.checkLayout({ allowScrollY: true });
       await t.game('setState', { save: { notebook: [] } });
     },
+  },  {
+    name: 'S2-15 the Lure button is hidden on levels that have no drumsticks',
+    viewports: ['desktop', 'mobile'],
+    async run(t) {
+      const shown = () => t.page.evaluate(() => { const b = document.getElementById('h-lure'); return b.getBoundingClientRect().width > 0 && getComputedStyle(b).display !== 'none'; });
+      for (const id of ['l1', 'l5']) {
+        await t.game('newGame', { level: id });
+        await t.waitFrames(3);
+        t.equal(await shown(), false, id + ': no Lure button before any drumstick can exist');
+      }
+      await t.game('newGame', { level: 'l6' });
+      await t.waitFrames(3);
+      t.equal(await shown(), true, 'l6: the Lure button is there on the level that grants a lure');
+      await t.game('newGame', { level: 'l1' });
+      await t.game('setState', { lures: 1 });
+      await t.waitFrames(3);
+      t.equal(await shown(), true, 'a held lure shows the button on any level');
+      await t.game('newGame', { mode: 'endless' });
+      await t.waitFrames(3);
+      t.equal(await shown(), true, 'Moonlight Run drops drumsticks, so it keeps the button');
+    },
   },
 ];

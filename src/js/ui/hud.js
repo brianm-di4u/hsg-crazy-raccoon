@@ -58,6 +58,9 @@ export class Hud {
     this.set('h-lures', String(run.lures));
     const lb = this.root.querySelector('#h-lure');
     if (this.last.lureOn !== run.lures > 0) { this.last.lureOn = run.lures > 0; lb.disabled = run.lures <= 0; }
+    // levels 1-5 have no drumsticks: the button appears once the level grants a lure, has one to find, or one is held
+    const canLure = run.lures > 0 || run.mode === 'endless' || (run.L.lures || 0) > 0 || run.items.some((i) => i.k === 'drum');
+    if (this.last.lureShown !== canLure) { this.last.lureShown = canLure; lb.hidden = !canLure; }
     const bm = this.root.querySelector('#h-beam');
     if (run.beam != null) { bm.hidden = false; this.set('h-beam', `Lantern ${Math.max(0, Math.round(run.p.row - run.beam))} rows behind`); } else bm.hidden = true;
   }
