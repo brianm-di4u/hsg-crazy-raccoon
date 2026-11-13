@@ -11,7 +11,7 @@ export const tests = [
     name: 'node --test tests-node (mechanics, items, levels, endless, determinism, fuzz, facts)',
     node: true,
     async run(t) {
-      const r = node(['--test', '--test-reporter=dot', 'tests-node/']);
+      const r = node(['--test', '--test-reporter=dot', 'tests-node/*.test.mjs']);
       t.equal(r.status, 0, 'node tests pass');
       const m = (r.stdout + r.stderr).match(/# pass (\d+)[\s\S]*# fail (\d+)/) || (r.stdout + r.stderr).match(/pass (\d+)[\s\S]*fail (\d+)/);
       if (m) t.log(`pass ${m[1]}, fail ${m[2]}`);

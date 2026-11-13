@@ -10,7 +10,7 @@
     "check": "node tools/check-levels.mjs",
     "facts": "node tools/check-facts.mjs",
     "balance": "node tools/balance.mjs",
-    "sim": "node --test tests-node/",
+    "sim": "node --test \"tests-node/*.test.mjs\"",
     "art": "node shared/test-harness/art-pack.mjs .",
     "test": "node shared/test-harness/run.mjs ."
   }
