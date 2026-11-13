@@ -3,13 +3,20 @@
 // games/Cart Racing/src/js/ui/audio.js (itself after hsg-fishing; Hot Springs Games, MIT). Music: original loops.
 
 let ctx = null, master = null, sfxBus = null, musicBus = null, noiseBuf = null;
-const state = { on: true, music: true, vol: 0.5, started: false, theme: null, step: 0, nextT: 0, timer: null };
+const state = { on: true, music: true, vol: 0.5, started: false, theme: null, step: 0, nextT: 0, timer: null, hold: false, suspended: false };
 
 export function initAudio(settings) {
   state.on = settings.sound !== false; state.music = settings.music !== false; state.vol = settings.volume ?? 0.5;
-  const start = () => { if (!state.started) unlock(); };
-  window.addEventListener('keydown', start);
-  window.addEventListener('pointerdown', start);
+  // Touch browsers grant audio activation on pointerup, touchend or click, not pointerdown, and iOS can later move
+  // the context to 'interrupted'. The listeners stay attached and retry resume() until the context is running.
+  const start = () => { if (!ctx) unlock(); else wake(); };
+  for (const type of ['keydown', 'pointerdown', 'pointerup', 'touchend', 'click']) window.addEventListener(type, start);
+}
+
+// Ask a suspended or interrupted context to run again (a no-op while running, or while the tab is hidden).
+function wake() {
+  if (!ctx || state.suspended || ctx.state === 'running') return;
+  try { const r = ctx.resume(); if (r && r.catch) r.catch(() => {}); } catch (e) { /* retried on the next gesture */ }
 }
 
 function unlock() {
@@ -17,6 +24,7 @@ function unlock() {
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return;
     ctx = new AC();
+    ctx.onstatechange = () => { if (ctx && ctx.state === 'running' && state.theme && !state.timer && !state.hold) playTheme(state.theme, true); };
     master = ctx.createGain(); master.gain.value = state.on ? state.vol * 0.5 : 0; master.connect(ctx.destination);
     sfxBus = ctx.createGain(); sfxBus.gain.value = 0.9; sfxBus.connect(master);
     musicBus = ctx.createGain(); musicBus.gain.value = state.music ? 0.3 : 0; musicBus.connect(master);
@@ -25,6 +33,7 @@ function unlock() {
     state.started = true;
     buildLoops();
     if (state.theme) playTheme(state.theme, true);
+    wake();
   } catch (e) { ctx = null; }
 }
 
@@ -108,15 +117,18 @@ function buildLoops() {
 }
 export function playTheme(name, force = false) {
   if (state.theme === name && !force && state.timer) return;
-  state.theme = name;
+  state.theme = name; state.hold = false;
   if (!ctx) return;
   if (state.timer) clearInterval(state.timer);
+  state.timer = null;
   const L = LOOPS[name];
   if (!L) return;
   state.step = 0; state.nextT = ctx.currentTime + 0.1;
   const sixteenth = 60 / L.bpm / 4;
   state.timer = setInterval(() => {
     if (!ctx) return;
+    // a throttled timer (background tab) must not release a clump of past-due notes at once
+    if (state.nextT < ctx.currentTime - 0.2) state.nextT = ctx.currentTime + 0.05;
     while (state.nextT < ctx.currentTime + 0.15) {
       const i = state.step % L.lead.length, at = state.nextT - ctx.currentTime;
       const ln = L.lead[i], bn = L.bass[i % L.bass.length], dr = L.drums[i % L.drums.length];
@@ -127,5 +139,19 @@ export function playTheme(name, force = false) {
       state.step++; state.nextT += sixteenth;
     }
   }, 50);
+}
+// Pause panel: stop scheduling music (menu sounds still play). A tab going to the background also suspends the context.
+export function holdMusic() { state.hold = true; if (state.timer) clearInterval(state.timer); state.timer = null; }
+export function suspendAudio() {
+  holdMusic(); state.suspended = true;
+  if (ctx) { try { const r = ctx.suspend(); if (r && r.catch) r.catch(() => {}); } catch (e) { /* ignore */ } }
+}
+export function resumeAudio(keepHeld = false) {
+  state.suspended = false;
+  if (keepHeld) { wake(); return; }
+  state.hold = false;
+  if (!ctx) return;
+  wake();
+  if (state.theme && !state.timer && ctx.state === 'running') playTheme(state.theme, true);
 }
 export function stopTheme() { if (state.timer) clearInterval(state.timer); state.timer = null; state.theme = null; }

@@ -9,7 +9,7 @@ import { loadArt } from './gfx/art.js';
 import { Hud } from './ui/hud.js';
 import { Screens } from './ui/screens.js';
 import { initInput, initTouch, pollGamepads, readIntent, consumePause, consumeMenu, setEnabled } from './ui/input.js';
-import { initAudio, setAudio, sfx, playTheme, audioState } from './ui/audio.js';
+import { initAudio, setAudio, sfx, playTheme, audioState, holdMusic, suspendAudio, resumeAudio } from './ui/audio.js';
 import { loadSave, writeSave, DEFAULT_SAVE } from './save.js';
 import { makeRng, hashStr } from './rng.js';
 import { installHooks } from './hooks.js';
@@ -105,9 +105,9 @@ function showTitle() {
 
 function pauseGame() {
   if (App.scene !== 'play' || screens.cur || !App.run || App.run.phase !== 'play') return;
-  App.paused = true; setEnabled(false); screens.show('pause'); kick();
+  App.paused = true; setEnabled(false); screens.show('pause'); holdMusic(); kick();
 }
-function resumeGame() { screens.hide(); App.paused = false; setEnabled(true); kick(); }
+function resumeGame() { screens.hide(); App.paused = false; setEnabled(true); resumeAudio(); kick(); }
 
 // results
 function levelDone(run) {
@@ -317,7 +317,9 @@ initTouch(canvas, () => (App.run ? renderer.playerScreen(App.run) : null));
 initAudio(App.save.settings);
 window.addEventListener('resize', kick);
 window.addEventListener('blur', () => { if (!window.__TEST__) pauseGame(); });
-document.addEventListener('visibilitychange', () => { if (document.hidden) pauseGame(); else kick(); });
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { pauseGame(); suspendAudio(); } else { resumeAudio(App.paused); kick(); }
+});
 
 applySettings();
 installHooks(App, { stepOnce, startLevel, startEndless, showTitle, pauseGame, resumeGame, levelDone, levelById, persist, applySettings, audioState });
