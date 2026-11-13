@@ -53,8 +53,9 @@ export function pollGamepads() {
   return any;
 }
 
-// Touch on the play area: swipe ≥ 24 px picks the dominant axis of the drag. A tap (shorter, < 600 ms) picks the
-// dominant axis from Bandit's screen centre (aim() → [x, y] or null) to the tap; on or near Bandit it hops up.
+// Touch on the play area: swipe ≥ 24 px picks the dominant axis of the drag. A tap (any length) picks the
+// dominant axis from Bandit's screen centre (aim() → [x, y] or null) to the tap; on or near Bandit it hops up. A tap
+// below Bandit also hops up (the thumb rests low on a phone): only a swipe down hops back.
 const dirOf = (dx, dy) => Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
 export function initTouch(zone, aim) {
   const st = { id: null, x: 0, y: 0, t: 0 };
@@ -70,10 +71,11 @@ export function initTouch(zone, aim) {
     if (!enabled) return;
     if (e.pointerType !== 'mouse') I.last = 'touch';
     if (d >= 24) I.hop = dirOf(dx, dy);
-    else if (e.timeStamp - st.t < 600) {
+    else {
       const a = aim && aim(), r = zone.getBoundingClientRect();
       const tx = e.clientX - r.left - (a ? a[0] : 0), ty = e.clientY - r.top - (a ? a[1] : 0);
-      I.hop = a && Math.hypot(tx, ty) > 28 ? dirOf(tx, ty) : 'up';
+      const dir = a && Math.hypot(tx, ty) > 28 ? dirOf(tx, ty) : 'up';
+      I.hop = dir === 'down' ? 'up' : dir;
     }
   };
   zone.addEventListener('pointerup', end);
