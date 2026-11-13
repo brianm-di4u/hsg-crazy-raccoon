@@ -152,5 +152,36 @@ export const tests = [
       await t.waitFrames(3);
       t.equal(await shown(), true, 'Moonlight Run drops drumsticks, so it keeps the button');
     },
+  },  {
+    name: 'P-N01 a shove from a closed-mouth gator never drops Bandit into water',
+    node: true,
+    async run(t) {
+      const fs = await import('node:fs');
+      const { Run } = await import('../src/js/sim/run.js');
+      const { colX } = await import('../src/js/sim/const.js');
+      const data = JSON.parse(fs.readFileSync(new URL('../data/levels.json', import.meta.url), 'utf8'));
+      const levels = data.levels || data;
+      let shoves = 0, splashes = 0;
+      for (const n of [11, 13]) {
+        const L = levels.find((l) => l.n === n);
+        const rows = L.rows.map((r, i) => i).filter((i) => i > 0 && L.rows[i].t !== 'water' && L.rows[i - 1].t === 'water' && (L.rows[i].g || []).some((g) => g.k !== 'hatchling'));
+        t.expect(rows.length > 0, 'level ' + n + ' has land-gator rows above water');
+        for (const r of rows) for (let c = 0; c < 9; c++) {
+          const run = new Run(JSON.parse(JSON.stringify(L)), { seed: 5 });
+          // let the world run, then drop Bandit on the row at half-second intervals for a minute
+          for (let k = 0; k < 120; k++) {
+            for (let i = 0; i < 30; i++) run.step({});
+            const p = run.p;
+            p.row = r; p.x = colX(c); p.state = 'idle'; p.on = null; p.queue = null; p.t = 0; p.invT = 0;
+            const rings = run.rings;
+            for (let i = 0; i < 40 && p.state !== 'dead'; i++) { run.step({}); if (run.ev.some((e) => e.k === 'knock' || e.k === 'bump')) shoves++; run.ev.length = 0; }
+            if (p.state === 'dead' && p.cause === 'splash') splashes++;
+            if (run.rings !== rings || run.phase !== 'play') break;
+          }
+        }
+      }
+      t.expect(shoves > 0, 'the probe found shoves (' + shoves + ')');
+      t.equal(splashes, 0, 'no shove ended in a splash');
+    },
   },
 ];

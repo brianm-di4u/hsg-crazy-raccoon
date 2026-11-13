@@ -76,7 +76,8 @@ function knockBack(p, level, ev) {
   // shoved back one row by a closed-mouthed gator; the landing resolves normally
   const tr = Math.max(0, p.row - 1);
   p.invT = Math.max(p.invT, 0.4);
-  if (tr === p.row) { p.state = 'bump'; p.t = 0; ev.push({ k: 'bump' }); return; }
+  // no room behind (the start of the level, or open water he would fall into): a bump in place instead
+  if (tr === p.row || isWater(level, tr)) { p.state = 'bump'; p.t = 0; ev.push({ k: 'bump' }); return; }
   const tx = isWater(level, tr) ? p.x : snapCol(p.x);
   p.from = { row: p.row, x: p.x }; p.to = { row: tr, x: tx }; p.state = 'hop'; p.t = 0; p.dur = KNOCK_T; p.knock = true; p.on = null;
   ev.push({ k: 'knock' });
