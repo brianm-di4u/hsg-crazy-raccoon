@@ -113,6 +113,8 @@ export const tests = [
       const r = await bossRow(t);
       t.expect(r >= 56 && r <= 62, `Old Ruthless is on rows around ${r}, in chunk 9`);
       await t.game('act', 'warp', r - 1, 0, 4);
+      const inView = eval(`() => window.__game.act('gatorAt', ${r}).some((g) => g.k === 'boss' && g.x > 150 && g.x < 400)`);
+      await t.stepUntil(inView, { max: 2400, chunk: 6, label: 'Old Ruthless in view' });
       await look(t);
       await t.shot('S3-04-boss');
       // the first beam row: find it from the generated level, then look at it
