@@ -44,7 +44,7 @@ export class Hud {
     this.last.hint = text; el.hidden = !text; el.textContent = text || '';
   }
   update(run) {
-    const max = run.mode === 'endless' ? 3 : (run.L.rings || 5) + (run.assist ? 2 : 0);
+    const max = run.mode === 'endless' ? Math.max(3, run.rings) : (run.L.rings || 5) + (run.assist ? 2 : 0);
     this.set('h-rings', ringSvg(run.rings, max), true);
     this.root.querySelector('#h-rings').setAttribute('aria-label', `${run.rings} tail rings left`);
     this.set('h-score', run.score.toLocaleString('en-US'));

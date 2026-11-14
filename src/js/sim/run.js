@@ -6,6 +6,11 @@ import { makePlayer, stepPlayer, die, rowType } from './player.js';
 import { makeRng, hashStr } from '../rng.js';
 import { Endless } from './endless.js';
 
+// The keeper's lantern climbs LANTERN_BASE + LANTERN_PER_D * d rows a second, d = Moonlight Run chunk (S3-04).
+const LANTERN_BASE = 0.3;
+const LANTERN_PER_D = 0.03; // wave 1: 0.012, so about 0.59 rows/s at chunk 24 against a solver's 3.4; now 1.02
+const RING_CAP = 5; // a tail-ring charm never takes a Moonlight Run past this many rings
+
 export class Run {
   constructor(level, opts = {}) {
     this.mode = opts.mode || 'campaign';
@@ -44,8 +49,12 @@ export class Run {
       const chunk = this.gen.next();
       for (const it of chunk.items) this.items.push({ id: this.items.length, r: it.r, c: it.c, k: it.k, st: 'free', washed: false });
       const fresh = buildGators(this.L.rows, { assist: this.assist }, this.world.gators.length ? this.world.gators[this.world.gators.length - 1].id + 1 : 0, from);
-      // as if every gator had been swimming since t = 0, so the solver's world (built all at once) matches
-      for (const g of fresh) { g.x = wrapX(g.x + g.dir * g.v * T * this.world.t); this.world.gators.push(g); }
+      // as if every gator had been swimming since t = 0, so the solver's world (built all at once) matches; a lane
+      // with a feeding-show toss also rushed at each past toss, so those gators are run forward step by step
+      const feedRows = new Set((this.L.feeds || []).map((f) => f.r)), n = Math.round(this.world.t / DT);
+      const fed = fresh.filter((g) => feedRows.has(g.row)), tmp = { t: 0, gators: fed, surges: [], lures: [], feedT: new Set(), nextId: 0, assist: this.assist };
+      if (fed.length) for (let i = 0; i < n; i++) stepWorld(tmp, this.L, DT);
+      for (const g of fresh) { if (!fed.includes(g)) g.x = wrapX(g.x + g.dir * g.v * T * this.world.t); this.world.gators.push(g); }
     }
     const floor = Math.floor(this.beam) - 6;
     if (this.world.gators.length > 160) this.world.gators = this.world.gators.filter((g) => g.row >= floor || g.id === this.p.on);
@@ -74,7 +83,7 @@ export class Run {
     // endless: the keeper's beam rises and never falls more than 9 rows behind
     if (this.beam != null && p.state !== 'won') {
       const d = this.gen.difficulty(p.row);
-      this.beam = Math.max(this.beam + (0.3 + 0.012 * d) * DT, p.row - 9);
+      this.beam = Math.max(this.beam + (LANTERN_BASE + LANTERN_PER_D * d) * DT, p.row - 9);
       if (p.state !== 'dead' && p.row <= this.beam && p.invT <= 0) { const n = this.ev.length; die(p, 'caught', this.ev); this.onEvent(this.ev[n]); }
       this.extend();
     }
@@ -124,6 +133,7 @@ export class Run {
         it.st = 'carried';
       } else if (it.k === 'cap') { it.st = 'banked'; this.caps++; this.score += SCORE.cap; }
       else if (it.k === 'drum') { if (this.lures >= MAX_LURES) { this.ev.push({ k: 'full' }); continue; } it.st = 'banked'; this.lures++; }
+      else if (it.k === 'ring') { if (this.rings >= RING_CAP) continue; it.st = 'banked'; this.rings++; }
       else if (it.k === 'ball') { it.st = 'banked'; this.ball = true; this.score += SCORE.ball; }
       else if (it.k === 'ticket') { it.st = 'banked'; this.ticket = true; }
       this.ev.push({ k: 'pickup', item: it.k, r, c });

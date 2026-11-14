@@ -283,7 +283,7 @@ function handleEvents(run) {
         if (e.cause === 'chomp') App.save.stats.chomps++; if (e.cause === 'splash') App.save.stats.splashes++;
         App.say({ chomp: 'Chomped!', splash: 'Splash!', swept: 'Swept away!', spotted: 'Spotted!', caught: 'Caught by the lantern!' }[e.cause] + ` ${run.rings} tail rings left.`);
         break;
-      case 'pickup': sfx(e.item === 'cap' ? 'cap' : e.item === 'ball' ? 'ball' : 'pickup'); if (e.item === 'ball') App.say('You found the lost home-run ball!'); break;
+      case 'pickup': sfx(e.item === 'cap' ? 'cap' : e.item === 'ball' ? 'ball' : 'pickup'); if (e.item === 'ball') App.say('You found the lost home-run ball!'); if (e.item === 'ring') App.say(`A tail ring! ${run.rings} tail rings left.`); break;
       case 'wash': sfx('wash'); break;
       case 'bank': sfx('bank'); App.say(`${e.n} snack${e.n > 1 ? 's' : ''} banked.`); break;
       case 'lure': sfx('lure'); break;

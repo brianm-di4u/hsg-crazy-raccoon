@@ -164,6 +164,10 @@ export function item(g, s, k, t = 0, washed = false) {
     blob(g, (p) => p.arc(0, bob, s * 0.18, 0, Math.PI * 2), lin(g, 0, -s * 0.18, 0, s * 0.18, [[0, '#FFFFFF'], [1, '#D9D4C7']]), lw);
     g.strokeStyle = '#D23A30'; g.lineWidth = lw * 0.7;
     g.beginPath(); g.arc(-s * 0.2, bob, s * 0.15, -0.8, 0.8); g.stroke(); g.beginPath(); g.arc(s * 0.2, bob, s * 0.15, Math.PI - 0.8, Math.PI + 0.8); g.stroke();
+  } else if (k === 'ring') {
+    // a tail-ring charm: a dark band with a pale bevel, tilted to catch the light
+    g.save(); g.rotate(-0.35); g.lineWidth = s * 0.1; g.strokeStyle = INK; g.beginPath(); g.ellipse(0, 0, s * 0.19, s * 0.13, 0, 0, Math.PI * 2); g.stroke();
+    g.lineWidth = s * 0.05; g.strokeStyle = '#8A8F9A'; g.beginPath(); g.ellipse(0, -s * 0.01, s * 0.19, s * 0.13, 0, Math.PI * 1.05, Math.PI * 1.9); g.stroke(); g.restore();
   } else if (k === 'ticket') {
     blob(g, (p) => { p.rect(-s * 0.22, -s * 0.13, s * 0.44, s * 0.26); }, lin(g, 0, -s * 0.13, 0, s * 0.13, [[0, '#FFE27A'], [1, '#D9A928']]), lw);
     g.fillStyle = INK; g.font = `900 ${Math.round(s * 0.18)}px "Arial Black", Impact, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('M', 0, s * 0.01);

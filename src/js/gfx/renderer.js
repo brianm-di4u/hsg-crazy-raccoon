@@ -397,7 +397,7 @@ export class Renderer {
     g.save(); g.translate(x, y); shadow(g, this.tile * 0.18, this.tile * 0.06, 0.2);
     g.translate(0, -this.tile * (0.22 + Math.sin(t * 3 + it.c) * 0.03));
     // bonus items wear a gold halo; every item twinkles
-    if (it.k === 'ball' || it.k === 'ticket' || it.k === 'drum') { const gr = g.createRadialGradient(0, 0, 0, 0, 0, this.tile * 0.5); gr.addColorStop(0, 'rgba(255,220,90,0.55)'); gr.addColorStop(1, 'rgba(255,220,90,0)'); g.fillStyle = gr; g.fillRect(-this.tile * 0.5, -this.tile * 0.5, this.tile, this.tile); }
+    if (it.k === 'ball' || it.k === 'ticket' || it.k === 'drum' || it.k === 'ring') { const gr = g.createRadialGradient(0, 0, 0, 0, 0, this.tile * 0.5); gr.addColorStop(0, 'rgba(255,220,90,0.55)'); gr.addColorStop(1, 'rgba(255,220,90,0)'); g.fillStyle = gr; g.fillRect(-this.tile * 0.5, -this.tile * 0.5, this.tile, this.tile); }
     this.itemAt(g, it.k, this.tile, t, false);
     if (!this.reduced) { // an 8-ray sparkle bursting around the snack every 1.2 s
       const u = (t / 1.2 + it.c * 0.37 + it.r * 0.11) % 1;
@@ -564,6 +564,7 @@ export class Renderer {
     }
     // flashlight beams
     if (run.L.beams) for (const b of run.L.beams) {
+      if (b.r1 < rBot - 1 || b.r0 > rTop + 1) continue;
       const { cx, hw } = beamAt(b, run.world.t), x = this.sx(cx), y0 = this.sy(b.r1 + 0.5), y1 = this.sy(b.r0 - 0.5), ym = (y0 + y1) / 2;
       // an elliptical gradient (scaled circle), so the pool feathers out on every side with no clipped edge
       const rx = hw * this.k * 1.25, ry = (y1 - y0) * 0.8, gr = g.createRadialGradient(0, 0, 0, 0, 0, rx);
@@ -629,7 +630,7 @@ export class Renderer {
         else if (e.cause === 'chomp') { this.fx.chomp(e.x, e.row); this.shake = 1; }
         else this.fx.sparkle(e.x, e.row, '#FFFFFF', 6);
         break;
-      case 'pickup': this.fx.sparkle(colX(e.c), e.r, e.item === 'ball' ? '#FFFFFF' : '#FFF3A6', e.item === 'ball' ? 16 : 8); this.fx.text(colX(e.c), e.r, { cap: '+25', ball: '+500', drum: 'Lure!', ticket: 'Ticket!' }[e.item] || 'Snack!', '#FFF3A6'); break;
+      case 'pickup': this.fx.sparkle(colX(e.c), e.r, e.item === 'ball' ? '#FFFFFF' : '#FFF3A6', e.item === 'ball' ? 16 : 8); this.fx.text(colX(e.c), e.r, { cap: '+25', ball: '+500', drum: 'Lure!', ticket: 'Ticket!', ring: 'Tail ring!' }[e.item] || 'Snack!', '#FFF3A6'); break;
       case 'wash': this.fx.splash(x, r); this.fx.text(x, r, 'Washed ×2!', '#9FF0FF'); for (let i = 0; i < 6; i++) this.fx.steam(x, r); break;
       case 'bank': this.fx.text(x, r, `+${e.pts}`, '#FFE27A'); this.fx.sparkle(x, r, '#FFE27A', 12); break;
       case 'streak': this.fx.text(x, r, `×${e.mult}`, '#FFB347'); break;
