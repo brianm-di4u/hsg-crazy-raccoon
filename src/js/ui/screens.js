@@ -179,6 +179,8 @@ const TEMPLATES = {
       ${field('Volume', seg('volume', s.volume, [[0.25, 'Low'], [0.5, 'Medium'], [0.85, 'High']]))}
       ${field('Motion', seg('reducedMotion', s.reducedMotion, [[null, 'System'], [false, 'Full'], [true, 'Reduced']]))}
       ${field('Text size', seg('textScale', s.textScale, [[1, '100%'], [1.25, '125%'], [1.5, '150%']]))}
+      ${field('Phone view', seg('view', s.view, [['close', 'Close'], ['standard', 'Standard'], ['wide', 'Wide']]))}
+      <p class="sub">Phone view: how much of the board shows when the phone is held upright. Wide shows every column.</p>
       ${field('Assist', seg('assist', s.assist, [[false, 'Off'], [true, 'On']]))}
       <p class="sub">Assist: slower gators, longer warnings, +2 tail rings (no par star).</p>
       <nav class="menu row">${btn('back', 'Done', 'autofocus data-back', 'btn primary')}${btn('resetSave', 'Reset progress', 'data-confirm="1"', 'btn small danger')}</nav>

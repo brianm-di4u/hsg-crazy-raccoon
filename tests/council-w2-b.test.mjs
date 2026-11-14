@@ -1,4 +1,7 @@
-// Council wave 2, batch B: S3-04 (Moonlight Run depth).
+// Council wave 2, batch B: S3-04 (Moonlight Run depth) and S3-10 (phone view: Settings > View and edge chevrons).
+const KEY = 'hsg-crazy-raccoon-v1';
+const COLS = { close: 6.5, standard: 7.5, wide: 9 };
+const setView = async (t, view) => { await t.game('scene', 'settings'); await t.page.click(`[data-k="view"][data-v="${view}"]`); await t.waitForStable(); };
 const endless = async (t, seed = 3) => { await t.game('newGame', { mode: 'endless', seed }); await t.game('pause'); await t.waitFrames(3); };
 const look = async (t) => { await t.game('step', 1); await t.waitFrames(5); };
 const bossRow = async (t) => {

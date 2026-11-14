@@ -1,6 +1,8 @@
 // Council wave 2, batch B: S3-04 (Moonlight Run depth) and S3-10 (phone view setting) on the sim and save side.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import { pathToFileURL, fileURLToPath } from 'node:url';
 import { Endless, SPEED_CAP, GAP_FLOOR } from '../src/js/sim/endless.js';
 import { Run } from '../src/js/sim/run.js';
 import { solve, replay } from '../src/js/sim/solve.js';
@@ -93,4 +95,35 @@ test('S3-04 a run through the boss chunk and the first beam chunks is still cros
     replay(run, res.moves, 120 * 300);
     assert.ok(run.maxRow >= g.level.rows.length - 3, `seed ${seed} replay reached row ${run.maxRow}`);
   }
+});
+
+// ---- S3-10: the Phone view setting in the save ---------------------------------------------------------------
+const KEY = 'hsg-crazy-raccoon-v1';
+const moduleFile = fileURLToPath(new URL('../src/js/save.js', import.meta.url));
+let serial = 0;
+const storage = (initial) => {
+  const values = new Map(initial ? [[KEY, JSON.stringify(initial)]] : []);
+  return { values, getItem: (k) => values.get(k) ?? null, setItem: (k, v) => { values.set(k, v); }, saved: () => JSON.parse(values.get(KEY)) };
+};
+async function load(store) {
+  const mod = await import(pathToFileURL(moduleFile).href + '?w2b=' + (++serial));
+  globalThis.window = { localStorage: store };
+  return { mod, save: mod.loadSave() };
+}
+
+test('S3-10 a fresh save and a save from before both read the standard view; close and wide are kept; a damaged value reads standard', async () => {
+  assert.equal((await load(storage())).save.settings.view, 'standard');
+  const fixture = JSON.parse(await fs.readFile(new URL('../test-fixtures/save-v1.2.0-earned-all15.json', import.meta.url), 'utf8'));
+  const old = await load(storage(fixture));
+  assert.equal(old.save.settings.view, 'standard'); assert.deepEqual(old.save.progress, fixture.progress); assert.equal(old.save.unlocked, fixture.unlocked);
+  for (const view of ['close', 'standard', 'wide']) assert.equal((await load(storage({ ...fixture, settings: { ...fixture.settings, view } }))).save.settings.view, view);
+  for (const bad of ['huge', 7, null, {}]) assert.equal((await load(storage({ ...fixture, settings: { ...fixture.settings, view: bad } }))).save.settings.view, 'standard');
+});
+
+test('S3-10 the view survives a write and a read', async () => {
+  const store = storage();
+  const a = await load(store);
+  a.save.settings.view = 'wide'; a.mod.writeSave(a.save);
+  assert.equal(store.saved().settings.view, 'wide');
+  assert.equal((await load(store)).save.settings.view, 'wide');
 });

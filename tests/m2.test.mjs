@@ -21,7 +21,7 @@ export const tests = [
       s = await t.game('act', 'hop', 'down'); s = await t.game('step', 20);
       t.equal(s.run.player.row, 0, 'cannot leave the board');
       const st = await t.state();
-      if (t.viewport === 'mobile') t.expect(Math.abs(st.camera.tile * 6.5 - st.camera.w) < 2, 'phone shows 6.5 columns and pans with Bandit');
+      if (t.viewport === 'mobile') t.expect(Math.abs(st.camera.tile * 7.5 - st.camera.w) < 2, 'phone shows 7.5 columns by default and pans with Bandit');
       await t.shot('m2-play');
       await t.checkLayout();
     },

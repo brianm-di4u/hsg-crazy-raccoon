@@ -109,7 +109,7 @@ test('actual earned all15 v1 fixture round trip and old-reader backward read ret
   const fixture = JSON.parse(await fs.readFile(new URL('../test-fixtures/save-v1.2.0-earned-all15.json', import.meta.url), 'utf8'));
   const store = storage(fixture), a = await tab(store), s = a.load();
   // the Ambience setting (wave 2) is merged in from the defaults: on, as for every older save
-  assert.deepEqual(s, { ...fixture, settings: { ...fixture.settings, ambience: true } }); s.settings.music = false; a.write(s);
+  assert.deepEqual(s, { ...fixture, settings: { ...fixture.settings, ambience: true, view: 'standard' } }); s.settings.music = false; a.write(s);
   const legacy = await tab(store, fileURLToPath(new URL('../test-fixtures/save-v1-reader.mjs', import.meta.url)));
   const read = legacy.load(); assert.equal(read.v, 1); assert.deepEqual(read.progress, fixture.progress);
   assert.deepEqual(read.stats, fixture.stats); assert.equal(read.settings.music, false);

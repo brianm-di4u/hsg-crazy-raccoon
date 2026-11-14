@@ -10,12 +10,18 @@ import { Fx } from './fx.js';
 import { hashStr } from '../rng.js';
 
 const RH_K = 0.8; // row height on screen as a fraction of the tile width
+// Phone portrait view (Settings > View): columns on screen and row height (fraction of the tile). 'close' is the
+// wave-1 view (6.5), 'standard' the new default (7.5), 'wide' fits the whole board (no sideways pan).
+const VIEW_COLS = { close: 6.5, standard: 7.5, wide: 9 }; // wave 1: 6.5 for everyone
+const VIEW_RH = { close: 0.9, standard: 0.98, wide: 1.12 };
+// a lateral gator this many tiles outside the view gets an edge chevron
+const CHEVRON_TILES = 3;
 
 export class Renderer {
   constructor(canvas, fxRng) {
     this.c = canvas; this.g = canvas.getContext('2d');
     this.dpr = 1; this.w = 0; this.h = 0; this.cam = 0; this.camT = 0; this.camX = T * COLS / 2; this.camXT = this.camX; this.shake = 0;
-    this.fx = new Fx(fxRng); this.lights = []; this.art = null; this.cache = new WeakMap(); this.reduced = false; this.landT = 9; this.deadFx = null; this.hudTop = 64; this.hudBot = 0;
+    this.fx = new Fx(fxRng); this.lights = []; this.art = null; this.cache = new WeakMap(); this.reduced = false; this.landT = 9; this.deadFx = null; this.hudTop = 64; this.hudBot = 0; this.view = 'standard'; this.portrait = false;
     this.resize();
   }
   resize() {
@@ -30,10 +36,12 @@ export class Renderer {
   layout() {
     const { w, h } = this;
     const portrait = h > w * 1.1;
-    // portrait phones: about 6.5 of the 9 columns, panning sideways with Bandit, rows a little taller;
-    // wide screens: about 13 rows tall
-    this.tile = portrait ? w / 6.5 : Math.min(w / COLS, (h - this.hudTop * 0.3) / (13 * RH_K));
-    this.rh = this.tile * (portrait ? 0.9 : RH_K);
+    // portrait phones show VIEW_COLS[view] of the 9 columns (Settings > View), panning sideways with Bandit when
+    // fewer than 9; rows a little taller. Wide screens: all 9 columns, about 13 rows tall
+    const cols = VIEW_COLS[this.view] || VIEW_COLS.standard;
+    this.portrait = portrait;
+    this.tile = portrait ? w / cols : Math.min(w / COLS, (h - this.hudTop * 0.3) / (13 * RH_K));
+    this.rh = this.tile * (portrait ? VIEW_RH[this.view] || VIEW_RH.standard : RH_K);
     this.bw = this.tile * COLS;
     this.k = this.tile / T;
     this.placeX();
@@ -41,6 +49,7 @@ export class Renderer {
     this.hudBand = portrait ? 108 : 64;
     this.footBand = portrait ? 78 : 0;
   }
+  setView(v) { if (v === this.view || !VIEW_COLS[v]) return; this.view = v; this.layout(); }
   // horizontal camera: centred board when it fits, otherwise follow camX (world units) clamped to the board
   placeX() {
     if (this.bw <= this.w) { this.bx = (this.w - this.bw) / 2; return; }
@@ -138,7 +147,7 @@ export class Renderer {
       g.save(); g.translate(ex, ey); badge(g, this.tile * 0.9, t); g.fillStyle = '#E8452E'; g.strokeStyle = INK; g.lineWidth = 1.5; g.beginPath(); const d = left ? -1 : 1; g.moveTo(d * this.tile * 0.42, 0); g.lineTo(d * this.tile * 0.26, -this.tile * 0.12); g.lineTo(d * this.tile * 0.26, this.tile * 0.12); g.closePath(); g.fill(); g.stroke(); g.restore();
     }
     // lighting
-    if (theme === 'barn') { if (this.bw <= this.w) this.barnWalls(g); g.fillStyle = 'rgba(255,165,80,0.07)'; g.fillRect(0, 0, w, h); this.lamps(g, run, rBot, rTop, t); }
+    if (theme === 'barn') { if (!this.portrait) this.barnWalls(g); g.fillStyle = 'rgba(255,165,80,0.07)'; g.fillRect(0, 0, w, h); this.lamps(g, run, rBot, rTop, t); }
     // noon: warm, bright midday light
     if (theme === 'noon') { g.fillStyle = 'rgba(255,200,110,0.12)'; g.fillRect(0, 0, w, h); }
     // warm noon grade: a plain overlay (soft-light cost ~12 ms a frame in software)
@@ -157,7 +166,7 @@ export class Renderer {
       g.fillStyle = 'rgba(92,140,60,0.55)'; g.fillRect(0, fy + 2, w, 4); g.fillStyle = 'rgba(0,0,0,0.22)'; g.fillRect(0, fy + 6, w, 6);
       g.strokeStyle = '#4F8A3A'; g.lineWidth = 2; g.lineCap = 'round';
       for (let x = (this.bx % (this.tile * 0.9)) + this.tile * 0.12; x < w; x += this.tile * 0.9) for (const [dx, hh] of [[-5, 9], [0, 13], [5, 8]]) { g.beginPath(); g.moveTo(x + dx * 0.4, fy + 3); g.quadraticCurveTo(x + dx * 0.7, fy - hh * 0.5, x + dx, fy - hh); g.stroke(); } }
-    if (this.bw > this.w) { const hb = this.hudBand; g.fillStyle = '#1F3A2C'; g.fillRect(0, 0, w, hb); const gr = g.createLinearGradient(0, 0, 0, hb); gr.addColorStop(0, 'rgba(18,46,40,1)'); gr.addColorStop(1, 'rgba(30,66,54,1)'); g.fillStyle = gr; g.fillRect(0, 0, w, hb); g.fillStyle = 'rgba(0,0,0,0.45)'; g.fillRect(0, hb, w, 3); g.fillStyle = 'rgba(255,240,200,0.35)'; g.fillRect(0, hb - 2, w, 2); }
+    if (this.portrait) { const hb = this.hudBand; g.fillStyle = '#1F3A2C'; g.fillRect(0, 0, w, hb); const gr = g.createLinearGradient(0, 0, 0, hb); gr.addColorStop(0, 'rgba(18,46,40,1)'); gr.addColorStop(1, 'rgba(30,66,54,1)'); g.fillStyle = gr; g.fillRect(0, 0, w, hb); g.fillStyle = 'rgba(0,0,0,0.45)'; g.fillRect(0, hb, w, 3); g.fillStyle = 'rgba(255,240,200,0.35)'; g.fillRect(0, hb - 2, w, 2); }
     else { const hb = this.hudBand, gr = g.createLinearGradient(0, 0, 0, hb + 24); gr.addColorStop(0, 'rgba(12,30,36,0.55)'); gr.addColorStop(0.75, 'rgba(12,30,36,0.28)'); gr.addColorStop(1, 'rgba(12,30,36,0)'); g.fillStyle = gr; g.fillRect(0, 0, w, hb + 24); }
     // out-of-bounds dimming beside the board
     if (this.bx > 4) {
@@ -245,7 +254,7 @@ export class Renderer {
       if (row.check && type !== 'start') { g.fillStyle = 'rgba(255,255,255,0.16)'; g.fillRect(-20, y - h2, w + 40, this.rh); } // full width: a board-wide box left seams on desktop
       if (type === 'goal') { g.save(); g.translate(this.sx(colX(4)), y + h2 * 0.6); if (!this.propAt(g, 'den', this.tile * 2.6, 0.92)) den(g, this.tile); g.restore(); }
       this.sideDecor(g, run, r, y, P);
-      if (type === 'start' && this.bw > this.w) { g.save(); g.translate(Math.max(this.bx, 0) + this.tile * 0.55, y + this.rh * 0.3); this.propAt(g, 'sign', this.tile * 0.85, 0.95); g.restore(); }
+      if (type === 'start' && this.portrait) { g.save(); g.translate(Math.max(this.bx, 0) + this.tile * 0.55, y + this.rh * 0.3); this.propAt(g, 'sign', this.tile * 0.85, 0.95); g.restore(); }
     }
   }
 
@@ -385,7 +394,7 @@ export class Renderer {
       g.strokeStyle = `rgba(230,60,40,${0.55 + pu * 0.4})`; g.lineWidth = Math.max(2, this.tile * 0.05);
       g.beginPath(); g.ellipse(nx - gt.dir * this.tile * (gt.k === 'sleeper' ? -0.5 : 0.3), y + this.rh * 0.02, this.tile * 0.42, this.rh * 0.22, 0, 0, Math.PI * 2);
       g.fillStyle = `rgba(230,60,40,${0.12 + pu * 0.14})`; g.fill(); g.stroke();
-      if (!onScreen || (this.bw > this.w && hy < this.hudBand)) return; // off screen, or hidden under the portrait header
+      if (!onScreen || (this.portrait && hy < this.hudBand)) return; // off screen, or hidden under the portrait header
       g.save(); g.translate(hx, hy); badge(g, this.tile, t);
       g.fillStyle = '#FFD23F'; g.strokeStyle = INK; g.lineWidth = 1.5; g.beginPath(); g.moveTo(-this.tile * 0.08, this.tile * 0.19); g.lineTo(this.tile * 0.08, this.tile * 0.19); g.lineTo(0, this.tile * 0.34); g.closePath(); g.fill(); g.stroke();
       g.restore();
@@ -514,7 +523,7 @@ export class Renderer {
     g.restore();
     for (let r0 = Math.max(0, rBot) - (Math.max(0, rBot) % 3); r0 <= rTop; r0 += 3) {
       const r = this.lampRow(run, r0); if (r == null) continue;
-      const edge = (r0 / 3) % 2 ? 1 : 0, x = this.bw <= this.w ? (edge ? this.bx + this.bw - this.tile * 0.4 : this.bx + this.tile * 0.4) : (edge ? this.w - this.tile * 0.6 : this.tile * 0.6), y = this.sy(r);
+      const edge = (r0 / 3) % 2 ? 1 : 0, x = !this.portrait ? (edge ? this.bx + this.bw - this.tile * 0.4 : this.bx + this.tile * 0.4) : (edge ? this.w - this.tile * 0.6 : this.tile * 0.6), y = this.sy(r);
       const fl = 0.9 + Math.sin(t * 7 + r) * (this.reduced ? 0 : 0.06);
       const gr = g.createRadialGradient(x, y, 0, x, y, this.tile * 2.4);
       gr.addColorStop(0, `rgba(255,180,90,${0.34 * fl})`); gr.addColorStop(0.5, `rgba(255,150,60,${0.14 * fl})`); gr.addColorStop(1, 'rgba(255,140,60,0)');
@@ -522,17 +531,17 @@ export class Renderer {
     }
     g.restore();
     // the heat-lamp fixtures hanging over those glows (portrait has no margins to hang them in: glows only)
-    if (this.bw > this.w) return;
+    if (this.portrait) return;
     for (let r0 = Math.max(0, rBot) - (Math.max(0, rBot) % 3); r0 <= rTop; r0 += 3) {
       const r = this.lampRow(run, r0); if (r == null) continue;
       // fixtures hang just outside the playfield (desktop margins) or at the screen edge (portrait), never over a lane
-      const edge = (r0 / 3) % 2 ? 1 : 0, x = this.bw <= this.w ? (edge ? this.bx + this.bw + this.tile * 0.35 : this.bx - this.tile * 0.35) : (edge ? this.w - this.tile * 0.3 : this.tile * 0.3), yb = this.sy(r) - this.rh / 2;
+      const edge = (r0 / 3) % 2 ? 1 : 0, x = !this.portrait ? (edge ? this.bx + this.bw + this.tile * 0.35 : this.bx - this.tile * 0.35) : (edge ? this.w - this.tile * 0.3 : this.tile * 0.3), yb = this.sy(r) - this.rh / 2;
       // the crossbeam it hangs from, laid along the row boundary so it never covers a lane
       const bh = Math.max(8, this.rh * 0.22), x0 = Math.max(0, this.bx), x1 = Math.min(this.w, this.bx + this.bw);
       // overhead beam: solid timber in the margins, only a faint shadow across the board so nothing on a lane is hidden
       for (const [a, b] of [[-20, x0], [x1, this.w + 20]]) if (b > a) { g.fillStyle = '#4A2E1C'; g.fillRect(a, yb - bh / 2, b - a, bh); g.fillStyle = 'rgba(255,200,140,0.35)'; g.fillRect(a, yb - bh / 2, b - a, Math.max(1, bh * 0.25)); }
       g.fillStyle = 'rgba(40,20,8,0.16)'; g.fillRect(x0, yb - bh / 2, x1 - x0, bh);
-      if (this.bw > this.w) { const sx0 = edge ? this.w - this.tile * 0.55 : 0; g.fillStyle = '#4A2E1C'; g.fillRect(sx0, yb - bh / 2, this.tile * 0.55, bh); }
+      if (this.portrait) { const sx0 = edge ? this.w - this.tile * 0.55 : 0; g.fillStyle = '#4A2E1C'; g.fillRect(sx0, yb - bh / 2, this.tile * 0.55, bh); }
       g.save(); g.translate(x, yb - bh * 0.2); if (!this.propAt(g, 'lamp', this.tile * 0.5, 0)) { g.fillStyle = '#5A4A3A'; g.beginPath(); g.arc(0, 0, this.tile * 0.25, Math.PI, 0); g.fill(); g.fillStyle = '#FFB347'; g.beginPath(); g.arc(0, 0, this.tile * 0.1, 0, Math.PI * 2); g.fill(); } g.restore();
     }
   }
@@ -584,6 +593,27 @@ export class Renderer {
     }
   }
 
+  // Gators heading for the view from up to CHEVRON_TILES outside it, on Bandit's row or the next: [{ left, x, y }] in
+  // screen px. Only on a phone held upright (the board edge is the screen edge there, in every view).
+  edgeChevrons(run) {
+    const out = [], w = this.w;
+    if (!run || !this.portrait) return out;
+    // Old Ruthless's own off-screen marker (drawn with the actors) covers his two lanes
+    const bossRows = new Set();
+    for (const gt of run.world.gators) if (gt.k === 'boss') { const bx = this.sx(nose(gt)); if (bx <= 0 || bx >= w) { bossRows.add(gt.row); bossRows.add(gt.row + 1); } }
+    for (const gt of run.world.gators) {
+      if (gt.k === 'boss' || gt.k === 'sleeper' || gt.k === 'basker' || (gt.row !== run.p.row && gt.row !== run.p.row + 1) || bossRows.has(gt.row)) continue;
+      const nx = this.sx(nose(gt)), tx = this.sx(nose(gt) - gt.dir * gt.len * T);
+      const lo = Math.min(nx, tx), hi = Math.max(nx, tx), reach = this.tile * CHEVRON_TILES;
+      const left = hi <= 0 && gt.dir > 0 && -nx <= reach, right = lo >= w && gt.dir < 0 && nx - w <= reach;
+      if (!left && !right) continue;
+      const y = this.sy(gt.row) + this.rh * 0.05;
+      if (y < this.hudBand + this.tile * 0.3) continue;
+      out.push({ left, x: left ? this.tile * 0.4 : w - this.tile * 0.4, y });
+    }
+    return out;
+  }
+
   overlays(g, run, t) {
     // feeding-show drumsticks falling onto their shadows
     for (const s of warnings(run.world)) {
@@ -591,6 +621,14 @@ export class Renderer {
       g.fillStyle = `rgba(0,0,0,${0.15 + u * 0.3})`; g.beginPath(); g.ellipse(x, y, this.tile * (0.2 + u * 0.3), this.tile * (0.08 + u * 0.1), 0, 0, Math.PI * 2); g.fill();
       g.save(); g.translate(x, y - (1 - u) * this.h * 0.5); item(g, this.tile * 1.2, 'drum', t); g.restore();
       g.save(); g.translate(x, y - this.tile * 1.1); badge(g, this.tile * 0.9, t); g.restore();
+    }
+    // edge chevrons: a gator coming toward the view from just outside it, on Bandit's row or the next
+    for (const c of this.edgeChevrons(run)) {
+      const d = c.left ? -1 : 1, s = this.tile * 0.4, pu = this.reduced ? 1 : 0.7 + 0.3 * Math.sin(t * 12);
+      g.save(); g.translate(c.x, c.y); g.globalAlpha = pu; g.fillStyle = '#FFD23F'; g.strokeStyle = INK; g.lineWidth = 2; g.lineJoin = 'round';
+      g.beginPath(); g.moveTo(-d * s * 0.9, -s * 0.95); g.lineTo(-d * s * 0.9, s * 0.95); g.lineTo(d * s * 0.7, 0); g.closePath(); g.fill(); g.stroke();
+      g.fillStyle = '#E8452E'; g.beginPath(); g.moveTo(-d * s * 0.9, -s * 0.5); g.lineTo(-d * s * 0.9, s * 0.5); g.lineTo(d * s * 0.2, 0); g.closePath(); g.fill();
+      g.restore();
     }
     // the player's lures in flight
     for (const L of run.world.lures) {
