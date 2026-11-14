@@ -159,7 +159,7 @@ export const tests = [
 
       await t.game('scene', 'settings');
       const label = await t.page.$$eval('#screens .flabel', (n) => n.map((x) => x.textContent));
-      t.equal(label.slice(0, 3), ['Sound effects', 'Music', 'Ambience'], 'Settings lists Sound effects, Music and Ambience');
+      t.equal(label.slice(0, 3), ['Sound', 'Music', 'Ambience'], 'Settings lists Sound (the switch for everything, as before this wave), Music and Ambience');
       await t.shot('S5-02-settings');
       const box = await t.page.$eval('[data-k="ambience"][data-v="false"]', (b) => { const r = b.getBoundingClientRect(); return [r.width, r.height]; });
       t.expect(box[0] >= 44 && box[1] >= 44, 'the Ambience buttons are at least 44 px');

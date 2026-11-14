@@ -254,7 +254,7 @@ const TEMPLATES = {
     return `
     <div class="panel" role="dialog" aria-label="Settings">
       <h2>Settings</h2>
-      ${field('Sound effects', seg('sound', s.sound, [[true, 'On'], [false, 'Off']]))}
+      ${field('Sound', seg('sound', s.sound, [[true, 'On'], [false, 'Off']]))}
       ${field('Music', seg('music', s.music, [[true, 'On'], [false, 'Off']]))}
       ${field('Ambience', seg('ambience', s.ambience, [[true, 'On'], [false, 'Off']]))}
       ${field('Volume', seg('volume', s.volume, [[0.25, 'Low'], [0.5, 'Medium'], [0.85, 'High']]))}
