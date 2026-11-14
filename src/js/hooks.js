@@ -15,7 +15,8 @@ export function installHooks(App, api) {
       run: run ? run.summary() : null,
       camera: { row: +App.renderer.cam.toFixed(2), tile: +App.renderer.tile.toFixed(2), bx: +App.renderer.bx.toFixed(1), w: App.renderer.w, h: App.renderer.h, view: App.renderer.view, chevrons: run ? App.renderer.edgeChevrons(run).map((c) => ({ left: c.left, x: Math.round(c.x), y: Math.round(c.y) })) : [], player: run ? App.renderer.playerScreen(run).map((v) => +v.toFixed(1)) : null },
       settings: App.save.settings, reduced: App.reduced, art: !!App.renderer.art,
-      save: { unlocked: App.save.unlocked, endlessUnlocked: App.save.endless.unlocked, top: App.save.endless.top, progress: App.save.progress, notebook: App.save.notebook.length, merman: App.save.merman },
+      save: { unlocked: App.save.unlocked, endlessUnlocked: App.save.endless.unlocked, top: App.save.endless.top, progress: App.save.progress, notebook: App.save.notebook.length, merman: App.save.merman, ach: App.save.ach, costume: App.save.settings.costume, finale: App.save.finale, daily: App.save.endless.daily, bestRows: App.save.endless.bestRows, today: App.today() },
+      tip: App.hud.last.tip || '', toast: document.getElementById('toast').textContent, costumeDrawn: App.renderer.costume,
       audio: api.audioState(), steps: App.steps, said: App.lastSaid, fx: App.renderer.fx.count(),
     };
   };
@@ -53,14 +54,14 @@ export function installHooks(App, api) {
       else if (name === 'map') { api.showTitle(); App.screens.show('map', { levels: App.LEVELS }); }
       else if (name === 'play' || name === 'game') { api.startLevel(App.LEVELS[0], { intro: false }); }
       else if (name === 'endless') api.startEndless({ intro: false });
-      else if (['help', 'settings', 'notebook', 'credits', 'scores'].includes(name)) { if (App.scene !== 'title') api.showTitle(); App.screens.show(name, name === 'notebook' ? { facts: App.FACTS } : { from: 'title' }); }
+      else if (['help', 'settings', 'notebook', 'credits', 'scores', 'records', 'trophies'].includes(name)) { if (App.scene !== 'title') api.showTitle(); App.screens.show(name, name === 'notebook' ? { facts: App.FACTS } : { from: 'title' }); }
       else if (name === 'pause') { if (App.scene !== 'play') api.startLevel(App.LEVELS[0], { intro: false }); api.pauseGame(); }
-      else if (name === 'win' || name === 'fail') {
+      else if (name === 'win' || name === 'fail' || name === 'finale') {
         // the stored plan is for Assist off
         const was = App.save.settings.assist; App.save.settings.assist = false;
-        const L = App.LEVELS[0], run = api.startLevel(L, { intro: false });
+        const L = name === 'finale' ? App.LEVELS[App.LEVELS.length - 1] : App.LEVELS[0], run = api.startLevel(L, { intro: false });
         App.save.settings.assist = was;
-        if (name === 'win') { for (const [st, d] of L.plan) { while (run.steps < st) api.stepOnce({}); api.stepOnce({ hop: DIRS[d] }); } let n = 0; while (run.phase === 'play' && n++ < 6000) api.stepOnce({}); }
+        if (name !== 'fail') { for (const [st, d] of L.plan) { while (run.steps < st) api.stepOnce({}); api.stepOnce({ hop: DIRS[d] }); } let n = 0; while (run.phase === 'play' && n++ < 6000) api.stepOnce({}); }
         else { run.rings = 1; run.p.row = 2; run.p.x = colX(4); run.p.on = null; run.p.state = 'idle'; let n = 0; while (run.phase === 'play' && n++ < 2000) api.stepOnce({}); }
         App.endAt = 0; api.levelDone(run);
       }
@@ -94,8 +95,9 @@ export function installHooks(App, api) {
         }
         case 'solve': return run ? solve(run.L, { assist: run.assist }) : null;
         case 'clock': App.clock = a[0] == null ? null : a[0] / 1000; return true;
+        case 'today': App.dayOverride = a[0] || null; return App.today();
         case 'unlockAll': App.save.unlocked = App.LEVELS.length; App.save.endless.unlocked = true; api.persist(); if (App.screens.cur) App.screens.refresh(); return true;
-        case 'clearSave': App.save.progress = {}; App.save.unlocked = 1; App.save.endless = { unlocked: false, top: [] }; App.save.notebook = []; App.save.merman = false; api.persist(); return true;
+        case 'clearSave': App.save.progress = {}; App.save.unlocked = 1; App.save.endless = { unlocked: false, top: [] }; App.save.notebook = []; App.save.merman = false; App.save.ach = {}; App.save.finale = false; App.save.endless.bestRows = 0; App.save.endless.bestScore = 0; App.save.endless.daily = { last: '', streak: 0, bestStreak: 0, hist: {} }; api.persist(); return true;
         case 'hud': for (const id of ['hud', 'screens']) { const el = document.getElementById(id); if (el) el.style.visibility = a[0] === false ? 'hidden' : ''; } return true;
         case 'fxCount': return App.renderer.fx.count();
         case 'gatorAt': return run ? run.world.gators.filter((g) => g.row === a[0]).map((g) => ({ id: g.id, x: g.x, k: g.k, jaw: g.jaw, len: g.len, dir: g.dir })) : [];

@@ -1,6 +1,7 @@
 // Menu screens (DOM). Every action is a real <button>; arrow keys / d-pad move focus, Enter / A confirms, Esc / B
 // goes back. Structure after games/Furious Squirrels/src/js/ui/screens.js (Hot Springs Games, MIT).
 import { fmt } from './hud.js';
+import { ACHIEVEMENTS, COSTUMES, totals, costumeUnlocked, activeCostume, dailyStreak, shiftDay, dayLabel, achName } from '../progress.js';
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 const btn = (act, label, extra = '', cls = 'btn') => `<button type="button" class="${cls}" data-act="${act}" ${extra}>${label}</button>`;
@@ -13,6 +14,14 @@ const ZONES = ['', 'Front Pits', 'Hatchling Nursery', 'Noon Feeding Show', 'Wint
 const MAN = typeof MANIFEST !== 'undefined' && !/[?&]art=0/.test(location.search) ? MANIFEST : {};
 // a painted Bandit pose for a screen, falling back through the poses that exist
 const bandit = (names, cls = '') => { const n = names.find((k) => MAN[k]); return n ? `<img class="portrait ${cls}" src="assets/${MAN[n].file}" alt="" aria-hidden="true">` : ''; };
+// the lost ball in Bandit's paw on the ending panel (drawn in CSS and SVG): a ball with stitches, or an empty outline
+const ballSvg = (all) => all
+  ? '<svg class="ballsvg" viewBox="0 0 40 40" role="img" aria-label="The 1918 ball"><circle cx="20" cy="20" r="17" fill="#FFFDF2" stroke="#1B1A17" stroke-width="3"/><path d="M11 9q7 11 0 22M29 9q-7 11 0 22" fill="none" stroke="#C2482B" stroke-width="2.2" stroke-dasharray="3 3"/></svg>'
+  : '<svg class="ballsvg" viewBox="0 0 40 40" role="img" aria-label="An empty paw"><circle cx="20" cy="20" r="17" fill="none" stroke="#7A715E" stroke-width="3" stroke-dasharray="5 5"/></svg>';
+const dailyNote = (app) => {
+  const d = app.save.endless.daily, today = app.today(), e = d.hist[today], st = dailyStreak(d, today);
+  return `<p class="note daily-note">${e ? `Today: best ${e.rows} rows.` : "Today's Daily Run is waiting."}${st ? ` ${st}-day streak.` : ''}</p>`;
+};
 const factCard = (f) => f ? `<aside class="fact"><b>Farm fact</b><p>${esc(f.text)}</p><small>Source: ${esc(f.source)}</small></aside>` : '';
 
 export class Screens {
@@ -63,11 +72,12 @@ const TEMPLATES = {
       <div class="logo" aria-label="Crazy Raccoon: Gator Farm Dash"><h1><span class="w1">Crazy</span><span class="w2">Raccoon</span></h1><p class="subtitle">Gator Farm Dash</p></div>
       <nav class="menu" aria-label="Main menu">
         ${btn('play', app.save.unlocked > 1 ? 'Play (continue)' : 'Play', 'autofocus', 'btn primary big')}
-        ${btn('endless', app.save.endless.unlocked ? 'Moonlight Run' : 'Moonlight Run 🔒', app.save.endless.unlocked ? '' : 'aria-describedby="lock-note"')}
+        <div class="row2">${btn('endless', app.save.endless.unlocked ? 'Moonlight Run' : 'Moonlight Run 🔒', app.save.endless.unlocked ? '' : 'aria-describedby="lock-note"')}${btn('daily', app.save.endless.unlocked ? 'Daily Run' : 'Daily Run 🔒', app.save.endless.unlocked ? '' : 'aria-describedby="lock-note"')}</div>
         <div class="row2">${btn('help', 'How to Play')}${btn('notebook', 'Farm Notebook')}</div>
-        <div class="row2">${btn('settings', 'Settings')}${btn('credits', 'Credits')}</div>
+        <div class="row2">${btn('records', 'Records')}${btn('settings', 'Settings')}</div>
+        ${btn('credits', 'Credits', '', 'btn small')}
       </nav>
-      ${app.save.endless.unlocked ? '' : '<p class="note" id="lock-note">Clear level 6 to unlock the Moonlight Run.</p>'}
+      ${app.save.endless.unlocked ? dailyNote(app) : '<p class="note" id="lock-note">Clear level 6 to unlock the Moonlight Run and the Daily Run.</p>'}
       <p class="brand">Hot Springs Games</p>
       <p class="fineprint">${FICTION}</p>
     </div>`,
@@ -101,10 +111,11 @@ const TEMPLATES = {
   pause: (app) => `
     <div class="panel" role="dialog" aria-label="Paused">
       <h2>Paused</h2>
+      <p class="goalline">${app.run && app.run.mode === 'endless' ? 'Goal: hop as far as you can before the lantern.' : 'Goal: reach the den. Bank snacks on the bright BANK rows.'}</p>
       <nav class="menu">${btn('resume', 'Resume', 'autofocus data-back', 'btn primary')}${btn('restart', 'Restart')}${btn('help', 'How to Play')}${btn('settings', 'Settings')}${btn('quit', app.run && app.run.mode === 'endless' ? 'Quit to title' : 'Farm map')}</nav>
     </div>`,
 
-  win: (app, { L, res, fact, next, best, assist }) => `
+  win: (app, { L, res, fact, next, best, assist, bestTime, earned = [], nextUp = '' }) => `
     <div class="panel" role="dialog" aria-label="Level clear">
       ${bandit(['bandit-cheer', 'raccoon-down-hop'])}
       <h2>Home free!</h2>
@@ -118,11 +129,30 @@ const TEMPLATES = {
         <li class="tot"><span>Score${best ? ' · new best!' : ''}</span><b>${res.score.toLocaleString('en-US')}</b></li>
       </ul>
       <p class="stars-why">${['Cleared', res.stars[1] ? 'All snacks home' : 'Snacks left behind', assist ? 'Par star off with Assist' : res.stars[2] ? 'Beat par' : 'Over par'].join(' · ')}</p>
+      ${bestTime ? '<p class="sr-only">New best time.</p>' : ''}
+      ${earned.length ? `<p class="found">★ Achievement${earned.length > 1 ? 's' : ''}: ${earned.map((a) => esc(achName(a))).join(', ')}</p>` : ''}
       ${res.ball ? '<p class="found">⚾ You found the lost 1918 home-run ball! <small>(A game nod to Babe Ruth\'s real 1918 homer into the farm.)</small></p>' : ''}
       ${res.ticket ? '<p class="found">🎟 Merman ticket! Check the Farm Notebook.</p>' : ''}
       ${factCard(fact)}
+      ${nextUp ? `<p class="nextup">${esc(nextUp)}</p>` : ''}
       <nav class="menu row">${next ? btn('next', 'Next level', 'autofocus', 'btn primary') : btn('map', 'Farm map', 'autofocus', 'btn primary')}${btn('restart', 'Replay')}${next ? btn('map', 'Map') : ''}</nav>
     </div>`,
+
+  // The ending (S4-02): shown instead of the level panel when the last level is cleared
+  finale: (app, { L, res, first }) => {
+    const t = totals(app.save), all = t.balls >= 15;
+    return `
+    <div class="panel finale" role="dialog" aria-label="The end">
+      <div class="finale-ball">${bandit(['bandit-cheer', 'raccoon-down-hop'])}${ballSvg(all)}</div>
+      <h2>Home free, for good!</h2>
+      <p class="kicker">${L.n}. ${esc(L.name)} · ${res.stars.filter(Boolean).length} of 3 stars · ${res.score.toLocaleString('en-US')} points</p>
+      ${first ? '<p class="quote">Old Ruthless lowers his great jaw. "Keep the snacks, little bandit. The farm is yours tonight."</p>' : ''}
+      <p class="epilogue">The lantern is out and the gators are drifting off to sleep. Bandit curls up in the den with the night's last pecan.</p>
+      <p class="epilogue">${all ? 'All fifteen lost balls are home, the 1918 one too.' : `${t.balls} of 15 lost balls are home. The rest are still hiding somewhere on the farm.`}</p>
+      <div class="totals" aria-label="Totals"><span>★ ${t.stars}/45</span><span>⚾ ${t.balls}/15</span><span>Notebook ${app.save.notebook.length}/${app.FACTS.length}</span></div>
+      <nav class="menu row">${btn('credits', 'Credits', 'autofocus', 'btn primary')}${btn('map', 'Farm map')}${btn('restart', 'Replay')}</nav>
+    </div>`;
+  },
 
   fail: (app, { L, cause }) => `
     <div class="panel" role="dialog" aria-label="Out of rings">
@@ -133,12 +163,15 @@ const TEMPLATES = {
       <nav class="menu row">${btn('restart', 'Try again', 'autofocus', 'btn primary')}${btn('map', 'Farm map', 'data-back')}</nav>
     </div>`,
 
-  over: (app, { res, rank }) => `
+  over: (app, { res, rank, newBest, daily, earned = [] }) => `
     <div class="panel" role="dialog" aria-label="Moonlight Run over">
       <h2>Lantern caught you!</h2>
       <p class="lead">${res.rows} rows · ${res.score.toLocaleString('en-US')} points</p>
+      ${newBest ? '<p><span class="newbest">New personal best!</span></p>' : ''}
+      ${daily ? `<p class="dailyline">Daily Run, ${esc(dayLabel(daily.key))}: best today ${daily.best.rows} rows, ${daily.best.score.toLocaleString('en-US')} points${daily.newBest && !daily.first ? ' · new best today!' : ''}. ${daily.streak}-day streak.</p>` : ''}
+      ${earned.length ? `<p class="found">★ Achievement${earned.length > 1 ? 's' : ''}: ${earned.map((a) => esc(achName(a))).join(', ')}</p>` : ''}
       ${rank >= 0 ? `<form class="initials" data-form="initials"><label for="ini">Top ten! Your initials</label><input id="ini" maxlength="3" autocomplete="off" spellcheck="false" value="${esc(app.save.lastInitials || '')}" aria-describedby="ini-help"><small id="ini-help">Up to 3 letters</small>${btn('saveScore', 'Save score', '', 'btn primary')}</form>` : ''}
-      <nav class="menu row">${btn('endless', 'Run again', rank >= 0 ? '' : 'autofocus', rank >= 0 ? 'btn' : 'btn primary')}${btn('scores', 'High scores')}${btn('title', 'Title', 'data-back')}</nav>
+      <nav class="menu row">${btn(daily ? 'daily' : 'endless', 'Run again', rank >= 0 ? '' : 'autofocus', rank >= 0 ? 'btn' : 'btn primary')}${btn('scores', 'High scores')}${btn('title', 'Title', 'data-back')}</nav>
     </div>`,
 
   scores: (app) => `
@@ -148,9 +181,57 @@ const TEMPLATES = {
       <nav class="menu row">${btn('back', 'Back', 'autofocus data-back')}</nav>
     </div>`,
 
+  // Records (S3-05): what the save knows. Levels, bests, the Moonlight Run, the daily streak and calendar.
+  records: (app, data) => {
+    const s = app.save, t = totals(s), d = s.endless.daily, today = app.today(), streak = dailyStreak(d, today);
+    const days = Array.from({ length: 14 }, (_, i) => shiftDay(today, i - 13));
+    return `
+    <div class="panel wide" role="dialog" aria-label="Records">
+      <h2>Records</h2>
+      <div class="recgrid">
+        <div class="rec"><b>${t.cleared}/${app.LEVELS.length}</b><span>Levels cleared</span></div>
+        <div class="rec"><b>${t.stars}/${app.LEVELS.length * 3}</b><span>Stars</span></div>
+        <div class="rec"><b>${t.balls}/${app.LEVELS.length}</b><span>Lost balls</span></div>
+        <div class="rec"><b>${s.stats.treats}</b><span>Snacks banked</span></div>
+        <div class="rec"><b>${s.stats.hops.toLocaleString('en-US')}</b><span>Hops</span></div>
+        <div class="rec"><b>${s.stats.runs}</b><span>Runs played</span></div>
+      </div>
+      <h3>Campaign bests</h3>
+      <table class="bests"><thead><tr><th>Lv</th><th>Level</th><th>Best score</th><th>Best time</th></tr></thead><tbody>${app.LEVELS.map((L) => {
+        const pr = s.progress[L.id];
+        return `<tr><td>${L.n}</td><td>${esc(L.name)} ${pr ? stars(pr.stars) : ''}</td><td>${pr ? pr.best.toLocaleString('en-US') : '–'}</td><td>${pr && pr.bestT != null ? fmt(pr.bestT) : '–'}</td></tr>`;
+      }).join('')}</tbody></table>
+      <h3>Moonlight Run</h3>
+      <div class="recgrid">
+        <div class="rec"><b>${s.endless.bestRows}</b><span>Best rows</span></div>
+        <div class="rec"><b>${s.endless.bestScore.toLocaleString('en-US')}</b><span>Best score</span></div>
+        <div class="rec"><b>${streak}</b><span>Daily streak (days)</span></div>
+        <div class="rec"><b>${d.bestStreak}</b><span>Best daily streak</span></div>
+      </div>
+      <p class="sub">${s.endless.unlocked ? 'The last 14 days of the Daily Run. Green days were played.' : 'Clear level 6 to unlock the Daily Run.'}</p>
+      <div class="cal" role="img" aria-label="Daily Run calendar, last 14 days: ${days.filter((k) => d.hist[k]).length} played">${days.map((k) => `<span class="${d.hist[k] ? 'hit' : ''} ${k === today ? 'today' : ''}" title="${esc(dayLabel(k))}">${k.slice(8).replace(/^0/, '')}${d.hist[k] ? '✓' : ''}</span>`).join('')}</div>
+      <nav class="menu row">${btn('trophies', 'Achievements and costumes', 'autofocus', 'btn primary')}${btn('back', 'Back', 'data-back')}</nav>
+    </div>`;
+  },
+
+  trophies: (app) => {
+    const s = app.save, got = ACHIEVEMENTS.filter((a) => s.ach[a.id]).length, cur = activeCostume(s);
+    return `
+    <div class="panel wide" role="dialog" aria-label="Achievements and costumes">
+      <h2>Bandit's costumes</h2>
+      <p class="sub">Costumes are earned with stars, balls and rows. Tap one to wear it.</p>
+      <div class="wardrobe">${COSTUMES.map((c) => { const open = costumeUnlocked(s, c.id); return `<button type="button" class="btn small" data-act="${open ? 'costume' : 'locked'}" data-v="${c.id}" ${open ? '' : 'disabled'} aria-pressed="${cur === c.id}"><span>${esc(c.name)}</span><small>${open ? (cur === c.id ? 'Wearing it' : 'Tap to wear') : esc(c.how) + ' (' + esc(c.need(s)) + ')'}</small></button>`; }).join('')}</div>
+      <h3>Achievements</h3>
+      <p class="sub">${got} of ${ACHIEVEMENTS.length} earned. Each one is earned by playing.</p>
+      <ul class="ach">${ACHIEVEMENTS.map((a) => `<li class="${s.ach[a.id] ? '' : 'off'}"><span class="mk" aria-hidden="true">${s.ach[a.id] ? '★' : '?'}</span><span><b>${esc(a.name)}</b><small>${esc(a.how)}${s.ach[a.id] ? (s.ach[a.id] === 'before' ? ' Earned earlier.' : ' Earned ' + esc(s.ach[a.id]) + '.') : ' Not yet.'}</small></span></li>`).join('')}</ul>
+      <nav class="menu row">${btn('records', 'Records', 'data-back')}${btn('title', 'Title')}</nav>
+    </div>`;
+  },
+
   help: () => `
     <div class="panel wide" role="dialog" aria-label="How to play">
       <h2>How to Play</h2>
+      <p class="goalline">Goal: reach the den at the top. Bank snacks on the bright BANK rows, and beat par for the third star.</p>
       <div class="cols">
         <section><h3>Move</h3><p><b>Arrows</b> / <b>WASD</b>, the <b>d-pad</b>, or <b>tap</b> beside Bandit to hop that way (<b>swipes</b> work too). One hop = one tile.</p>
           <h3>Gators</h3><ul>
@@ -159,7 +240,7 @@ const TEMPLATES = {
           <li><b>Hatchlings</b>: banded mouths, can't bite, but they shove.</li>
           <li><b>Baskers</b> gape on the sand: closed mouth bumps you back, open mouth bites.</li>
           <li><b>Sleepers</b> in the barn: when the eye opens, they lunge a tile.</li></ul></section>
-        <section><h3>Snacks</h3><p>Grab pecans and berries (paws hold 3). Bank them at <b>bright checkpoint rows</b> or the den. Dunk them in a <b>steaming spring stone</b> first to wash them for double points.</p>
+        <section><h3>Snacks</h3><p>Grab pecans and berries (paws hold 3). Bank them at the <b>bright BANK rows</b> or the den: snacks only count once banked. Dunk them in a <b>steaming spring stone</b> first to wash them for double points.</p>
           <h3>Lure</h3><p><b>Space</b> / <b>E</b> / <b>Lure</b> button tosses a drumstick two rows ahead (and three tiles to the side you last hopped). Gators rush to it.</p>
           <h3>Tail rings</h3><p>Each splash, chomp or sweep off the edge costs a ring. You restart at the last checkpoint.</p>
           <h3>Stars</h3><p>★ Reach the den · ★ Bank every snack · ★ Beat par. Find the hidden ⚾ in every level.</p></section>
@@ -181,6 +262,8 @@ const TEMPLATES = {
       ${field('Text size', seg('textScale', s.textScale, [[1, '100%'], [1.25, '125%'], [1.5, '150%']]))}
       ${field('Phone view', seg('view', s.view, [['close', 'Close'], ['standard', 'Standard'], ['wide', 'Wide']]))}
       <p class="sub">Phone view: how much of the board shows when the phone is held upright. Wide shows every column.</p>
+      ${field('First-run tips', seg('tipsOn', s.tipsOn, [[true, 'On'], [false, 'Off']]))}
+      <p class="sub">Short hints in the first levels. ${btn('tipsAgain', 'Show tips again', '', 'btn small')}</p>
       ${field('Assist', seg('assist', s.assist, [[false, 'Off'], [true, 'On']]))}
       <p class="sub">Assist: slower gators, longer warnings, +2 tail rings (no par star).</p>
       <nav class="menu row">${btn('back', 'Done', 'autofocus data-back', 'btn primary')}${btn('resetSave', 'Reset progress', 'data-confirm="1"', 'btn small danger')}</nav>

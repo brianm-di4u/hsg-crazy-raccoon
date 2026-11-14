@@ -5,7 +5,7 @@
 import { T, COLS, HOP_H, DEAD_T, colX } from '../sim/const.js';
 import { nose, beamAt, warnings } from '../sim/world.js';
 import { playerPose } from '../sim/player.js';
-import { PAL, INK, gator, raccoon, item, pool, post, rail, hay, den, pine, tomb, badge, shadow, star4 } from './draw.js';
+import { PAL, INK, gator, raccoon, item, pool, post, rail, hay, den, pine, tomb, badge, shadow, star4, costume, bankPlaque } from './draw.js';
 import { Fx } from './fx.js';
 import { hashStr } from '../rng.js';
 
@@ -21,7 +21,7 @@ export class Renderer {
   constructor(canvas, fxRng) {
     this.c = canvas; this.g = canvas.getContext('2d');
     this.dpr = 1; this.w = 0; this.h = 0; this.cam = 0; this.camT = 0; this.camX = T * COLS / 2; this.camXT = this.camX; this.shake = 0;
-    this.fx = new Fx(fxRng); this.lights = []; this.art = null; this.cache = new WeakMap(); this.reduced = false; this.landT = 9; this.deadFx = null; this.hudTop = 64; this.hudBot = 0; this.view = 'standard'; this.portrait = false;
+    this.fx = new Fx(fxRng); this.lights = []; this.art = null; this.cache = new WeakMap(); this.reduced = false; this.landT = 9; this.deadFx = null; this.hudTop = 64; this.hudBot = 0; this.view = 'standard'; this.portrait = false; this.costume = 'plain';
     this.resize();
   }
   resize() {
@@ -252,10 +252,25 @@ export class Renderer {
       const row = run.L.rows[r];
       if (row.pools) for (const c of row.pools) this.poolAt(g, this.sx(colX(c)), y + h2 * 0.1, t);
       if (row.check && type !== 'start') { g.fillStyle = 'rgba(255,255,255,0.16)'; g.fillRect(-20, y - h2, w + 40, this.rh); } // full width: a board-wide box left seams on desktop
+      if (row.check && type !== 'start' && type !== 'goal') this.bankMark(g, y, h2, w);
       if (type === 'goal') { g.save(); g.translate(this.sx(colX(4)), y + h2 * 0.6); if (!this.propAt(g, 'den', this.tile * 2.6, 0.92)) den(g, this.tile); g.restore(); }
       this.sideDecor(g, run, r, y, P);
       if (type === 'start' && this.portrait) { g.save(); g.translate(Math.max(this.bx, 0) + this.tile * 0.55, y + this.rh * 0.3); this.propAt(g, 'sign', this.tile * 0.85, 0.95); g.restore(); }
     }
+  }
+
+  // the checkpoint rows are where snacks are banked (S2-01): gold dashed edges and a BANK plaque at each end of the board
+  bankMark(g, y, h2, w) {
+    g.save();
+    g.setLineDash([this.tile * 0.24, this.tile * 0.14]);
+    for (const [col, lw] of [[INK, Math.max(4, this.tile * 0.1)], ['#FFD23F', Math.max(2.5, this.tile * 0.055)]]) {
+      g.strokeStyle = col; g.lineWidth = lw;
+      for (const yy of [y - h2 + 3, y + h2 - 3]) { g.beginPath(); g.moveTo(-20, yy); g.lineTo(w + 20, yy); g.stroke(); }
+    }
+    g.setLineDash([]);
+    // the plaques sit at the ends of the board, kept on screen when a phone view pans the board sideways
+    for (const x of [Math.max(this.bx, 0) + this.tile * 0.42, Math.min(this.bx + this.bw, this.w) - this.tile * 0.42]) { g.save(); g.translate(x, y - h2 + this.rh * 0.2); bankPlaque(g, this.tile * 0.85); g.restore(); } // up in the top edge of the row, clear of the snacks
+    g.restore();
   }
 
   tileFill(g, img, y, hgt, scroll, tint = '') {
@@ -494,9 +509,10 @@ export class Renderer {
       g.save(); g.scale((1 + sq * 0.32) * (p.facing === 'right' ? -1 : 1), 1 - sq * 0.34);
       this.blit(g, img, -w / 2, -h * 0.97, w, h);
       g.restore();
+      if (this.costume !== 'plain') costume(g, this.costume, this.tile, -h * 0.88, p.facing, t, this.reduced);
       if (carried.length) { g.save(); g.translate(0, -this.tile * 0.4); for (let i = 0; i < Math.min(3, carried.length); i++) { g.save(); g.translate((i - (carried.length - 1) / 2) * this.tile * 0.2, 0); this.itemAt(g, carried[i].k, this.tile * 0.42, t, carried[i].washed); g.restore(); } g.restore(); }
     }
-    else raccoon(g, s, { facing: p.facing, sq, t, grin: p.state === 'won', carry: Math.min(3, carried.length), carryKinds: carried.map((i) => i.k), washed: carried.map((i) => i.washed) });
+    else { raccoon(g, s, { facing: p.facing, sq, t, grin: p.state === 'won', carry: Math.min(3, carried.length), carryKinds: carried.map((i) => i.k), washed: carried.map((i) => i.washed) }); if (this.costume !== 'plain') costume(g, this.costume, this.tile, -s * 0.9, p.facing, t, this.reduced); }
     if (p.state === 'dead' && (p.cause === 'spotted' || p.cause === 'caught')) { g.translate(0, -s * 1.15); badge(g, s, t); }
     g.restore();
   }

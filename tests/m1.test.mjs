@@ -37,7 +37,7 @@ export const tests = [
       // Title → How to Play via arrows + Enter, then Esc back
       const focusText = () => t.page.evaluate(() => document.activeElement && document.activeElement.textContent.trim());
       t.expect(/^Play/.test(await focusText()), 'Play focused first');
-      await kb.press('ArrowDown'); await kb.press('ArrowDown');
+      await kb.press('ArrowDown'); await kb.press('ArrowDown'); await kb.press('ArrowDown'); // Moonlight Run, Daily Run (wave 2), How to Play
       t.equal(await focusText(), 'How to Play', 'arrow moves focus');
       await kb.press('Enter');
       t.equal((await t.state()).screen, 'help', 'help open');
@@ -45,7 +45,7 @@ export const tests = [
       await kb.press('Escape');
       t.equal((await t.state()).screen, 'title', 'Esc back to title');
       // Settings: toggle text size with keyboard
-      for (let i = 0; i < 4; i++) await kb.press('ArrowDown');
+      for (let i = 0; i < 6; i++) await kb.press('ArrowDown'); // Moonlight Run, Daily Run, How to Play, Farm Notebook, Records (wave 2), Settings
       t.equal(await focusText(), 'Settings');
       await kb.press('Enter');
       t.equal((await t.state()).screen, 'settings');

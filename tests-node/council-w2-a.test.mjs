@@ -30,7 +30,7 @@ test('a save from before the Ambience setting loads with it on and loses nothing
   const { save } = await load(storage(old));
   assert.equal(save.settings.ambience, true);
   assert.deepEqual(save.progress, old.progress);
-  assert.deepEqual(save.stats, old.stats);
+  assert.deepEqual(save.stats, { ...old.stats, dailies: 0 }); // wave 2 batch C adds the daily-run count (default 0); nothing the save held changes
   assert.equal(save.unlocked, old.unlocked);
   assert.equal(save.settings.sound, old.settings.sound);
 });

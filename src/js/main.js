@@ -8,7 +8,8 @@ import { Bot } from './sim/bot.js';
 import { Renderer } from './gfx/renderer.js';
 import { loadArt } from './gfx/art.js';
 import { Hud } from './ui/hud.js';
-import { Screens } from './ui/screens.js';
+import { Screens, esc } from './ui/screens.js';
+import { dateKey, dailySeed, dayLabel, award, backfill, ACHIEVEMENTS, costumeUnlocked, activeCostume, nextUnlock, recordDaily } from './progress.js';
 import { initInput, initTouch, pollGamepads, readIntent, consumePause, consumeMenu, setEnabled } from './ui/input.js';
 import { initAudio, setAudio, sfx, playTheme, setTension, setAmbience, duckMusic, audioState, audioList, renderAudio, holdMusic, suspendAudio, resumeAudio } from './ui/audio.js';
 import { loadSave, writeSave, DEFAULT_SAVE } from './save.js';
@@ -24,7 +25,7 @@ const THEME_SCENE = { day: 'meadow', noon: 'showground', barn: 'loft', night: 'm
 
 const App = {
   scene: 'boot', ready: false, loading: 0, paused: false, testPaused: false, time: 0, clock: null, steps: 0,
-  save: loadSave(), run: null, level: null, nextSeed: null, reduced: false, demo: null, endAt: 0, fact: null, LEVELS, FACTS: ALLFACTS, lastSaid: '',
+  save: loadSave(), earned: [], today: () => App.dayOverride || dateKey(), run: null, level: null, nextSeed: null, reduced: false, demo: null, endAt: 0, fact: null, LEVELS, FACTS: ALLFACTS, lastSaid: '',
 };
 window.__CR = App;
 
@@ -45,11 +46,60 @@ function applySettings() {
   App.reduced = s.reducedMotion == null ? sys : !!s.reducedMotion;
   renderer.reduced = App.reduced;
   renderer.setView(s.view);
+  renderer.costume = activeCostume(App.save);
   renderer.fx.scale = App.reduced ? 0.4 : 1;
   document.body.classList.toggle('reduced', App.reduced);
   setAudio(s);
 }
 function persist(options) { writeSave(App.save, options); applySettings(); }
+
+// ---------------------------------------------------------------------------------------------------------------
+// achievements (S3-05): earned by play the game sees; a short toast that never stops the game, with its cue
+const toastEl = document.getElementById('toast'), toastQ = [];
+let toastBusy = false;
+function toastNext() {
+  const a = toastQ.shift();
+  if (!a) { toastBusy = false; return; }
+  toastBusy = true;
+  toastEl.innerHTML = `<b>Achievement: ${esc(a.name)}</b><span>${esc(a.how)}</span>`; toastEl.classList.add('on');
+  setTimeout(() => { toastEl.classList.remove('on'); setTimeout(toastNext, 300); }, 3000);
+}
+function earn(id) {
+  if (!award(App.save, id, App.today())) return false;
+  App.earned.push(id); persist();
+  const a = ACHIEVEMENTS.find((x) => x.id === id);
+  sfx('ach'); toastQ.push(a); if (!toastBusy) toastNext();
+  App.say(`Achievement: ${a.name}. ${a.how}`);
+  return true;
+}
+// anything the save itself proves (stars, balls, chomps, rows); an old save is granted these quietly at load
+function checkDerived() { for (const a of ACHIEVEMENTS) if (a.have && !App.save.ach[a.id] && a.have(App.save)) earn(a.id); }
+if (backfill(App.save, 'before').length) writeSave(App.save);
+
+// first-run tips (S2-01): in the first two levels, one short line at the moment it matters. Shown once, saved with
+// the settings; a save from before the tips never shows them unless asked (Settings > Show tips again).
+const TIPS = { goal: 'Reach the den at the top. Bank snacks on bright rows.', carry: 'Bank snacks at the bright row. Paws hold three.', bank: 'Hop onto the bright BANK row to bank them.' };
+let tipId = null, tipUntil = 0;
+const tipsLive = () => App.save.settings.tipsOn && !!App.level && App.level.n >= 1 && App.level.n <= 2;
+function endTip() { tipId = null; hud.tip(''); }
+function showTip(id) {
+  const st = App.save.settings;
+  if (!tipsLive() || st.tipsDone[id] || tipId === id || !App.run) return;
+  st.tipsDone[id] = true; persist();
+  tipId = id; tipUntil = App.run.steps + Math.round(7 / DT);
+  hud.tip(TIPS[id]); App.say(TIPS[id]);
+}
+function feelTips(run) {
+  if (!tipsLive()) return;
+  const done = App.save.settings.tipsDone;
+  if (tipId && run.steps > tipUntil) endTip();
+  if (run.phase !== 'play') return;
+  if (run.L.n === 1 && run.hops >= 1 && !done.goal) showTip('goal');
+  if (!run.carried().length) return;
+  if (!done.carry) showTip('carry');
+  const r = run.L.rows.findIndex((row, i) => i > run.p.row && (row.check || row.t === 'goal'));
+  if (!done.bank && r >= 0 && r - run.p.row <= 3) showTip('bank');
+}
 
 // ---------------------------------------------------------------------------------------------------------------
 // runs
@@ -71,17 +121,19 @@ function startLevel(L, { seed, intro = true } = {}) {
   else beginPlay();
   return App.run;
 }
-function startEndless({ seed, intro = true } = {}) {
+function startEndless({ seed, intro = true, daily = null } = {}) {
   App.level = null;
-  App.run = new Run({ id: 'endless' }, { mode: 'endless', seed: seed ?? App.nextSeed ?? (Date.now() & 0xffffff), assist: false }); // Assist is for the levels: the top-10 board is shared
+  App.run = new Run({ id: 'endless' }, { mode: 'endless', seed: seed ?? (daily ? dailySeed(daily) : null) ?? App.nextSeed ?? (Date.now() & 0xffffff), assist: false });
+  App.run.daily = daily; // Assist is for the levels: the top-10 board is shared
   enterPlay();
   App.fact = ALLFACTS.length ? ALLFACTS[(Date.now() >> 10) % ALLFACTS.length] : null;
-  if (intro) { screens.show('intro', { L: { ...App.run.L, intro: 'Night falls. Hop as far as you can before the keeper\'s lantern catches up. Three tail rings.', rings: 3 }, fact: App.fact, assist: false }); setEnabled(false); }
+  if (intro) { screens.show('intro', { L: { ...App.run.L, intro: daily ? `Daily Run, ${dayLabel(daily)}. Every player gets this same night today. Hop as far as you can. Three tail rings.` : 'Night falls. Hop as far as you can before the keeper\'s lantern catches up. Three tail rings.', rings: 3 }, fact: App.fact, assist: false }); setEnabled(false); }
   else beginPlay();
   return App.run;
 }
 function enterPlay() {
   App.demo = null; App.scene = 'play'; document.body.dataset.scene = 'play';
+  App.earned = []; endTip();
   App.paused = false; App.endAt = 0;
   renderer.fx.clear(); renderer.snap(0, App.run.p.x);
   hud.show(true); hud.update(App.run);
@@ -121,16 +173,22 @@ function levelDone(run) {
   if (run.mode === 'endless') {
     const rows = Math.max(0, run.maxRow);
     const entry = { score: res.score, rows };
-    const top = s.endless.top, rank = top.length < 10 || res.score > top[top.length - 1].score ? top.filter((e) => e.score >= res.score).length : -1;
+    const top = s.endless.top, rank = !run.daily && (top.length < 10 || res.score > top[top.length - 1].score) ? top.filter((e) => e.score >= res.score).length : -1; // the Daily Run has its own record, not the shared top ten
+    const had = s.endless.bestRows > 0 || s.endless.bestScore > 0, newBest = had && (rows > s.endless.bestRows || res.score > s.endless.bestScore);
+    s.endless.bestRows = Math.max(s.endless.bestRows, rows); s.endless.bestScore = Math.max(s.endless.bestScore, res.score);
+    let daily = null;
+    if (run.daily) { daily = recordDaily(s.endless.daily, run.daily, rows, res.score); s.stats.dailies++; }
     persist();
-    screens.show('over', { res: { ...res, rows }, rank, entry });
+    if (daily) { earn('daily1'); if (daily.streak >= 7) earn('daily7'); }
+    checkDerived();
+    screens.show('over', { res: { ...res, rows }, rank, entry, newBest, daily, earned: App.earned.slice() });
     App.pendingScore = rank >= 0 ? entry : null;
     setEnabled(false); sfx('fail');
     return;
   }
   if (!res.win) { screens.show('fail', { L, cause: run.p.cause }); setEnabled(false); sfx('fail'); persist(); return; }
   const pr = s.progress[L.id] || { stars: [false, false, false], best: 0, bestT: null, ball: false };
-  const best = res.score > pr.best;
+  const best = res.score > pr.best, bestTime = pr.bestT != null && res.t < pr.bestT;
   pr.stars = pr.stars.map((b, i) => b || res.stars[i]); pr.best = Math.max(pr.best, res.score);
   pr.bestT = pr.bestT == null ? res.t : Math.min(pr.bestT, res.t); pr.ball = pr.ball || res.ball;
   s.progress[L.id] = pr;
@@ -142,10 +200,20 @@ function levelDone(run) {
   if (f) s.notebook.push(f.id);
   s.stats.treats += run.treatsBanked();
   persist();
+  if (res.deaths === 0) earn('clean');
+  checkDerived();
   const next = LEVELS.find((x) => x.n === L.n + 1);
-  screens.show('win', { L, res, fact: f, next: !!next, best, assist: App.save.settings.assist });
   setEnabled(false);
-  playTheme('results'); duckMusic(8, 1600);
+  playTheme('results');
+  if (!next) {
+    // the ending (S4-02): its own panel and a longer stinger; Old Ruthless's defeat line shows the first time only
+    const first = !s.finale; s.finale = true; persist();
+    screens.show('finale', { L, res, first });
+    duckMusic(8, 4600); sfx('finale');
+    return;
+  }
+  screens.show('win', { L, res, fact: f, next: true, best, bestTime, assist: App.save.settings.assist, earned: App.earned.slice(), nextUp: nextUnlock(s) });
+  duckMusic(8, 1600);
   sfx('win'); res.stars.forEach((b, i) => { if (b) setTimeout(() => sfx('star', i), 500 + i * 220); });
 }
 
@@ -153,6 +221,8 @@ function levelDone(run) {
 // menus and HUD
 App.onHud = (a) => {
   if (a === 'pause') pauseGame();
+  else if (a === 'skipTips') { App.save.settings.tipsOn = false; persist(); endTip(); App.say('Tips are off. Turn them on again in Settings.'); }
+  else if (a === 'tipDone') endTip();
   else if (a === 'lure' && App.run && App.scene === 'play' && !App.paused && !screens.cur) { App.lureReq = true; kick(); }
 };
 
@@ -165,6 +235,11 @@ App.onMenu = (act, d = {}) => {
     case 'locked': return;
     case 'go': return beginPlay();
     case 'endless': if (!s.endless.unlocked) { App.say('Clear level 6 to unlock the Moonlight Run.'); return; } return startEndless();
+    case 'daily': if (!s.endless.unlocked) { App.say('Clear level 6 to unlock the Daily Run.'); return; } return startEndless({ daily: App.today() });
+    case 'records': return screens.show('records', { from: screens.cur === 'trophies' ? 'title' : screens.cur });
+    case 'trophies': return screens.show('trophies', { from: 'records' });
+    case 'costume': if (costumeUnlocked(s, d.v)) { s.settings.costume = d.v; persist(); screens.refresh(); } return;
+    case 'tipsAgain': s.settings.tipsOn = true; s.settings.tipsDone = {}; persist(); App.say('First-run tips are on again.'); return screens.refresh();
     case 'help': return screens.show('help', { from: screens.cur });
     case 'settings': return screens.show('settings', { from: screens.cur });
     case 'notebook': return screens.show('notebook', { facts: ALLFACTS });
@@ -178,7 +253,7 @@ App.onMenu = (act, d = {}) => {
     case 'resetSave': return screens.show('confirmReset', { from: 'settings' });
     case 'resetYes': App.save = DEFAULT_SAVE(); persist({ reset: true }); return showTitle();
     case 'resume': return resumeGame();
-    case 'restart': if (App.run && App.run.mode === 'endless') return startEndless({ intro: false }); if (App.level) return startLevel(App.level, { intro: false }); return;
+    case 'restart': if (App.run && App.run.mode === 'endless') return startEndless({ intro: false, daily: App.run.daily ? App.today() : null }); if (App.level) return startLevel(App.level, { intro: false }); return;
     case 'next': { const L = LEVELS.find((x) => x.n === App.level.n + 1); if (L) startLevel(L); return; }
     case 'map': App.scene = 'title'; App.run = null; hud.show(false); showTitle(); playTheme('map', 'meadow'); return screens.show('map', { levels: LEVELS });
     case 'quit': return App.run && App.run.mode === 'endless' ? screens.show('confirmQuit', { from: 'pause' }) : App.onMenu('map');
@@ -198,6 +273,7 @@ App.onMenu = (act, d = {}) => {
       if (screens.cur === 'pause') return resumeGame();
       if (from === 'pause') return screens.show('pause');
       if (from === 'settings') return screens.show('settings');
+      if (from === 'records') return screens.show('records', { from: 'title' });
       if (screens.cur === 'intro') return App.level ? App.onMenu('map') : showTitle();
       if (App.scene === 'play' && App.run && App.run.phase !== 'play') return App.onMenu('map');
       return showTitle();
@@ -222,6 +298,7 @@ function stepOnce(input = {}) {
   handleEvents(run);
   cueHazards(run);
   feelTension(run);
+  feelTips(run);
 }
 App.stepOnce = stepOnce;
 
@@ -281,14 +358,14 @@ function handleEvents(run) {
       case 'nudge': sfx('nudge'); break;
       case 'die':
         sfx(e.cause === 'splash' ? 'splash' : e.cause === 'chomp' ? 'chomp' : e.cause === 'spotted' || e.cause === 'caught' ? 'spotted' : 'splash');
-        if (e.cause === 'chomp') App.save.stats.chomps++; if (e.cause === 'splash') App.save.stats.splashes++;
+        if (e.cause === 'chomp') { App.save.stats.chomps++; checkDerived(); } if (e.cause === 'splash') App.save.stats.splashes++;
         App.say({ chomp: 'Chomped!', splash: 'Splash!', swept: 'Swept away!', spotted: 'Spotted!', caught: 'Caught by the lantern!' }[e.cause] + ` ${run.rings} tail rings left.`);
         break;
-      case 'pickup': sfx(e.item === 'cap' ? 'cap' : e.item === 'ball' ? 'ball' : 'pickup'); if (e.item === 'ball') App.say('You found the lost home-run ball!'); if (e.item === 'ring') App.say(`A tail ring! ${run.rings} tail rings left.`); break;
-      case 'wash': sfx('wash'); break;
-      case 'bank': sfx('bank'); App.say(`${e.n} snack${e.n > 1 ? 's' : ''} banked.`); break;
-      case 'lure': sfx('lure'); break;
-      case 'streak': sfx('streak', e.mult); break;
+      case 'pickup': if (e.item === 'pecan' || e.item === 'berry') hud.pulse(); sfx(e.item === 'cap' ? 'cap' : e.item === 'ball' ? 'ball' : 'pickup'); if (e.item === 'ball') App.say('You found the lost home-run ball!'); if (e.item === 'ring') App.say(`A tail ring! ${run.rings} tail rings left.`); break;
+      case 'wash': sfx('wash'); earn('squeaky'); break;
+      case 'bank': sfx('bank'); App.say(`${e.n} snack${e.n > 1 ? 's' : ''} banked.`); earn('snack'); if (tipId) { Object.assign(App.save.settings.tipsDone, { carry: true, bank: true }); persist(); endTip(); } break;
+      case 'lure': sfx('lure'); earn('lure'); break;
+      case 'streak': sfx('streak', e.mult); if (e.mult >= 4) earn('streak4'); break;
       case 'whipWind': sfx('whip'); break;
       case 'fling': sfx('whip'); break;
       case 'full': hud.hint('Paws full!'); setTimeout(() => hud.hint(''), 900); break;

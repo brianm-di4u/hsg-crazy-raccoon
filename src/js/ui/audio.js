@@ -99,6 +99,15 @@ function noise(dur, { vol = 0.2, at = 0, type = 'bandpass', freq = 1200, q = 1, 
   s.start(t, Math.random()); s.stop(t + dur + 0.02);
 }
 
+// a note that holds its level and then lets go (the ending's chord), unlike tone(), which dies away from the start
+function held(freq, dur, vol, at, type) {
+  if (!ctx) return;
+  const t = ctx.currentTime + at, o = ctx.createOscillator(), g = ctx.createGain();
+  o.type = type; o.frequency.setValueAtTime(freq, t);
+  g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + 0.06); g.gain.setValueAtTime(vol, t + dur - 1.2); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + dur + 0.02);
+}
+
 export const SFX = {
   hop(n = 0) { tone(520 + (n % 3) * 60, 0.07, { type: 'triangle', vol: 0.09, slide: 1.6 }); },
   land() { noise(0.04, { vol: 0.05, freq: 500, q: 1.2 }); },
@@ -121,6 +130,20 @@ export const SFX = {
   win() { [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, 0.2, { type: 'square', vol: 0.08, at: i * 0.11, filter: 2600 })); },
   fail() { [392, 349, 311, 262].forEach((f, i) => tone(f, 0.25, { type: 'triangle', vol: 0.09, at: i * 0.16 })); },
   star(i) { tone(1047 * Math.pow(1.26, i), 0.18, { type: 'square', vol: 0.07, filter: 3000 }); },
+  // an achievement: two bell notes and a high sparkle, a little different each time (S3-05)
+  ach() {
+    const j = 1 + (Math.random() - 0.5) * 0.03;
+    [1319, 1760].forEach((f, i) => tone(f * j, 0.55, { type: 'sine', vol: 0.26, at: i * 0.11 }));
+    tone(2637 * j, 0.8, { type: 'triangle', vol: 0.12, at: 0.11 });
+    noise(0.12, { vol: 0.05, type: 'highpass', freq: 5200, q: 0.5, at: 0.1 });
+  },
+  // the ending (S4-02): a climbing run of notes, then a held major chord with a shimmer on top, about 4 s in all
+  finale() {
+    [392, 494, 587, 784, 988, 1175].forEach((f, i) => tone(f, 0.32, { type: 'square', vol: 0.12, at: i * 0.14, filter: 2800 }));
+    [523, 659, 784, 1047].forEach((f) => { held(f, 3.2, 0.065, 1.0, 'triangle'); held(f / 2, 3.2, 0.05, 1.0, 'sine'); });
+    [2093, 2637, 3136, 3951].forEach((f, i) => tone(f, 0.7, { type: 'sine', vol: 0.05, at: 1.2 + i * 0.16 }));
+    noise(1.4, { vol: 0.03, type: 'highpass', freq: 4200, q: 0.5, at: 1.0 });
+  },
 };
 export function sfx(name, ...a) { if (ctx && state.on && SFX[name]) SFX[name](...a); }
 
@@ -618,6 +641,18 @@ export function stopTheme() { state.theme = null; state.scene = null; state.play
 // Renders one piece or scene by itself on an OfflineAudioContext at the level the game ships and measures it
 // (test hook). Never touches the live audio or the settings. o: { intensity, params, seed }.
 export async function renderAudio(name, seconds = 30, wav = false, o = {}) {
+  if (name.startsWith('cue:')) { // a sound effect by itself: rendered through a stand-in for the live buses, then put back
+    const cue = SFX[name.slice(4)];
+    if (!cue) throw new Error('unknown audio: ' + name);
+    return measureAudio((oc, dest) => {
+      const keep = [ctx, sfxBus, noiseBuf];
+      ctx = oc; sfxBus = oc.createGain(); sfxBus.gain.value = 0.9; sfxBus.connect(dest);
+      noiseBuf = oc.createBuffer(1, oc.sampleRate, oc.sampleRate);
+      const d = noiseBuf.getChannelData(0); let x = 0x2545F491; for (let i = 0; i < d.length; i++) { x = (Math.imul(x, 1664525) + 1013904223) >>> 0; d[i] = x / 2147483648 - 1; }
+      try { cue(); } finally { [ctx, sfxBus, noiseBuf] = keep; }
+      return null;
+    }, seconds, { wav });
+  }
   const score = SCORES[name], scene = SCENES[name];
   if (!score && !scene) throw new Error('unknown audio: ' + name);
   return measureAudio((oc, dest) => {

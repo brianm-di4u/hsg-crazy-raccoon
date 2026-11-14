@@ -23,14 +23,29 @@ export class Hud {
         <div class="pill time" id="h-time" aria-label="Time"></div>
         <div class="pill beam" id="h-beam" hidden></div>
       </div>
+      <div class="pill tip" id="h-tip" hidden role="note"><span id="h-tiptext"></span><button type="button" class="btn small" id="h-tipskip">Skip tips</button></div>
       <div class="bottom">
         <div class="pill hint" id="h-hint" hidden></div>
         <button type="button" class="btn lure" id="h-lure" aria-label="Toss a drumstick lure"><span class="drum" aria-hidden="true"></span><span class="lbl">Lure</span><b id="h-lures">0</b></button>
       </div>`;
     bindButton(root.querySelector('#h-pause'), () => app.onHud('pause'));
     bindButton(root.querySelector('#h-lure'), () => app.onHud('lure'));
+    bindButton(root.querySelector('#h-tipskip'), () => app.onHud('skipTips'));
+    root.querySelector('#h-tip').addEventListener('click', (e) => { if (e.target.id !== 'h-tipskip') app.onHud('tipDone'); });
   }
-  show(on) { this.root.classList.toggle('on', on); this.last = {}; }
+  // a first-run tip (S2-01): one short line with a Skip tips button. Taps on the line dismiss it.
+  tip(text) {
+    const el = this.root.querySelector('#h-tip');
+    if (this.last.tip === text) return;
+    this.last.tip = text; el.hidden = !text; this.root.querySelector('#h-tiptext').textContent = text || '';
+  }
+  // the snack counter pulses when a snack is picked up (a steady highlight under reduced motion, see the CSS)
+  pulse() {
+    const el = this.root.querySelector('#h-snacks');
+    el.classList.remove('pulse'); void el.offsetWidth; el.classList.add('pulse');
+    clearTimeout(this.pulseT); this.pulseT = setTimeout(() => el.classList.remove('pulse'), 1400);
+  }
+  show(on) { this.root.classList.toggle('on', on); this.last = {}; if (!on) this.tip(''); }
   set(id, v, html = false) {
     if (this.last[id] === v) return;
     this.last[id] = v;

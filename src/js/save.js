@@ -1,5 +1,7 @@
 // Saves: one versioned JSON object in localStorage, wrapped in try/catch with an in-memory fallback so the game
 // works when storage is blocked. Adapted from games/Cart Racing/src/js/save.js (Hot Springs Games, MIT).
+import { COSTUME_IDS, DAILY_KEEP, emptyDaily, validDay } from './progress.js';
+
 const KEY = 'hsg-crazy-raccoon-v1';
 let mem = null;
 let persisted = null;
@@ -7,13 +9,15 @@ let pendingReset = false;
 
 export const DEFAULT_SAVE = () => ({
   v: 1,
-  settings: { sound: true, music: true, ambience: true, volume: 0.5, reducedMotion: null, textScale: 1, assist: false, hints: true, view: 'standard' },
+  settings: { sound: true, music: true, ambience: true, volume: 0.5, reducedMotion: null, textScale: 1, assist: false, hints: true, view: 'standard', costume: 'plain', tipsOn: true, tipsDone: {} },
   progress: {}, // levelId → { stars: [b, b, b], best, bestT, ball }
   unlocked: 1, // highest playable level number
   notebook: [], // fact ids seen
   merman: false,
-  endless: { unlocked: false, top: [] }, // top: [{ initials, score, rows, date }]
-  stats: { hops: 0, chomps: 0, splashes: 0, treats: 0, runs: 0 },
+  endless: { unlocked: false, top: [], bestRows: 0, bestScore: 0, daily: emptyDaily() }, // top: [{ initials, score, rows, date }]
+  ach: {}, // achievement id → the date it was earned ('before' when an old save already proved it)
+  finale: false, // the level 15 ending has been seen (its one-time defeat line is not repeated)
+  stats: { hops: 0, chomps: 0, splashes: 0, treats: 0, runs: 0, dailies: 0 },
 });
 
 
@@ -30,6 +34,10 @@ function sanitize(d) {
   d.settings.volume = Math.min(1, Math.max(0, num(d.settings.volume, 0.5)));
   if (!['close', 'standard', 'wide'].includes(d.settings.view)) d.settings.view = 'standard'; // phone view: saves from before have none
   if (![1, 1.25, 1.5].includes(d.settings.textScale)) d.settings.textScale = 1;
+  if (!COSTUME_IDS.includes(d.settings.costume)) d.settings.costume = 'plain';
+  d.settings.tipsDone = object(d.settings.tipsDone) ? Object.fromEntries(Object.entries(d.settings.tipsDone).filter(([, v]) => v === true)) : {};
+  d.ach = object(d.ach) ? Object.fromEntries(Object.entries(d.ach).filter(([, v]) => typeof v === 'string')) : {};
+  d.finale = d.finale === true;
   if (!object(d.progress)) d.progress = {};
   for (const id of Object.keys(d.progress)) {
     const e = d.progress[id];
@@ -46,6 +54,14 @@ function sanitize(d) {
   d.endless.top = (Array.isArray(d.endless.top) ? d.endless.top : [])
     .filter((e) => object(e) && Number.isFinite(e.score) && typeof e.initials === 'string')
     .map((e) => ({ ...e, rows: num(e.rows, 0), date: typeof e.date === 'string' ? e.date : '' }));
+  const top = d.endless.top;
+  d.endless.bestRows = Math.max(0, num(d.endless.bestRows, 0), ...top.map((e) => e.rows));
+  d.endless.bestScore = Math.max(0, num(d.endless.bestScore, 0), ...top.map((e) => e.score));
+  const dy = object(d.endless.daily) ? d.endless.daily : {}, hist = object(dy.hist) ? dy.hist : {};
+  d.endless.daily = { last: validDay(dy.last) ? dy.last : '', streak: Math.max(0, Math.trunc(num(dy.streak, 0))), bestStreak: Math.max(0, Math.trunc(num(dy.bestStreak, 0))), hist: {} };
+  for (const k of Object.keys(hist).filter((x) => validDay(x) && object(hist[x])).sort().slice(-DAILY_KEEP))
+    d.endless.daily.hist[k] = { rows: Math.max(0, Math.trunc(num(hist[k].rows, 0))), score: Math.max(0, Math.trunc(num(hist[k].score, 0))), runs: Math.max(1, Math.trunc(num(hist[k].runs, 1))) };
+  d.endless.daily.bestStreak = Math.max(d.endless.daily.bestStreak, d.endless.daily.streak);
   for (const k of Object.keys(d.stats)) d.stats[k] = Math.max(0, num(d.stats[k], 0));
   return d;
 }
@@ -54,7 +70,10 @@ function decoded(raw) {
   const s = JSON.parse(raw);
   if (!s || s.v !== 1) return null;
   const d = DEFAULT_SAVE();
-  return sanitize({ ...d, ...s, settings: { ...d.settings, ...(object(s.settings) ? s.settings : {}) }, endless: { ...d.endless, ...(object(s.endless) ? s.endless : {}) }, stats: { ...d.stats, ...(object(s.stats) ? s.stats : {}) } });
+  // a save written before the tips existed belongs to a player who is not a newcomer: no first-run tips unless asked
+  const set = { ...d.settings, ...(object(s.settings) ? s.settings : {}) };
+  if (!object(s.settings) || typeof s.settings.tipsOn !== 'boolean') set.tipsOn = false;
+  return sanitize({ ...d, ...s, settings: set, endless: { ...d.endless, ...(object(s.endless) ? s.endless : {}) }, stats: { ...d.stats, ...(object(s.stats) ? s.stats : {}) } });
 }
 // Apply only this tab's changes since its last successful load/write. Unchanged stale fields never replace
 // newer stored data (including an explicit reset in another tab). This is a synchronous read/merge/write,
@@ -76,10 +95,11 @@ function delta(base, local, latest, route = '') {
     return (Number.isFinite(latest) ? latest : 0) + Math.max(0, local - base);
   if (/^progress\.[^.]+\.best$/.test(route) && Number.isFinite(local)) return Math.max(Number.isFinite(latest) ? latest : 0, local);
   if (/^progress\.[^.]+\.bestT$/.test(route) && Number.isFinite(local)) return Number.isFinite(latest) ? Math.min(latest, local) : local;
+  if ((route === 'endless.bestRows' || route === 'endless.bestScore') && Number.isFinite(local)) return Math.max(Number.isFinite(latest) ? latest : 0, local);
   if (route === 'unlocked' && Number.isFinite(local)) return Math.max(Number.isFinite(latest) ? latest : 1, local);
   if (/^progress\.[^.]+\.stars$/.test(route) && Array.isArray(local))
     return local.map((v, i) => Boolean(v || latest?.[i]));
-  if ((/^progress\.[^.]+\.ball$/.test(route) || route === 'merman' || route === 'endless.unlocked') && typeof local === 'boolean')
+  if ((/^progress\.[^.]+\.ball$/.test(route) || route === 'merman' || route === 'finale' || route === 'endless.unlocked') && typeof local === 'boolean')
     return Boolean(local || latest);
   if (object(local)) {
     const result = object(latest) ? copy(latest) : {};

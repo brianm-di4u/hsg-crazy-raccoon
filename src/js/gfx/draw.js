@@ -215,3 +215,47 @@ export function den(g, s) {
   // a few sticks and a leaf on top
   g.strokeStyle = '#5A3F27'; g.lineWidth = lw; for (const a of [-0.6, 0.2, 0.8]) { g.beginPath(); g.moveTo(Math.cos(a + 3.6) * s * 0.9, -s * 1.0 + Math.sin(a) * s * 0.2); g.lineTo(Math.cos(a + 3.6) * s * 0.9 + s * 0.4, -s * 1.15 + Math.sin(a) * s * 0.2); g.stroke(); }
 }
+
+// --- Bandit's costumes (S3-05): simple shapes over the painted or drawn sprite, in tile units. `top` is the y of the
+// top of Bandit's head, `face` is left, right, up or down. Drawn at Bandit's foot point after the sprite.
+export function costume(g, id, s, top, face = 'down', t = 0, still = false) {
+  if (!id || id === 'plain') return;
+  const lw = Math.max(1.5, s * 0.045), side = face === 'left' ? -1 : face === 'right' ? 1 : 0;
+  g.save(); g.translate(side * s * 0.05, top);
+  if (id === 'hardhat') {
+    blob(g, (p) => p.ellipse(0, s * 0.03, s * 0.37, s * 0.075, 0, 0, Math.PI * 2), '#E0A91A', lw);
+    blob(g, (p) => { p.moveTo(-s * 0.28, s * 0.03); p.quadraticCurveTo(-s * 0.28, -s * 0.27, 0, -s * 0.27); p.quadraticCurveTo(s * 0.28, -s * 0.27, s * 0.28, s * 0.03); }, '#FFC93C', lw);
+    g.strokeStyle = '#E0A91A'; g.lineWidth = lw; g.beginPath(); g.moveTo(0, -s * 0.27); g.lineTo(0, s * 0.0); g.stroke();
+    g.fillStyle = '#FFFFFF'; g.beginPath(); g.ellipse(-s * 0.1, -s * 0.15, s * 0.04, s * 0.025, -0.6, 0, Math.PI * 2); g.fill();
+  } else if (id === 'keeper') {
+    blob(g, (p) => { p.moveTo(-s * 0.3, s * 0.03); p.quadraticCurveTo(-s * 0.3, -s * 0.2, 0, -s * 0.2); p.quadraticCurveTo(s * 0.3, -s * 0.2, s * 0.3, s * 0.03); }, '#4F7A3A', lw);
+    g.fillStyle = '#3B5E2B'; g.beginPath(); g.ellipse(0, -s * 0.2, s * 0.05, s * 0.025, 0, 0, Math.PI * 2); g.fill();
+    if (face !== 'up') blob(g, (p) => p.ellipse(side * s * 0.2, s * 0.05, s * (side ? 0.2 : 0.22), s * 0.06, 0, 0, Math.PI * 2), '#2F4826', lw);
+  } else if (id === 'crown') {
+    blob(g, (p) => { p.moveTo(-s * 0.24, s * 0.03); p.lineTo(-s * 0.27, -s * 0.2); p.lineTo(-s * 0.13, -s * 0.09); p.lineTo(0, -s * 0.25); p.lineTo(s * 0.13, -s * 0.09); p.lineTo(s * 0.27, -s * 0.2); p.lineTo(s * 0.24, s * 0.03); }, '#FFC93C', lw);
+    g.fillStyle = '#C2482B'; g.beginPath(); g.arc(0, -s * 0.05, s * 0.04, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#1E7F8F'; for (const x of [-0.15, 0.15]) { g.beginPath(); g.arc(x * s, -s * 0.02, s * 0.028, 0, Math.PI * 2); g.fill(); }
+  } else if (id === 'scarf') {
+    // a red band at the neck with a knotted tail, under the chin
+    g.translate(0, s * 0.43);
+    blob(g, (p) => p.ellipse(0, 0, s * 0.27, s * 0.07, 0, 0, Math.PI * 2), '#C2482B', lw);
+    blob(g, (p) => { p.moveTo(s * 0.08 * (side || 1), 0); p.lineTo(s * 0.2 * (side || 1), s * 0.17); p.lineTo(s * 0.08 * (side || 1), s * 0.14); }, '#E06A50', lw * 0.8);
+    g.strokeStyle = '#FFFFFF'; g.lineWidth = lw * 0.7; g.beginPath(); g.moveTo(-s * 0.16, s * 0.01); g.lineTo(s * 0.16, s * 0.01); g.stroke();
+  } else if (id === 'moon') {
+    // a soft moonlit glow around Bandit and three slow sparkles (still under reduced motion)
+    g.translate(0, s * 0.45);
+    const r = s * 0.7, gr = g.createRadialGradient(0, 0, r * 0.2, 0, 0, r);
+    gr.addColorStop(0, 'rgba(200,225,255,0.38)'); gr.addColorStop(1, 'rgba(200,225,255,0)');
+    g.fillStyle = gr; g.beginPath(); g.arc(0, 0, r, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#EAF4FF';
+    for (let i = 0; i < 3; i++) { const a = (still ? 0 : t * 0.8) + i * 2.09; star4(g, Math.cos(a) * s * 0.5, Math.sin(a) * s * 0.3 - s * 0.1, s * 0.035); }
+  }
+  g.restore();
+}
+
+// the BANK sign on a checkpoint row (S2-01): a small gold plaque so the row where snacks are banked is readable
+export function bankPlaque(g, s) {
+  const w = s * 0.74, h = s * 0.3;
+  blob(g, (p) => p.roundRect(-w / 2, -h / 2, w, h, h * 0.3), '#FFC93C', Math.max(1.5, s * 0.04));
+  g.fillStyle = INK; g.font = `900 ${Math.round(h * 0.6)}px "Arial Black", Impact, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('BANK', 0, h * 0.04);
+}
