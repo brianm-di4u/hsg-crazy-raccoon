@@ -11,6 +11,7 @@ export const HOP_H = 0.45; // peak height in tiles (renderer)
 export const BUMP_T = 0.12;
 export const KNOCK_T = 0.22;
 export const DEAD_T = 0.9;
+export const DEAD_SKIP_T = 0.4; // a hop pressed this long after a death restarts at once (S1-11); before it, the death plays out
 export const INV_T = 1.2;
 export const STREAK_WIN = 0.5;
 export const STREAK_RESET = 1.0;

@@ -6,7 +6,7 @@ import { along, onRow, isHead, isTail, deadly, beamAt, nose } from './world.js';
 const DIRS = { up: [1, 0], down: [-1, 0], left: [0, -1], right: [0, 1] };
 
 export function makePlayer(level, col = 4) {
-  return { row: 0, x: colX(col), state: 'idle', t: 0, dur: HOP_T, from: null, to: null, facing: 'up', lastH: 0, on: null, queue: null, invT: 0, whipT: 0, whipId: -1, cause: null, knock: false, nudge: -1, check: { row: 0, x: colX(col) } };
+  return { row: 0, x: colX(col), state: 'idle', t: 0, dur: HOP_T, from: null, to: null, facing: 'up', lastH: 0, on: null, queue: null, queue2: null, invT: 0, whipT: 0, whipId: -1, cause: null, knock: false, nudge: -1, check: { row: 0, x: colX(col) } };
 }
 
 export const rowType = (level, r) => (level.rows[r] ? level.rows[r].t : 'void');
@@ -68,7 +68,7 @@ function startHop(p, world, level, dir, ev) {
 
 export function die(p, cause, ev) {
   if (p.state === 'dead' || p.state === 'won') return;
-  p.state = 'dead'; p.t = 0; p.cause = cause; p.on = null; p.queue = null;
+  p.state = 'dead'; p.t = 0; p.cause = cause; p.on = null; p.queue = null; p.queue2 = null;
   ev.push({ k: 'die', cause, row: p.row, x: p.x });
 }
 
@@ -110,8 +110,13 @@ function land(p, world, level, ev) {
     }
     ev.push({ k: 'land', row: r, x, fwd, ground: true, fling });
   }
-  if (p.queue && p.state === 'idle') { const q = p.queue; p.queue = null; startHop(p, world, level, q, ev); }
+  if (p.queue && p.state === 'idle') startHop(p, world, level, shiftQueue(p), ev);
 }
+
+// Two presses can wait while a hop is in flight (S1-08): the first fires when it lands, the second after it. A third
+// press replaces the second, so the newest intent is never dropped.
+function enqueue(p, dir) { if (!p.queue) p.queue = dir; else p.queue2 = dir; }
+function shiftQueue(p) { const q = p.queue; p.queue = p.queue2 || null; p.queue2 = null; return q; }
 
 export function gatorById(world, id) { for (const g of world.gators) if (g.id === id) return g; return null; }
 
@@ -119,30 +124,30 @@ export function gatorById(world, id) { for (const g of world.gators) if (g.id ==
 export function stepPlayer(p, world, level, input, ev, dt = DT) {
   if (p.invT > 0) p.invT -= dt;
   const hop = input && input.hop;
+  let queued = false;
   switch (p.state) {
     case 'dead': case 'won': p.t += dt; return;
     case 'hop':
       p.t += dt;
-      if (hop) p.queue = hop;
+      if (hop) enqueue(p, hop);
       if (p.t >= (p.dur || HOP_T)) land(p, world, level, ev);
       return;
     case 'fling':
       p.t += dt;
-      if (hop) p.queue = hop;
+      if (hop) enqueue(p, hop);
       if (p.t >= FLING_T) land(p, world, level, ev);
       return;
     case 'bump':
       p.t += dt;
-      if (hop) p.queue = hop; // a retry pressed during the wiggle fires when it ends
+      if (hop) { enqueue(p, hop); queued = true; } // a retry pressed during the wiggle fires when it ends
       if (p.t >= BUMP_T) p.state = 'idle';
       else break;
     // falls through to idle handling once the bump wiggle ends
     default: break;
   }
   if (p.state === 'idle' && (hop || p.queue)) {
-    const h = hop || p.queue;
-    p.queue = null;
-    if (startHop(p, world, level, h, ev)) return;
+    if (hop && !queued) enqueue(p, hop);
+    if (startHop(p, world, level, shiftQueue(p), ev)) return;
   }
   const grounded = p.state === 'idle' || p.state === 'bump';
   // riding

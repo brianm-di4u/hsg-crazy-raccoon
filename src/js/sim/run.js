@@ -1,6 +1,6 @@
 // A run: one campaign level or one Moonlight Run. Owns the world, Bandit, items, rings, score and the event queue
 // the app drains for sound, FX and UI. No DOM (MECHANICS §4–§8).
-import { DT, T, W, COLS, DEAD_T, INV_T, STREAK_WIN, STREAK_RESET, MAX_CARRY, MAX_LURES, LURE_FLIGHT, SCORE, TREATS, colX, xCol, clamp, wrapX } from './const.js';
+import { DT, T, W, COLS, DEAD_T, DEAD_SKIP_T, INV_T, STREAK_WIN, STREAK_RESET, MAX_CARRY, MAX_LURES, LURE_FLIGHT, SCORE, TREATS, colX, xCol, clamp, wrapX } from './const.js';
 import { makeWorld, stepWorld, buildGators, onRow } from './world.js';
 import { makePlayer, stepPlayer, die, rowType } from './player.js';
 import { makeRng, hashStr } from '../rng.js';
@@ -87,7 +87,9 @@ export class Run {
       if (p.state !== 'dead' && p.row <= this.beam && p.invT <= 0) { const n = this.ev.length; die(p, 'caught', this.ev); this.onEvent(this.ev[n]); }
       this.extend();
     }
-    if (p.state === 'dead' && p.t >= DEAD_T) this.respawn();
+    // a hop pressed once the death has had its beat (DEAD_SKIP_T) restarts at once and is the first hop of the retry
+    const skip = p.state === 'dead' && p.t >= DEAD_SKIP_T && p.t < DEAD_T && this.rings > 0 && input.hop;
+    if (p.state === 'dead' && (p.t >= DEAD_T || skip)) { this.respawn(); if (skip && p.state === 'idle') p.queue = input.hop; }
     if (this.t - this.lastFwd > STREAK_RESET && this.streak) { this.streak = 0; this.mult = 1; }
   }
 
@@ -155,7 +157,7 @@ export class Run {
       this.beam -= 3;
       for (let r = Math.max(row, Math.ceil(this.beam) + 1); r < this.N; r++) if (this.L.rows[r].check) { row = r; break; }
     }
-    p.row = row; p.x = p.check.row === row ? p.check.x : colX(4); p.state = 'idle'; p.t = 0; p.on = null; p.queue = null; p.invT = INV_T; p.whipT = 0; p.cause = null;
+    p.row = row; p.x = p.check.row === row ? p.check.x : colX(4); p.state = 'idle'; p.t = 0; p.on = null; p.queue = null; p.queue2 = null; p.invT = INV_T; p.whipT = 0; p.cause = null;
     this.ev.push({ k: 'respawn', row });
   }
 

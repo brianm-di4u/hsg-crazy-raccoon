@@ -34,7 +34,7 @@ export function installHooks(App, api) {
           const p = run.p;
           if (s.player.row != null) p.row = s.player.row;
           p.x = s.player.x ?? (s.player.col != null ? colX(s.player.col) : p.x);
-          p.state = 'idle'; p.on = null; p.queue = null; p.t = 0;
+          p.state = 'idle'; p.on = null; p.queue = null; p.queue2 = null; p.t = 0;
           if (s.player.ride) { const g = run.world.gators.find((q) => q.row === p.row && Math.abs(q.x - p.x) < q.len * 64); if (g) p.on = g.id; }
           App.renderer.snap(p.row, p.x);
         }
