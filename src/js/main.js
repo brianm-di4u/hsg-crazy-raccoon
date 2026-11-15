@@ -44,6 +44,23 @@ const live = document.getElementById('live');
 App.say = (t) => { live.textContent = ''; setTimeout(() => { live.textContent = t; }, 30); App.lastSaid = t; };
 
 // ---------------------------------------------------------------------------------------------------------------
+// haptics (S3-13): short pulses on a landing, a bite or splash, a bank and a win, where the browser has navigator.vibrate.
+// Off with the Vibration setting and whenever motion is reduced. Never part of the Sound switch.
+const PULSE = { land: 10, hurt: 25, bank: [15, 30, 15], win: [20, 40, 20, 40, 25] };
+function buzz(kind) {
+  if (!App.save.settings.vibration || App.reduced || !navigator.vibrate) return;
+  try { navigator.vibrate(PULSE[kind]); } catch (e) { /* a browser that refuses it: no pulse */ }
+}
+// what Bandit lands on, for the landing sound (S5-04)
+const SURFACE = { start: 'grass', grass: 'grass', goal: 'grass', boardwalk: 'wood', fence: 'wood', sand: 'sand', path: 'path', straw: 'straw' };
+function surfaceOf(run, e) {
+  if (e.ride) return 'back';
+  if (e.pool) return 'wet';
+  const row = run.L.rows && run.L.rows[e.row];
+  return (row && SURFACE[row.t]) || 'grass';
+}
+
+// ---------------------------------------------------------------------------------------------------------------
 function applySettings() {
   const s = App.save.settings;
   document.documentElement.style.setProperty('--text-scale', s.textScale || 1);
@@ -194,7 +211,7 @@ function levelDone(run) {
     checkDerived();
     screens.show('over', { res: { ...res, rows }, rank, entry, newBest, daily, earned: App.earned.slice(), cause: run.p.cause });
     App.pendingScore = rank >= 0 ? entry : null;
-    setEnabled(false); sfx('fail');
+    setEnabled(false); sfx(newBest ? 'best' : 'fail');
     return;
   }
   if (!res.win) {
@@ -230,7 +247,10 @@ function levelDone(run) {
   }
   screens.show('win', { L, res, fact: f, next: true, best, bestTime, assist: App.save.settings.assist, earned: App.earned.slice(), nextUp: nextUnlock(s) });
   duckMusic(8, 1600);
-  sfx('win'); res.stars.forEach((b, i) => { if (b) setTimeout(() => sfx('star', i), 500 + i * 220); });
+  sfx('win'); res.stars.forEach((b, i) => { if (b) setTimeout(() => sfx(i === 2 ? 'par' : 'star', i), 500 + i * 220); });
+  // after the stars: a new best, then the fact card that went into the Notebook
+  if (best || bestTime) setTimeout(() => sfx('best'), 1350);
+  if (f) setTimeout(() => sfx('fact'), best || bestTime ? 1900 : 1350);
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -254,9 +274,12 @@ function commitScore() {
   return ini;
 }
 
+// a refused press sounds refused (S5-10); going back is lower than going on; a settings click waits until the setting is applied
+const BACK_ACTS = new Set(['back', 'resume', 'title', 'quitYes', 'map']);
 App.onMenu = (act, d = {}) => {
-  sfx('menu');
   const s = App.save;
+  if (act === 'locked' || ((act === 'endless' || act === 'daily') && !s.endless.unlocked)) sfx('denied');
+  else if (act !== 'set') sfx(BACK_ACTS.has(act) ? 'back' : 'menu');
   if (App.pendingScore && screens.cur === 'over' && act !== 'saveScore') App.say('Score saved as ' + commitScore() + '.');
   switch (act) {
     case 'play': playTheme('map', 'meadow'); return screens.show('map', { levels: LEVELS });
@@ -277,7 +300,7 @@ App.onMenu = (act, d = {}) => {
     case 'title': return showTitle();
     case 'set': {
       const v = d.k === 'view' ? d.v : d.v === 'true' ? true : d.v === 'false' ? false : d.v === 'null' ? null : +d.v;
-      s.settings[d.k] = v; persist(); return screens.refresh();
+      s.settings[d.k] = v; persist(); sfx('menu'); return screens.refresh();
     }
     case 'resetSave': return screens.show('confirmReset', { from: 'settings' });
     case 'resetYes': App.save = DEFAULT_SAVE(); persist({ reset: true }); return showTitle();
@@ -373,25 +396,25 @@ function handleEvents(run) {
   for (const e of run.drain()) {
     renderer.onEvent(e, run);
     switch (e.k) {
-      case 'hop': sfx('hop', run.hops); App.save.stats.hops++; break;
-      case 'land': if (!e.ride) sfx('land'); break;
+      case 'hop': sfx('hop', run.hops, run.mult); App.save.stats.hops++; break;
+      case 'land': sfx('land', surfaceOf(run, e)); buzz('land'); break;
       case 'bump': sfx('bump'); break;
       case 'knock': sfx('bump'); break;
       case 'nudge': sfx('nudge'); break;
       case 'die':
-        sfx(e.cause === 'splash' ? 'splash' : e.cause === 'chomp' ? 'chomp' : e.cause === 'spotted' || e.cause === 'caught' ? 'spotted' : 'splash');
+        sfx({ chomp: 'chomp', spotted: 'spotted', swept: 'sweep', caught: 'hum' }[e.cause] || 'splash'); buzz('hurt');
         if (e.cause === 'chomp') { App.save.stats.chomps++; App.stop = HITSTOP_T; checkDerived(); } if (e.cause === 'splash') App.save.stats.splashes++;
         App.say({ chomp: 'Chomped!', splash: 'Splash!', swept: 'Swept away!', spotted: 'Spotted!', caught: 'Caught by the lantern!' }[e.cause] + ` ${run.rings} tail rings left.`);
         break;
       case 'pickup': if (e.item === 'pecan' || e.item === 'berry') hud.pulse(); sfx(e.item === 'cap' ? 'cap' : e.item === 'ball' ? 'ball' : 'pickup'); if (e.item === 'ball') App.say('You found the lost home-run ball!'); if (e.item === 'ring') App.say(`A tail ring! ${run.rings} tail rings left.`); break;
       case 'wash': sfx('wash'); earn('squeaky'); break;
-      case 'bank': sfx('bank'); App.say(`${e.n} snack${e.n > 1 ? 's' : ''} banked.`); earn('snack'); if (tipId) { Object.assign(App.save.settings.tipsDone, { carry: true, bank: true }); persist(); endTip(); } break;
+      case 'bank': sfx('bank'); buzz('bank'); App.say(`${e.n} snack${e.n > 1 ? 's' : ''} banked.`); earn('snack'); if (tipId) { Object.assign(App.save.settings.tipsDone, { carry: true, bank: true }); persist(); endTip(); } break;
       case 'lure': sfx('lure'); earn('lure'); break;
       case 'streak': sfx('streak', e.mult); if (e.mult >= 4) earn('streak4'); break;
       case 'whipWind': sfx('whip'); break;
       case 'fling': sfx('whip'); break;
       case 'full': hud.hint('Paws full!'); setTimeout(() => hud.hint(''), 900); break;
-      case 'win': App.say('Home free!'); break;
+      case 'win': App.say('Home free!'); buzz('win'); break;
       default: break;
     }
   }

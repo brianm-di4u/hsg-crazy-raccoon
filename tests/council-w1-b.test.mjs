@@ -23,14 +23,15 @@ const fakeAudio = () => {
     resume() { return Promise.resolve(); } suspend() { return Promise.resolve(); }
   };
 };
-const heard = (t, key) => t.page.evaluate((k) => window.__aud.osc.filter((o) => o === k).length, key);
-const cue = async (t, level, key, ticks) => {
+// wave 3 (S5-04): every play of a cue is detuned a little, so a cue is counted by name in the audio state's cue log, not by its pitch
+const played = (t, name) => t.page.evaluate((n) => window.__game.getState().audio.cues.filter((c) => c === n).length, name);
+const cue = async (t, level, name, ticks) => {
   await t.page.dispatchEvent('body', 'pointerdown');
   await t.game('newGame', { level });
   await t.game('pause');
-  await t.page.evaluate(() => { window.__aud.osc.length = 0; });
+  const before = await played(t, name);
   for (let i = 0; i < ticks / 60; i++) await t.game('step', 60);
-  return heard(t, key);
+  return (await played(t, name)) - before;
 };
 
 const setUp = async (t) => {
@@ -82,10 +83,9 @@ export const tests = [
     viewports: ['desktop'],
     initScript: fakeAudio,
     async run(t) {
-      const n = await cue(t, 'l1', 'square:880', 1200);
+      const n = await cue(t, 'l1', 'tele', 1200);
       t.expect(n >= 2, 'the tele cue plays as gators near the start begin their warnings (heard ' + n + ')');
-      const total = await t.page.evaluate(() => window.__aud.osc.filter((o) => o === 'square:880').length);
-      t.expect(total <= 60, 'one cue per warning, not one per step (heard ' + total + ' in 20 s)');
+      t.expect(n <= 60, 'one cue per warning, not one per step (heard ' + n + ' in 20 s)');
     },
   },
   {
@@ -93,7 +93,7 @@ export const tests = [
     viewports: ['desktop'],
     initScript: fakeAudio,
     async run(t) {
-      const n = await cue(t, 'l7', 'square:392', 480);
+      const n = await cue(t, 'l7', 'feed', 480);
       t.expect(n >= 1, 'the feed cue plays when the first toss is announced (heard ' + n + ')');
       t.expect(n <= 3, 'one cue per toss (heard ' + n + ')');
     },

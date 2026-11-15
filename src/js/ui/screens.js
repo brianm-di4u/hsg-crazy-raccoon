@@ -256,7 +256,8 @@ const TEMPLATES = {
       <div class="cols">
         <section><h3>Move</h3><p><b>Arrows</b> / <b>WASD</b>, the <b>d-pad</b>, or <b>tap</b> beside Bandit to hop that way (<b>swipes</b> work too). One hop = one tile.</p>
           <h3>Stars</h3><p>★ Reach the den · ★ Bank every snack · ★ Beat par. Find the hidden ⚾ in every level.</p>
-          <h3>Tail rings</h3><p>Each splash, chomp or sweep off the edge costs a ring. You restart at the last checkpoint.</p></section>
+          <h3>Tail rings</h3><p>Each splash, chomp or sweep off the edge costs a ring. You restart at the last checkpoint.</p>
+          <h3>Sound</h3><p>Listen for the warning pop before a gator bites. Each surface sounds different underfoot.</p></section>
         <section><h3>Snacks</h3><p>Grab pecans and berries (paws hold 3). Bank them at the <b>bright BANK rows</b> or the den: snacks only count once banked. Dunk them in a <b>steaming spring stone</b> first to wash them for double points.</p>
           <h3>Lure</h3><p><b>Space</b> / <b>E</b> / <b>Lure</b> button tosses a drumstick two rows ahead (and three tiles to the side you last hopped). A dashed ring shows the spot. Gators rush to it.</p>
           <h3>Gators</h3><ul>
@@ -279,6 +280,7 @@ const TEMPLATES = {
       ${field('Music', seg('music', s.music, [[true, 'On'], [false, 'Off']]))}
       ${field('Ambience', seg('ambience', s.ambience, [[true, 'On'], [false, 'Off']]))}
       ${field('Volume', seg('volume', s.volume, [[0.25, 'Low'], [0.5, 'Medium'], [0.85, 'High']]))}
+      ${navigator.vibrate ? field('Vibration', seg('vibration', s.vibration, [[true, 'On'], [false, 'Off']])) + '<p class="sub">A short buzz on landings, bites, banking and wins. Off when motion is reduced.</p>' : ''}
       ${field('Motion', seg('reducedMotion', s.reducedMotion, [[null, 'System'], [false, 'Full'], [true, 'Reduced']]))}
       ${field('Text size', seg('textScale', s.textScale, [[1, '100%'], [1.25, '125%'], [1.5, '150%'], [1.75, '175%']]))}
       ${field('Phone view', seg('view', s.view, [['close', 'Close'], ['standard', 'Standard'], ['wide', 'Wide']]))}

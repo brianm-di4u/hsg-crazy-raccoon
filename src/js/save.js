@@ -12,7 +12,7 @@ export const storageBlocked = () => blocked;
 
 export const DEFAULT_SAVE = () => ({
   v: 1,
-  settings: { sound: true, music: true, ambience: true, volume: 0.5, reducedMotion: null, textScale: 1, assist: false, hints: true, view: 'standard', costume: 'plain', tipsOn: true, tipsDone: {} },
+  settings: { sound: true, music: true, ambience: true, volume: 0.5, vibration: true, reducedMotion: null, textScale: 1, assist: false, hints: true, view: 'standard', costume: 'plain', tipsOn: true, tipsDone: {} },
   progress: {}, // levelId → { stars: [b, b, b], best, bestT, ball }
   unlocked: 1, // highest playable level number
   notebook: [], // fact ids seen
@@ -34,6 +34,7 @@ const num = (v, fallback) => (typeof v === 'number' && Number.isFinite(v) ? v : 
 // level clear or the scores screen and then be written back for good.
 function sanitize(d) {
   d.settings.ambience = d.settings.ambience !== false; // saves from before the Ambience setting have none: on
+  d.settings.vibration = d.settings.vibration !== false; // likewise for Vibration (S3-13)
   d.settings.volume = Math.min(1, Math.max(0, num(d.settings.volume, 0.5)));
   if (!['close', 'standard', 'wide'].includes(d.settings.view)) d.settings.view = 'standard'; // phone view: saves from before have none
   if (![1, 1.25, 1.5, 1.75].includes(d.settings.textScale)) d.settings.textScale = 1;

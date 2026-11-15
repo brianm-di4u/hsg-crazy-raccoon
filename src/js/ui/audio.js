@@ -4,11 +4,33 @@
 // (generative scores written as data, ambience beds with sparse one-shots), with this game's own scores and scenes.
 
 let ctx = null, master = null, sfxBus = null, mixBus = null, noiseBuf = null, kit = null;
-const state = { on: true, music: true, amb: true, vol: 0.5, started: false, theme: null, scene: null, playing: null, playingScene: null, tension: 0, hold: false, suspended: false };
+const state = { on: true, music: true, amb: true, vol: 0.5, started: false, theme: null, scene: null, playing: null, playingScene: null, tension: 0, hold: false, suspended: false, cues: [], cueVol: 0 };
 
 // What the music and ambience buses are set to when their setting is on (the scores and scenes are written to the
 // levels the mix targets, measured by audioRender: music peaks 0.06 to 0.16, ambience under 0.07).
 const MUSIC_LEVEL = 1, AMB_LEVEL = 1;
+// The master gain is the Volume setting times MASTER_K (old value 0.5, S5-03 and CL-01); a limiter follows it so the music, the
+// ambience and the loudest cue together never clip, even with every volume control at its maximum. audioRender builds
+// the same chain, so its numbers are what the speakers get.
+const MASTER_K = 1.4, SHIPPED_VOLUME = 0.5;
+// After the compressor, a soft clip: straight up to 0.6, then folded smoothly under 0.88. The compressor needs a few
+// milliseconds to react, so on its own a burst of cues at full volume gets through it; this catches what it lets by.
+const SOFT_CLIP = (() => {
+  const n = 2049, curve = new Float32Array(n);
+  for (let i = 0; i < n; i++) { const x = (i / (n - 1)) * 2 - 1, a = Math.abs(x); curve[i] = Math.sign(x) * (a <= 0.6 ? a : 0.6 + 0.32 * Math.tanh((a - 0.6) / 0.32)); }
+  return curve;
+})();
+function makeMaster(c, dest, gain) {
+  const m = c.createGain(); m.gain.value = gain;
+  let tail = dest;
+  if (c.createWaveShaper) { const sh = c.createWaveShaper(); sh.curve = SOFT_CLIP; sh.oversample = '2x'; sh.connect(dest); tail = sh; }
+  if (c.createDynamicsCompressor) {
+    const lim = c.createDynamicsCompressor();
+    lim.threshold.value = -6; lim.knee.value = 4; lim.ratio.value = 12; lim.attack.value = 0.003; lim.release.value = 0.15;
+    m.connect(lim); lim.connect(tail);
+  } else m.connect(tail);
+  return m;
+}
 
 export function initAudio(settings) {
   state.on = settings.sound !== false; state.music = settings.music !== false; state.amb = settings.ambience !== false; state.vol = settings.volume ?? 0.5;
@@ -37,13 +59,7 @@ function unlock() {
       if (ctx.state === 'running') { if (broke && !state.hold) applyTheme(true); broke = false; ranBefore = true; }
       else if (ranBefore && !state.suspended) broke = true;
     };
-    master = ctx.createGain(); master.gain.value = state.on ? state.vol * 0.5 : 0;
-    // a limiter on the master so the music, the ambience and the loudest cue together never clip
-    if (ctx.createDynamicsCompressor) {
-      const lim = ctx.createDynamicsCompressor();
-      lim.threshold.value = -6; lim.knee.value = 4; lim.ratio.value = 12; lim.attack.value = 0.003; lim.release.value = 0.15;
-      master.connect(lim); lim.connect(ctx.destination);
-    } else master.connect(ctx.destination);
+    master = makeMaster(ctx, ctx.destination, state.on ? state.vol * MASTER_K : 0);
     sfxBus = ctx.createGain(); sfxBus.gain.value = 0.9; sfxBus.connect(master);
     mixBus = ctx.createGain(); mixBus.gain.value = 1; mixBus.connect(master);
     noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
@@ -70,15 +86,19 @@ function levels() {
 export function setAudio(settings) {
   state.on = settings.sound !== false; state.music = settings.music !== false; state.amb = settings.ambience !== false; state.vol = settings.volume ?? state.vol;
   if (!ctx) return;
-  master.gain.setTargetAtTime(state.on ? state.vol * 0.5 : 0, ctx.currentTime, 0.05);
+  master.gain.setTargetAtTime(state.on ? state.vol * MASTER_K : 0, ctx.currentTime, 0.05);
   levels();
 }
 export function audioState() {
-  return { started: state.started, on: state.on, music: state.music, ambience: state.amb, theme: state.theme, scene: state.scene, ctx: ctx ? ctx.state : 'none', held: state.hold, tension: +state.tension.toFixed(2), kit: !!kit, levels: kit ? { ...kit.levels(), master: +master.gain.value.toFixed(3) } : null };
+  return { started: state.started, on: state.on, music: state.music, ambience: state.amb, theme: state.theme, scene: state.scene, ctx: ctx ? ctx.state : 'none', held: state.hold, tension: +state.tension.toFixed(2), kit: !!kit, cues: state.cues.slice(), cueVol: state.cueVol, levels: kit ? { ...kit.levels(), master: +master.gain.value.toFixed(3) } : null };
 }
 
+// Every play of a cue is a little different (S5-04): playCue draws one detune (up to 25 cents) and one gain (up to 1.5 dB
+// either way) and every note of that cue shares them, so an arpeggio stays in tune with itself.
+let cueDetune = 1, cueGain = 1;
 function tone(freq, dur, { type = 'square', vol = 0.2, at = 0, slide = 0, attack = 0.005, bus = sfxBus, filter = 0 } = {}) {
   if (!ctx) return;
+  freq *= cueDetune; vol *= cueGain;
   const t = ctx.currentTime + at, o = ctx.createOscillator(), g = ctx.createGain();
   o.type = type; o.frequency.setValueAtTime(freq, t);
   if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, freq * slide), t + dur);
@@ -90,6 +110,7 @@ function tone(freq, dur, { type = 'square', vol = 0.2, at = 0, slide = 0, attack
 }
 function noise(dur, { vol = 0.2, at = 0, type = 'bandpass', freq = 1200, q = 1, sweep = 0, bus = sfxBus } = {}) {
   if (!ctx) return;
+  vol *= cueGain;
   const t = ctx.currentTime + at, s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
   s.buffer = noiseBuf; s.loop = true;
   f.type = type; f.frequency.setValueAtTime(freq, t); f.Q.value = q;
@@ -102,6 +123,7 @@ function noise(dur, { vol = 0.2, at = 0, type = 'bandpass', freq = 1200, q = 1, 
 // a note that holds its level and then lets go (the ending's chord), unlike tone(), which dies away from the start
 function held(freq, dur, vol, at, type) {
   if (!ctx) return;
+  freq *= cueDetune; vol *= cueGain;
   const t = ctx.currentTime + at, o = ctx.createOscillator(), g = ctx.createGain();
   o.type = type; o.frequency.setValueAtTime(freq, t);
   g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + 0.06); g.gain.setValueAtTime(vol, t + dur - 1.2); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
@@ -109,12 +131,32 @@ function held(freq, dur, vol, at, type) {
 }
 
 export const SFX = {
-  hop(n = 0) { tone(520 + (n % 3) * 60, 0.07, { type: 'triangle', vol: 0.09, slide: 1.6 }); },
-  land() { noise(0.04, { vol: 0.05, freq: 500, q: 1.2 }); },
-  bump() { tone(140, 0.08, { type: 'square', vol: 0.06, slide: 0.7, filter: 800 }); },
+  // hop: a pitch that cycles through three notes and rises a little with the streak multiplier (S5-21), over a bright
+  // tick and a scuff of push-off
+  hop(n = 0, mult = 1) {
+    const f = (520 + (n % 3) * 60) * Math.pow(1.05, Math.min(8, Math.max(1, mult)) - 1);
+    tone(f, 0.07, { type: 'triangle', vol: 0.1, slide: 1.6 });
+    tone(f * 2.01, 0.04, { type: 'sine', vol: 0.05, slide: 1.3 });
+    noise(0.03, { vol: 0.08, type: 'highpass', freq: 3000, q: 0.7 });
+  },
+  // land: its own sound for each surface (S5-04): a soft thud on grass, a two-note wood tick on the boardwalk, a shaker
+  // on sand, a clink on the path, a rustle on straw, a wet knock on a gator's back, a small splash in a pool
+  land(surface = 'grass') {
+    switch (surface) {
+      case 'wood': tone(420, 0.05, { type: 'sine', vol: 0.546 }); tone(330, 0.06, { type: 'triangle', vol: 0.473, at: 0.045 }); noise(0.02, { vol: 0.728, freq: 2200, q: 1.5 }); break;
+      case 'sand': noise(0.09, { vol: 0.9, type: 'highpass', freq: 4200, q: 0.6 }); noise(0.05, { vol: 0.563, freq: 1800, q: 0.8, at: 0.03 }); break;
+      case 'path': tone(1850, 0.07, { type: 'sine', vol: 0.63 }); tone(2790, 0.05, { type: 'sine', vol: 0.367, at: 0.012 }); noise(0.025, { vol: 2.1, freq: 3000, q: 1.5 }); break;
+      case 'straw': noise(0.1, { vol: 1.219, freq: 2600, q: 0.5, sweep: 0.7 }); tone(180, 0.05, { type: 'sine', vol: 0.275 }); break;
+      case 'back': tone(170, 0.11, { type: 'sine', vol: 0.634, slide: 0.55 }); noise(0.08, { vol: 1.118, type: 'lowpass', freq: 800, q: 1, sweep: 0.5 }); tone(620, 0.04, { type: 'sine', vol: 0.112, slide: 0.5 }); tone(135, 0.09, { type: 'sine', vol: 0.42, slide: 0.6, at: 0.07 }); break;
+      case 'wet': noise(0.2, { vol: 1.456, freq: 1800, q: 0.7, sweep: 0.45 }); tone(560, 0.1, { type: 'sine', vol: 0.218, slide: 0.5 }); break;
+      default: tone(120, 0.07, { type: 'sine', vol: 1.322, slide: 0.7 }); noise(0.06, { vol: 1.944, type: 'lowpass', freq: 700, q: 0.9 });
+    }
+  },
+  bump() { tone(140, 0.08, { type: 'square', vol: 0.06, slide: 0.7, filter: 800 }); tone(95, 0.1, { type: 'sine', vol: 0.12, slide: 0.6 }); },
   splash() { noise(0.45, { vol: 0.22, freq: 1700, q: 0.7, sweep: 0.35 }); tone(300, 0.25, { type: 'sine', vol: 0.08, slide: 0.4 }); },
   chomp() { noise(0.05, { vol: 0.28, freq: 2400, q: 2 }); tone(110, 0.12, { type: 'square', vol: 0.12, slide: 0.6, filter: 900 }); noise(0.05, { vol: 0.22, freq: 1800, q: 2, at: 0.09 }); },
-  tele() { tone(880, 0.05, { type: 'square', vol: 0.03, filter: 2400 }); },
+  // the warning before a jaw opens: a short, dry pop
+  tele() { tone(760, 0.07, { type: 'sine', vol: 0.3, slide: 0.45 }); noise(0.015, { vol: 0.25, freq: 2400, q: 1.5 }); },
   whip() { noise(0.12, { vol: 0.2, freq: 3500, q: 1.5, sweep: 0.4 }); tone(400, 0.4, { type: 'triangle', vol: 0.08, slide: 2.2 }); },
   pickup() { [880, 1175].forEach((f, i) => tone(f, 0.08, { type: 'triangle', vol: 0.1, at: i * 0.06 })); },
   cap() { tone(1568, 0.06, { type: 'square', vol: 0.05, filter: 3000 }); tone(2093, 0.08, { type: 'square', vol: 0.04, at: 0.05, filter: 3200 }); },
@@ -122,14 +164,27 @@ export const SFX = {
   bank() { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.1, { type: 'triangle', vol: 0.09, at: i * 0.06 })); },
   lure() { noise(0.3, { vol: 0.1, freq: 900, q: 0.8, sweep: 2.5 }); },
   feed() { tone(392, 0.12, { type: 'square', vol: 0.06, filter: 1800 }); tone(330, 0.16, { type: 'square', vol: 0.06, at: 0.13, filter: 1800 }); },
+  // swept off the edge by the current: a rush of water that falls away (S5-15)
+  sweep() { noise(0.7, { vol: 0.2, freq: 2200, q: 0.6, sweep: 0.2 }); tone(240, 0.6, { type: 'sine', vol: 0.1, slide: 0.35 }); },
+  // caught in the lantern's light: a low hum that swells and drops (S5-15)
+  hum() { tone(146, 0.7, { type: 'sawtooth', vol: 0.1, slide: 0.8, attack: 0.15, filter: 520 }); tone(155, 0.7, { type: 'sawtooth', vol: 0.08, slide: 0.8, attack: 0.15, filter: 520 }); },
   spotted() { for (let i = 0; i < 3; i++) tone(2400 + (i % 2) * 300, 0.08, { type: 'sine', vol: 0.09, at: i * 0.08 }); },
-  streak(m) { tone(660 * Math.pow(1.12, m), 0.12, { type: 'square', vol: 0.06, filter: 2600 }); },
+  // a longer streak: one soft rising ping, a beat after the landing so it does not sit on top of the hop (S5-21)
+  streak(m) { tone(660 * Math.pow(1.12, Math.min(8, m)), 0.14, { type: 'triangle', vol: 0.07, at: 0.08 }); },
   nudge() { tone(300, 0.06, { type: 'triangle', vol: 0.06, slide: 1.4 }); },
   ball() { [784, 988, 1175, 1568].forEach((f, i) => tone(f, 0.14, { type: 'square', vol: 0.07, at: i * 0.08, filter: 2800 })); },
   menu() { tone(990, 0.04, { type: 'square', vol: 0.05, filter: 3000 }); },
+  // going back or letting go (S5-10): a lower, softer blip than the menu click
+  back() { tone(620, 0.06, { type: 'triangle', vol: 0.1, slide: 0.8 }); },
+  // a refused press (a locked level or mode): a low, dull thud
+  denied() { tone(110, 0.14, { type: 'sine', vol: 0.3, slide: 0.7 }); tone(98, 0.1, { type: 'square', vol: 0.05, filter: 500, at: 0.05 }); },
   win() { [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, 0.2, { type: 'square', vol: 0.08, at: i * 0.11, filter: 2600 })); },
   fail() { [392, 349, 311, 262].forEach((f, i) => tone(f, 0.25, { type: 'triangle', vol: 0.09, at: i * 0.16 })); },
   star(i) { tone(1047 * Math.pow(1.26, i), 0.18, { type: 'square', vol: 0.07, filter: 3000 }); },
+  // rewards at the end of a level (S5-16): a new best, the par star, a fact card for the Notebook
+  best() { [784, 1047, 1319, 1568].forEach((f, i) => tone(f, 0.22, { type: 'triangle', vol: 0.11, at: i * 0.07 })); tone(2093, 0.5, { type: 'sine', vol: 0.06, at: 0.28 }); },
+  par() { tone(1760, 0.04, { type: 'square', vol: 0.05, filter: 3000 }); tone(1760, 0.04, { type: 'square', vol: 0.05, at: 0.1, filter: 3000 }); tone(2349, 0.4, { type: 'sine', vol: 0.12, at: 0.2 }); tone(3136, 0.4, { type: 'sine', vol: 0.05, at: 0.2 }); },
+  fact() { tone(1319, 0.12, { type: 'sine', vol: 0.1 }); tone(1760, 0.3, { type: 'sine', vol: 0.08, at: 0.09 }); },
   // an achievement: two bell notes and a high sparkle, a little different each time (S3-05)
   ach() {
     const j = 1 + (Math.random() - 0.5) * 0.03;
@@ -145,7 +200,24 @@ export const SFX = {
     noise(1.4, { vol: 0.03, type: 'highpass', freq: 4200, q: 0.5, at: 1.0 });
   },
 };
-export function sfx(name, ...a) { if (ctx && state.on && SFX[name]) SFX[name](...a); }
+// Each cue plays through its own trim (CUE_TRIM, 1 where it is not listed), so a cue's level is set in one place.
+// Set by measuring each cue's peak as heard (audioRender, default volume): the typical play of a cue lands between 0.2
+// and 0.45, the frequent ones (hop, land, bump, pickup, bank) near the bottom, the big events (chomp, splash, win) near
+// the top, all clearly above the music (S5-03, CL-01).
+const CUE_TRIM = { hop: 8.8, bump: 9, splash: 6.5, chomp: 5.5, tele: 4, whip: 6.6, pickup: 4.7, cap: 8.8, wash: 3.8, bank: 4.3, lure: 15, feed: 4.7, sweep: 2.8, hum: 2.9, spotted: 3.5,
+  streak: 5.4, nudge: 24, ball: 4.8, menu: 21, back: 13.5, denied: 5, win: 4.2, fail: 4.1, star: 15, best: 3.9, par: 2.75, fact: 4.6 };
+function playCue(name, args, jitter = true) {
+  const g = ctx.createGain(), keep = sfxBus;
+  g.gain.value = CUE_TRIM[name] ?? 1; g.connect(sfxBus); sfxBus = g;
+  cueDetune = jitter && name !== 'finale' ? Math.pow(2, (Math.random() * 2 - 1) * 25 / 1200) : 1;
+  cueGain = jitter ? Math.pow(10, (Math.random() * 2 - 1) * 1.5 / 20) : 1;
+  try { SFX[name](...args); } finally { sfxBus = keep; cueDetune = 1; cueGain = 1; }
+}
+export function sfx(name, ...a) {
+  if (!ctx || !state.on || !SFX[name]) return;
+  state.cues.push(name + (typeof a[0] === 'string' ? ':' + a[0] : '')); state.cueVol = state.vol; if (state.cues.length > 80) state.cues.shift();
+  playCue(name, a);
+}
 
 // ---- the audio kit (Hot Springs Games, MIT): generative music, ambience beds and a renderer for tests ----------
 // Music: scores written as data. Ambience: noise beds with slow movement plus sparse one-shots. It never creates an
@@ -638,29 +710,34 @@ export function resumeAudio(keepHeld = false) {
 }
 export function stopTheme() { state.theme = null; state.scene = null; state.playing = null; state.playingScene = null; if (kit) { kit.music.stop(); kit.amb.stop(); } }
 
-// Renders one piece or scene by itself on an OfflineAudioContext at the level the game ships and measures it
-// (test hook). Never touches the live audio or the settings. o: { intensity, params, seed }.
+// Plays cues on an offline context through a stand-in for the live buses, then puts the live ones back.
+function cuesOffline(oc, master, list, seed) {
+  const keep = [ctx, sfxBus, noiseBuf];
+  ctx = oc; sfxBus = oc.createGain(); sfxBus.gain.value = 0.9; sfxBus.connect(master);
+  noiseBuf = oc.createBuffer(1, oc.sampleRate, oc.sampleRate);
+  const d = noiseBuf.getChannelData(0); let x = (seed || 0x2545F491) >>> 0; for (let i = 0; i < d.length; i++) { x = (Math.imul(x, 1664525) + 1013904223) >>> 0; d[i] = x / 2147483648 - 1; }
+  try { for (const c of list) { if (!SFX[c.name]) throw new Error('unknown audio: cue:' + c.name); playCue(c.name, c.args || []); } } finally { [ctx, sfxBus, noiseBuf] = keep; }
+}
+// Renders one piece, scene or cue ('cue:hop') by itself on an OfflineAudioContext at the level the game ships and measures it
+// (test hook), through the master gain and limiter the player hears, so the numbers are as heard. Never touches the live
+// audio or the settings. o: { intensity, params, seed, volume (the Volume setting, default the shipped 0.5), args (for a cue),
+// cues: [{ name, args }] played together at cueAt seconds over a piece or scene, for the busiest moment }.
 export async function renderAudio(name, seconds = 30, wav = false, o = {}) {
-  if (name.startsWith('cue:')) { // a sound effect by itself: rendered through a stand-in for the live buses, then put back
-    const cue = SFX[name.slice(4)];
-    if (!cue) throw new Error('unknown audio: ' + name);
-    return measureAudio((oc, dest) => {
-      const keep = [ctx, sfxBus, noiseBuf];
-      ctx = oc; sfxBus = oc.createGain(); sfxBus.gain.value = 0.9; sfxBus.connect(dest);
-      noiseBuf = oc.createBuffer(1, oc.sampleRate, oc.sampleRate);
-      const d = noiseBuf.getChannelData(0); let x = 0x2545F491; for (let i = 0; i < d.length; i++) { x = (Math.imul(x, 1664525) + 1013904223) >>> 0; d[i] = x / 2147483648 - 1; }
-      try { cue(); } finally { [ctx, sfxBus, noiseBuf] = keep; }
-      return null;
-    }, seconds, { wav });
+  const gain = (o.volume ?? SHIPPED_VOLUME) * MASTER_K;
+  if (name.startsWith('cue:')) { // a sound effect by itself
+    if (!SFX[name.slice(4)]) throw new Error('unknown audio: ' + name);
+    return measureAudio((oc, dest) => { cuesOffline(oc, makeMaster(oc, dest, gain), [{ name: name.slice(4), args: o.args }], o.seed); return null; }, seconds, { wav });
   }
   const score = SCORES[name], scene = SCENES[name];
   if (!score && !scene) throw new Error('unknown audio: ' + name);
   return measureAudio((oc, dest) => {
-    const k = makeAudioKit(oc, dest, { seed: o.seed || 0x5EED1 });
+    const master = makeMaster(oc, dest, gain), k = makeAudioKit(oc, master, { seed: o.seed || 0x5EED1 });
     k.music.level(MUSIC_LEVEL); k.amb.level(AMB_LEVEL); k.amb.set('tension', 0, 0.01); k.amb.set('crowd', 0.3, 0.01);
     for (const p of Object.keys(o.params || {})) k.amb.set(p, o.params[p], 0.01);
     if (score) { k.music.intensity(o.intensity || 0); k.music.play({ ...score }, { fade: 0.05 }); } else k.amb.play({ ...scene }, { fade: 0.05 });
     k.scheduleUntil(seconds + 0.5);
+    // o.cues: [{ name, args }] played together at o.cueAt seconds over the piece, for the busiest moment
+    if (o.cues && o.cues.length) oc.suspend(o.cueAt ?? 4).then(() => { cuesOffline(oc, master, o.cues, o.seed); oc.resume(); });
     return () => (score ? { ...k.music.info(), bpm: score.bpm, beats: score.beats || 4, formSeconds: +(k.music.info().formBars * (score.beats || 4) * 60 / score.bpm).toFixed(1) } : null);
   }, seconds, { wav });
 }
