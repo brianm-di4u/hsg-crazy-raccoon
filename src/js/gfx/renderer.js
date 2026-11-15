@@ -22,7 +22,7 @@ export class Renderer {
   constructor(canvas, fxRng) {
     this.c = canvas; this.g = canvas.getContext('2d');
     this.dpr = 1; this.w = 0; this.h = 0; this.cam = 0; this.camT = 0; this.camX = T * COLS / 2; this.camXT = this.camX; this.shake = 0;
-    this.fx = new Fx(fxRng); this.lights = []; this.art = null; this.cache = new WeakMap(); this.reduced = false; this.landT = 9; this.chompT = 9; this.grace = 0; this.arrive = 0; this.ghost = null; this.deadFx = null; this.hudTop = 64; this.hudBot = 0; this.view = 'standard'; this.portrait = false; this.costume = 'plain';
+    this.fx = new Fx(fxRng); this.lights = []; this.art = null; this.cache = new WeakMap(); this.reduced = false; this.landT = 9; this.chompT = 9; this.grace = 0; this.arrive = 0; this.ghost = null; this.deadFx = null; this.hudTop = 64; this.hudBot = 0; this.view = 'standard'; this.portrait = false; this.costume = 'plain'; this.cpSeen = new WeakMap();
     this.resize();
   }
   resize() {
@@ -725,11 +725,23 @@ export class Renderer {
     }
   }
 
+  // the first landing on each checkpoint row of a run says so once: a ring and 'Checkpoint!' where Bandit will return (S2-04)
+  checkpointSeen(run, r) {
+    const row = run.L.rows[r];
+    if (!row || !row.check || row.t === 'start' || row.t === 'goal') return;
+    let seen = this.cpSeen.get(run);
+    if (!seen) this.cpSeen.set(run, seen = new Set());
+    if (seen.has(r)) return;
+    seen.add(r);
+    this.fx.text(run.p.x, r, 'Checkpoint!', '#FFFFFF', 0.55);
+    this.fx.rings.push({ x: run.p.x, r, t: 0, life: 0.7, c: '#FFD23F', w: 56 });
+  }
+
   // events from the run → FX and camera kick
   onEvent(e, run) {
     const p = run.p, r = p.row, x = p.x;
     switch (e.k) {
-      case 'land': this.landT = 0; if (!e.ride && !e.pool) this.fx.dust(x, r, 7); if (e.pool) { this.fx.splash(x, r); } if (e.ride) { this.fx.rings.push({ x, r, t: 0, life: 0.5, c: '#E9FBFF', w: 40 }); this.fx.splash(x, r); } break;
+      case 'land': this.checkpointSeen(run, r); this.landT = 0; if (!e.ride && !e.pool) this.fx.dust(x, r, 7); if (e.pool) { this.fx.splash(x, r); } if (e.ride) { this.fx.rings.push({ x, r, t: 0, life: 0.5, c: '#E9FBFF', w: 40 }); this.fx.splash(x, r); } break;
       case 'hop': this.fx.dust(x, r, 4, 'rgba(255,255,255,0.8)'); break;
       case 'die':
         if (e.cause === 'splash') this.fx.splash(e.x, e.row);

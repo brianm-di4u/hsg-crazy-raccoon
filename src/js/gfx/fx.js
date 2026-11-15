@@ -31,7 +31,7 @@ export class Fx {
     for (let i = 0; i < this.n(n); i++) { const a = R.range(0, Math.PI * 2), v = R.range(40, 130); this.add({ k: 'spark', x, r, h: 26, vx: Math.cos(a) * v, vh: Math.sin(a) * v + 60, life: R.range(0.4, 0.8), t: 0, s: R.range(3, 5), c }); }
   }
   steam(x, r) { const R = this.rng; this.add({ k: 'steam', x: x + R.range(-14, 14), r, h: 8, vx: R.range(-8, 8), vh: R.range(30, 50), life: R.range(1.2, 1.8), t: 0, s: R.range(8, 14), c: '#FFFFFF' }); }
-  text(x, r, s, c = '#FFFFFF') { this.texts.push({ x, r, s, t: 0, life: 1.0, c }); }
+  text(x, r, s, c = '#FFFFFF', size = 1) { this.texts.push({ x, r, s, t: 0, life: 1.0, c, size }); }
 
   update(dt) {
     for (const o of this.p) {
@@ -65,7 +65,7 @@ export class Fx {
     }
     g.globalAlpha = 1;
     for (const o of this.texts) {
-      const [x, y] = proj(o.x, o.r), u = o.t / o.life, fs = Math.max(14, 30 * k * 2);
+      const [x, y] = proj(o.x, o.r), u = o.t / o.life, fs = Math.max(14, 30 * k * 2 * (o.size || 1));
       g.globalAlpha = u < 0.7 ? 1 : 1 - (u - 0.7) / 0.3;
       g.font = `900 ${fs}px "Arial Black", Impact, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
       g.lineWidth = Math.max(3, fs * 0.18); g.strokeStyle = '#1B1A17'; g.lineJoin = 'round'; g.strokeText(o.s, x, y - 50 * k - u * 50 * k);

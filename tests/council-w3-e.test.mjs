@@ -155,4 +155,29 @@ export const tests = [
       t.equal((await t.state()).settings.lureSide, 'right', 'a damaged value falls back to the right');
     },
   },
+
+  // ------------------------------------------------------------------ S2-04 checkpoint
+  {
+    name: 'S2-04 the first landing on a checkpoint row says Checkpoint once, and not on the start row',
+    viewports: ['desktop', 'mobile'],
+    async run(t) {
+      const spy = () => t.page.evaluate(() => { const fx = window.__CR.renderer.fx; window.__texts = []; if (fx.__orig) return; fx.__orig = fx.text; fx.text = function (x, r, s, c) { window.__texts.push(s + '@' + r); return fx.__orig.call(this, x, r, s, c); }; });
+      const said = () => t.page.evaluate(() => window.__texts.filter((s) => s.startsWith('Checkpoint')));
+      await t.game('newGame', { level: 'l1', seed: 5 }); await t.game('pause'); await spy();
+      await t.game('setState', { player: { row: 1, col: 4 } });
+      await t.game('act', 'hop', 'down'); await t.game('step', 40);
+      t.equal((await said()).length, 0, 'landing on the start row says nothing');
+      await t.game('setState', { player: { row: 5, col: 4 } });
+      await t.game('act', 'hop', 'down'); await t.game('step', 40);
+      t.equal((await said()).join(), 'Checkpoint!@4', 'the first landing on the row-4 checkpoint says so');
+      await keep(t, 'S2-04', 'checkpoint');
+      await t.game('act', 'hop', 'up'); await t.game('step', 40);
+      await t.game('act', 'hop', 'down'); await t.game('step', 40);
+      t.equal((await said()).length, 1, 'landing there again says nothing more');
+      await t.game('newGame', { level: 'l1', seed: 5 }); await t.game('pause'); await spy();
+      await t.game('setState', { player: { row: 5, col: 4 } });
+      await t.game('act', 'hop', 'down'); await t.game('step', 40);
+      t.equal((await said()).length, 1, 'a new run says it again');
+    },
+  },
 ];
