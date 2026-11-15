@@ -21,7 +21,7 @@ export class Renderer {
   constructor(canvas, fxRng) {
     this.c = canvas; this.g = canvas.getContext('2d');
     this.dpr = 1; this.w = 0; this.h = 0; this.cam = 0; this.camT = 0; this.camX = T * COLS / 2; this.camXT = this.camX; this.shake = 0;
-    this.fx = new Fx(fxRng); this.lights = []; this.art = null; this.cache = new WeakMap(); this.reduced = false; this.landT = 9; this.deadFx = null; this.hudTop = 64; this.hudBot = 0; this.view = 'standard'; this.portrait = false; this.costume = 'plain';
+    this.fx = new Fx(fxRng); this.lights = []; this.art = null; this.cache = new WeakMap(); this.reduced = false; this.landT = 9; this.chompT = 9; this.grace = 0; this.deadFx = null; this.hudTop = 64; this.hudBot = 0; this.view = 'standard'; this.portrait = false; this.costume = 'plain';
     this.resize();
   }
   resize() {
@@ -101,7 +101,7 @@ export class Renderer {
     const k = 1 - Math.pow(1 - 0.12, dt * 60);
     this.cam += (this.camT - this.cam) * k;
     this.camX += (this.camXT - this.camX) * k; this.placeX();
-    this.landT += dt;
+    this.landT += dt; this.chompT += dt;
     this.shake = Math.max(0, this.shake - dt * 2.5);
     this.fx.update(dt);
     return Math.abs(this.camT - this.cam) > 0.002 || this.fx.busy() || this.shake > 0;
@@ -484,7 +484,7 @@ export class Renderer {
     if (p.state === 'dead') {
       const u = Math.min(1, p.t / DEAD_T);
       if (p.cause === 'splash') { sink = u; }
-      else if (p.cause === 'chomp') { alpha = u < 0.15 ? 1 : 0; }
+      else if (p.cause === 'chomp') { sq = 0.6 * this.chompClose(); alpha = p.t < 0.2 ? 1 : Math.max(0, 1 - (p.t - 0.2) / 0.1); } // squashed in the jaws, then gone
       else if (p.cause === 'swept') { rot = u * 8; alpha = 1 - u; }
       else if (p.cause === 'spotted' || p.cause === 'caught') { sq = 0.3; }
     }
@@ -499,6 +499,7 @@ export class Renderer {
       for (const o of [-0.22, 0, 0.22]) { g.beginPath(); g.moveTo(o * s, s * 0.45); g.lineTo(o * s, s * (0.45 + 0.35 * Math.sin(Math.PI * pose.u))); g.stroke(); }
       g.restore();
     }
+    if (this.grace > 0 && p.state !== 'dead') this.graceRing(g, s);
     g.globalAlpha = alpha;
     if (sink > 0) { g.beginPath(); g.rect(-s, -s * 2, s * 2, s * 2); g.clip(); g.translate(0, sink * s * 0.9); }
     g.translate(0, -lift); if (rot) g.rotate(rot);
@@ -514,6 +515,30 @@ export class Renderer {
     }
     else { raccoon(g, s, { facing: p.facing, sq, t, grin: p.state === 'won', carry: Math.min(3, carried.length), carryKinds: carried.map((i) => i.k), washed: carried.map((i) => i.washed) }); if (this.costume !== 'plain') costume(g, this.costume, this.tile, -s * 0.9, p.facing, t, this.reduced); }
     if (p.state === 'dead' && (p.cause === 'spotted' || p.cause === 'caught')) { g.translate(0, -s * 1.15); badge(g, s, t); }
+    if (p.state === 'dead' && p.cause === 'chomp' && alpha > 0) this.jaws(g, s, this.chompClose());
+    g.restore();
+  }
+
+  // how shut the jaws are, 0 to 1: they snap closed over 0.05 s of real time, so the freeze on a chomp holds them shut
+  chompClose() { return this.reduced ? 1 : Math.min(1, this.chompT / 0.05); }
+  // two rows of teeth closing on Bandit (S1-03)
+  jaws(g, s, c) {
+    const open = s * 0.5 * (1 - c) + s * 0.04, cy = -s * 0.5, hw = s * 0.46, th = s * 0.2, gum = s * 0.14, n = 5;
+    g.save(); g.lineJoin = 'round'; g.strokeStyle = '#1B1A17'; g.lineWidth = Math.max(2, s * 0.04);
+    for (const dir of [-1, 1]) {
+      const by = cy + dir * (open + th);
+      g.fillStyle = '#7A2E2B'; g.beginPath(); g.rect(-hw, dir < 0 ? by - gum : by, hw * 2, gum); g.fill(); g.stroke();
+      g.fillStyle = '#FFFFFF';
+      for (let i = 0; i < n; i++) { const x0 = -hw + (i * hw * 2) / n, x1 = x0 + (hw * 2) / n; g.beginPath(); g.moveTo(x0, by); g.lineTo((x0 + x1) / 2, by - dir * th); g.lineTo(x1, by); g.closePath(); g.fill(); g.stroke(); }
+    }
+    g.restore();
+  }
+  // the beat before the world moves again after Go, Restart or Resume (S1-07): a ring closing on Bandit (a still ring when motion is reduced)
+  graceRing(g, s) {
+    const f = this.grace, r = s * (this.reduced ? 0.65 : 0.45 + 0.4 * f);
+    g.save(); g.translate(0, -s * 0.5); g.beginPath(); g.ellipse(0, 0, r, r * 0.7, 0, 0, Math.PI * 2);
+    g.lineWidth = Math.max(5, s * 0.1); g.strokeStyle = '#1B1A17'; g.stroke();
+    g.lineWidth = Math.max(3, s * 0.06); g.strokeStyle = '#FFE27A'; g.stroke();
     g.restore();
   }
 
@@ -681,7 +706,7 @@ export class Renderer {
       case 'hop': this.fx.dust(x, r, 4, 'rgba(255,255,255,0.8)'); break;
       case 'die':
         if (e.cause === 'splash') this.fx.splash(e.x, e.row);
-        else if (e.cause === 'chomp') { this.fx.chomp(e.x, e.row); this.shake = 1; }
+        else if (e.cause === 'chomp') { this.fx.chomp(e.x, e.row); this.shake = 1; this.chompT = 0; }
         else this.fx.sparkle(e.x, e.row, '#FFFFFF', 6);
         break;
       case 'pickup': this.fx.sparkle(colX(e.c), e.r, e.item === 'ball' ? '#FFFFFF' : '#FFF3A6', e.item === 'ball' ? 16 : 8); this.fx.text(colX(e.c), e.r, { cap: '+25', ball: '+500', drum: 'Lure!', ticket: 'Ticket!', ring: 'Tail ring!' }[e.item] || 'Snack!', '#FFF3A6'); break;

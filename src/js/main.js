@@ -12,20 +12,23 @@ import { Screens, esc } from './ui/screens.js';
 import { dateKey, dailySeed, dayLabel, award, backfill, ACHIEVEMENTS, costumeUnlocked, activeCostume, nextUnlock, recordDaily } from './progress.js';
 import { initInput, initTouch, pollGamepads, readIntent, consumePause, consumeMenu, setEnabled } from './ui/input.js';
 import { initAudio, setAudio, sfx, playTheme, setTension, setAmbience, duckMusic, audioState, audioList, renderAudio, holdMusic, suspendAudio, resumeAudio } from './ui/audio.js';
-import { loadSave, writeSave, DEFAULT_SAVE } from './save.js';
+import { loadSave, writeSave, DEFAULT_SAVE, storageBlocked } from './save.js';
 import { makeRng, hashStr } from './rng.js';
 import { installHooks } from './hooks.js';
 
 /* global LEVELDATA, FACTS, MANIFEST */
 const LEVELS = typeof LEVELDATA !== 'undefined' ? LEVELDATA.levels : [];
 const ALLFACTS = typeof FACTS !== 'undefined' ? [...FACTS.bank, ...FACTS.research] : [];
+const GRACE_T = 0.7; // after Go, Restart or Resume the world holds this long so a hand can find the keys (S1-07)
+const HITSTOP_T = 0.07; // the freeze on a chomp, with the jaws shut on Bandit (S1-03)
+const STORAGE_NOTE = 'Progress will not be saved in this browser mode.';
 const THEME_MUSIC = { day: 'day', noon: 'noon', barn: 'barn', night: 'night' };
 // the ambience scene for each level theme (the music has the theme's own name)
 const THEME_SCENE = { day: 'meadow', noon: 'showground', barn: 'loft', night: 'midnight' };
 
 const App = {
   scene: 'boot', ready: false, loading: 0, paused: false, testPaused: false, time: 0, clock: null, steps: 0,
-  save: loadSave(), earned: [], today: () => App.dayOverride || dateKey(), run: null, level: null, nextSeed: null, reduced: false, demo: null, endAt: 0, fact: null, LEVELS, FACTS: ALLFACTS, lastSaid: '',
+  save: loadSave(), earned: [], today: () => App.dayOverride || dateKey(), run: null, level: null, nextSeed: null, reduced: false, demo: null, endAt: 0, fact: null, LEVELS, FACTS: ALLFACTS, lastSaid: '', grace: 0, stop: 0,
 };
 window.__CR = App;
 
@@ -51,7 +54,12 @@ function applySettings() {
   document.body.classList.toggle('reduced', App.reduced);
   setAudio(s);
 }
-function persist(options) { writeSave(App.save, options); applySettings(); }
+App.storageBlocked = storageBlocked;
+let storageWarned = false;
+function persist(options) {
+  writeSave(App.save, options); applySettings();
+  if (storageBlocked() && !storageWarned) { storageWarned = true; App.say(STORAGE_NOTE); }
+}
 
 // ---------------------------------------------------------------------------------------------------------------
 // achievements (S3-05): earned by play the game sees; a short toast that never stops the game, with its cue
@@ -112,36 +120,36 @@ function pickFact(L) {
   return pool[hashStr(String(L.id)) % pool.length];
 }
 
-function startLevel(L, { seed, intro = true } = {}) {
+function startLevel(L, { seed, intro = true, grace = false } = {}) {
   App.level = L;
   App.run = new Run(JSON.parse(JSON.stringify(L)), { seed: seed ?? App.nextSeed ?? hashStr(L.id), assist: App.save.settings.assist });
   enterPlay();
   App.fact = pickFact(L);
   if (intro) { App.paused = false; screens.show('intro', { L: App.run.L, fact: App.fact, assist: App.save.settings.assist }); setEnabled(false); }
-  else beginPlay();
+  else beginPlay(grace);
   return App.run;
 }
-function startEndless({ seed, intro = true, daily = null } = {}) {
+function startEndless({ seed, intro = true, daily = null, grace = false } = {}) {
   App.level = null;
   App.run = new Run({ id: 'endless' }, { mode: 'endless', seed: seed ?? (daily ? dailySeed(daily) : null) ?? App.nextSeed ?? (Date.now() & 0xffffff), assist: false });
   App.run.daily = daily; // Assist is for the levels: the top-10 board is shared
   enterPlay();
   App.fact = ALLFACTS.length ? ALLFACTS[(Date.now() >> 10) % ALLFACTS.length] : null;
   if (intro) { screens.show('intro', { L: { ...App.run.L, intro: daily ? `Daily Run, ${dayLabel(daily)}. Every player gets this same night today. Hop as far as you can. Three tail rings.` : 'Night falls. Hop as far as you can before the keeper\'s lantern catches up. Three tail rings.', rings: 3 }, fact: App.fact, assist: false }); setEnabled(false); }
-  else beginPlay();
+  else beginPlay(grace);
   return App.run;
 }
 function enterPlay() {
   App.demo = null; App.scene = 'play'; document.body.dataset.scene = 'play';
-  App.earned = []; endTip();
+  App.earned = []; App.grace = 0; App.stop = 0; endTip();
   App.paused = false; App.endAt = 0;
   renderer.fx.clear(); renderer.snap(0, App.run.p.x);
   hud.show(true); hud.update(App.run);
   playTheme(THEME_MUSIC[App.run.L.theme] || 'day', THEME_SCENE[App.run.L.theme] || 'meadow');
   kick();
 }
-function beginPlay() {
-  screens.hide(); setEnabled(true); App.paused = false;
+function beginPlay(grace = true) {
+  screens.hide(); setEnabled(true); App.paused = false; App.grace = grace ? GRACE_T : 0;
   const L = App.run.L;
   App.say(L.n ? `Level ${L.n}, ${L.name}. Reach the den.` : 'Moonlight Run. Go!');
   hud.hint(App.save.settings.hints && L.n === 1 ? (matchMedia('(pointer: coarse)').matches ? 'Tap where to hop' : 'Arrow keys or WASD to hop') : '');
@@ -163,7 +171,7 @@ function pauseGame() {
   if (App.scene !== 'play' || screens.cur || !App.run || App.run.phase !== 'play') return;
   App.paused = true; setEnabled(false); screens.show('pause'); holdMusic(); kick();
 }
-function resumeGame() { screens.hide(); App.paused = false; setEnabled(true); resumeAudio(); kick(); }
+function resumeGame() { screens.hide(); App.paused = false; setEnabled(true); App.grace = GRACE_T; resumeAudio(); kick(); }
 
 // results
 function levelDone(run) {
@@ -226,9 +234,22 @@ App.onHud = (a) => {
   else if (a === 'lure' && App.run && App.scene === 'play' && !App.paused && !screens.cur) { App.lureReq = true; kick(); }
 };
 
+// a top-ten score is kept the moment the player leaves the Over panel any other way (S6-07): under the initials typed
+// so far, else the last ones used, else BAN
+function commitScore() {
+  if (!App.pendingScore) return null;
+  const s = App.save, inp = document.getElementById('ini');
+  const ini = ((inp && inp.value) || s.lastInitials || 'BAN').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3) || 'BAN';
+  const e = { initials: ini, score: App.pendingScore.score, rows: App.pendingScore.rows, date: new Date().toISOString().slice(0, 10) };
+  s.endless.top.push(e); s.endless.top.sort((a, b) => b.score - a.score); s.endless.top.length = Math.min(10, s.endless.top.length);
+  s.lastInitials = ini; App.pendingScore = null; persist();
+  return ini;
+}
+
 App.onMenu = (act, d = {}) => {
   sfx('menu');
   const s = App.save;
+  if (App.pendingScore && screens.cur === 'over' && act !== 'saveScore') App.say('Score saved as ' + commitScore() + '.');
   switch (act) {
     case 'play': playTheme('map', 'meadow'); return screens.show('map', { levels: LEVELS });
     case 'level': { const L = levelById(d.v); if (L) startLevel(L); return; }
@@ -253,21 +274,12 @@ App.onMenu = (act, d = {}) => {
     case 'resetSave': return screens.show('confirmReset', { from: 'settings' });
     case 'resetYes': App.save = DEFAULT_SAVE(); persist({ reset: true }); return showTitle();
     case 'resume': return resumeGame();
-    case 'restart': if (App.run && App.run.mode === 'endless') return startEndless({ intro: false, daily: App.run.daily ? App.today() : null }); if (App.level) return startLevel(App.level, { intro: false }); return;
+    case 'restart': if (App.run && App.run.mode === 'endless') return startEndless({ intro: false, grace: true, daily: App.run.daily ? App.today() : null }); if (App.level) return startLevel(App.level, { intro: false, grace: true }); return;
     case 'next': { const L = LEVELS.find((x) => x.n === App.level.n + 1); if (L) startLevel(L); return; }
     case 'map': App.scene = 'title'; App.run = null; hud.show(false); showTitle(); playTheme('map', 'meadow'); return screens.show('map', { levels: LEVELS });
     case 'quit': return App.run && App.run.mode === 'endless' ? screens.show('confirmQuit', { from: 'pause' }) : App.onMenu('map');
     case 'quitYes': return showTitle();
-    case 'saveScore': {
-      const inp = document.getElementById('ini');
-      const ini = ((inp && inp.value) || 'BAN').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3) || 'BAN';
-      if (App.pendingScore) {
-        const e = { initials: ini, score: App.pendingScore.score, rows: App.pendingScore.rows, date: new Date().toISOString().slice(0, 10) };
-        s.endless.top.push(e); s.endless.top.sort((a, b) => b.score - a.score); s.endless.top.length = Math.min(10, s.endless.top.length);
-        s.lastInitials = ini; App.pendingScore = null; persist();
-      }
-      return screens.show('scores');
-    }
+    case 'saveScore': commitScore(); return screens.show('scores');
     case 'back': {
       const from = screens.data.from;
       if (screens.cur === 'pause') return resumeGame();
@@ -358,7 +370,7 @@ function handleEvents(run) {
       case 'nudge': sfx('nudge'); break;
       case 'die':
         sfx(e.cause === 'splash' ? 'splash' : e.cause === 'chomp' ? 'chomp' : e.cause === 'spotted' || e.cause === 'caught' ? 'spotted' : 'splash');
-        if (e.cause === 'chomp') { App.save.stats.chomps++; checkDerived(); } if (e.cause === 'splash') App.save.stats.splashes++;
+        if (e.cause === 'chomp') { App.save.stats.chomps++; App.stop = HITSTOP_T; checkDerived(); } if (e.cause === 'splash') App.save.stats.splashes++;
         App.say({ chomp: 'Chomped!', splash: 'Splash!', swept: 'Swept away!', spotted: 'Spotted!', caught: 'Caught by the lantern!' }[e.cause] + ` ${run.rings} tail rings left.`);
         break;
       case 'pickup': if (e.item === 'pecan' || e.item === 'berry') hud.pulse(); sfx(e.item === 'cap' ? 'cap' : e.item === 'ball' ? 'ball' : 'pickup'); if (e.item === 'ball') App.say('You found the lost home-run ball!'); if (e.item === 'ring') App.say(`A tail ring! ${run.rings} tail rings left.`); break;
@@ -392,9 +404,9 @@ function frame(now) {
     const run = App.run;
     if (run && App.scene === 'play') {
       if (!App.paused && !App.testPaused && !screens.cur && run.phase === 'play') {
-        acc += dtw;
         let n = 0;
-        while (acc >= DT && n < 12) {
+        if (App.grace > 0 || App.stop > 0) { App.grace = Math.max(0, App.grace - dtw); App.stop = Math.max(0, App.stop - dtw); acc = 0; } else acc += dtw;
+        while (acc >= DT && n < 12 && App.stop <= 0) {
           const intent = n === 0 ? readIntent() : { hop: null, lure: false };
           if (App.lureReq) { intent.lure = true; App.lureReq = false; }
           stepOnce(intent); acc -= DT; n++;
@@ -404,6 +416,7 @@ function frame(now) {
       if (run.phase !== 'play' && App.endAt && App.time >= App.endAt && !screens.cur) { App.endAt = 0; levelDone(run); }
       else if (run.phase !== 'play' && App.endAt) busy = true;
       if (renderer.update(dtw, run)) busy = true;
+      renderer.grace = App.grace / GRACE_T;
       renderer.draw(run, { time: App.time });
       hud.update(run);
     } else if (App.scene === 'title' && renderer.drawTitle(App.time)) {
@@ -462,6 +475,7 @@ initTouch(canvas, () => (App.run ? renderer.playerScreen(App.run) : null));
 initAudio(App.save.settings);
 window.addEventListener('resize', kick);
 window.addEventListener('blur', () => { if (!window.__TEST__) pauseGame(); });
+window.addEventListener('pagehide', () => { if (screens.cur === 'over') commitScore(); });
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) { pauseGame(); suspendAudio(); } else { resumeAudio(App.paused); kick(); }
 });

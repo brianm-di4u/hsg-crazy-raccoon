@@ -29,6 +29,8 @@ export class Run {
     this.lures = level.lures || 0;
     this.score = 0; this.caps = 0; this.ball = false; this.ticket = false; this.deaths = 0; this.maxRow = 0;
     this.streak = 0; this.lastFwd = -9; this.mult = 1;
+    // where the score came from, for the win panel (S3-11): row points, banked snacks (and how many were washed), caps, the ball
+    this.pts = { rows: 0, snacks: 0, snackN: 0, washedN: 0, caps: 0, ball: 0 }; this.bestMult = 1;
     this.phase = 'play'; // play | won | fail
     this.t = 0; this.steps = 0; this.ev = []; this.hops = 0;
     this.beam = this.mode === 'endless' ? -4 : null;
@@ -103,9 +105,9 @@ export class Run {
           this.lastFwd = this.t;
           const m = Math.min(4, 1 + Math.floor(this.streak / 4));
           if (m > this.mult) this.ev.push({ k: 'streak', mult: m });
-          this.mult = m;
+          this.mult = m; if (m > this.bestMult) this.bestMult = m;
         }
-        if (p.row > this.maxRow) { this.score += SCORE.row * this.mult * (p.row - this.maxRow); this.maxRow = p.row; }
+        if (p.row > this.maxRow) { const gain = SCORE.row * this.mult * (p.row - this.maxRow); this.score += gain; this.pts.rows += gain; this.maxRow = p.row; }
         if (e.ground || e.pool) this.pickup(p.row, xCol(p.x));
         if (e.pool) {
           const dirty = this.carried().filter((i) => !i.washed && TREATS.has(i.k));
@@ -133,10 +135,10 @@ export class Run {
       if (TREATS.has(it.k)) {
         if (this.carried().length >= MAX_CARRY) { this.ev.push({ k: 'full' }); continue; }
         it.st = 'carried';
-      } else if (it.k === 'cap') { it.st = 'banked'; this.caps++; this.score += SCORE.cap; }
+      } else if (it.k === 'cap') { it.st = 'banked'; this.caps++; this.score += SCORE.cap; this.pts.caps += SCORE.cap; }
       else if (it.k === 'drum') { if (this.lures >= MAX_LURES) { this.ev.push({ k: 'full' }); continue; } it.st = 'banked'; this.lures++; }
       else if (it.k === 'ring') { if (this.rings >= RING_CAP) continue; it.st = 'banked'; this.rings++; }
-      else if (it.k === 'ball') { it.st = 'banked'; this.ball = true; this.score += SCORE.ball; }
+      else if (it.k === 'ball') { it.st = 'banked'; this.ball = true; this.score += SCORE.ball; this.pts.ball += SCORE.ball; }
       else if (it.k === 'ticket') { it.st = 'banked'; this.ticket = true; }
       this.ev.push({ k: 'pickup', item: it.k, r, c });
     }
@@ -144,8 +146,8 @@ export class Run {
 
   bank() {
     let n = 0, pts = 0;
-    for (const it of this.items) if (it.st === 'carried') { it.st = 'banked'; n++; pts += SCORE.treat * (it.washed ? 2 : 1); }
-    if (n) { this.score += pts; this.ev.push({ k: 'bank', n, pts }); }
+    for (const it of this.items) if (it.st === 'carried') { it.st = 'banked'; n++; pts += SCORE.treat * (it.washed ? 2 : 1); if (it.washed) this.pts.washedN++; }
+    if (n) { this.score += pts; this.pts.snacks += pts; this.pts.snackN += n; this.ev.push({ k: 'bank', n, pts }); }
   }
 
   respawn() {
@@ -170,7 +172,7 @@ export class Run {
     const all = this.treatsBanked() === this.treatsTotal();
     const stars = [true, all, !this.assist && this.t <= par];
     this.phase = 'won';
-    this.result = { win: true, score: this.score, t: this.t, par, stars, breakdown: { clear, time: Math.round(time), noDeath: nod, caps: this.caps }, ball: this.ball, ticket: this.ticket, deaths: this.deaths };
+    this.result = { win: true, score: this.score, t: this.t, par, stars, breakdown: { clear, time: Math.round(time), noDeath: nod, caps: this.caps, rows: this.pts.rows, snacks: this.pts.snacks, snackN: this.pts.snackN, washedN: this.pts.washedN, capPts: this.pts.caps, ballPts: this.pts.ball, bestMult: this.bestMult }, ball: this.ball, ticket: this.ticket, deaths: this.deaths };
   }
 
   drain() { const e = this.ev; this.ev = []; return e; }

@@ -10,18 +10,21 @@ const steps = (run, n, input = {}) => { const ev = []; for (let i = 0; i < n; i+
 const hop = (run, dir, settle = 30) => steps(run, settle, { hop: dir });
 const kinds = (ev) => ev.map((e) => e.k + (e.cause ? ':' + e.cause : ''));
 
-test('a hop moves one tile in 0.15 s and buffers at most one move', () => {
-  const run = new Run(lvl([{ t: 'grass' }, { t: 'grass' }, { t: 'grass' }]));
+test('a hop moves one tile in 0.15 s and buffers at most two moves', () => { // wave 3 (S1-08): was one
+  const run = new Run(lvl([{ t: 'grass' }, { t: 'grass' }, { t: 'grass' }, { t: 'grass' }, { t: 'grass' }]));
   run.step({ hop: 'up' });
   assert.equal(run.p.state, 'hop');
-  run.step({ hop: 'up' }); run.step({ hop: 'up' }); // second press buffers, third replaces the buffer (still one)
+  run.step({ hop: 'up' }); run.step({ hop: 'up' }); run.step({ hop: 'up' }); // second and third press buffer, the fourth replaces the third (still two)
   steps(run, Math.ceil(HOP_T / DT));
   assert.equal(run.p.row, 1, 'first hop landed');
   assert.equal(run.p.state, 'hop', 'buffered hop started on landing');
   steps(run, Math.ceil(HOP_T / DT));
-  assert.equal(run.p.row, 2, 'buffered hop ran after the first');
+  assert.equal(run.p.row, 2, 'first buffered hop ran after the first');
+  assert.equal(run.p.state, 'hop', 'the second buffered hop started on landing');
+  steps(run, Math.ceil(HOP_T / DT));
+  assert.equal(run.p.row, 3, 'second buffered hop ran');
   steps(run, 40);
-  assert.equal(run.p.row, 2, 'no third hop');
+  assert.equal(run.p.row, 3, 'no fourth hop');
   hop(run, 'right');
   assert.equal(run.p.x, colX(5));
 });

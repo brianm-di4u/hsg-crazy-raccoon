@@ -6,6 +6,9 @@ const KEY = 'hsg-crazy-raccoon-v1';
 let mem = null;
 let persisted = null;
 let pendingReset = false;
+let blocked = false; // the browser would not let us read or write storage (a private window, site data blocked): progress lives in memory only
+// true when this session's progress cannot be kept (S3-21)
+export const storageBlocked = () => blocked;
 
 export const DEFAULT_SAVE = () => ({
   v: 1,
@@ -33,7 +36,7 @@ function sanitize(d) {
   d.settings.ambience = d.settings.ambience !== false; // saves from before the Ambience setting have none: on
   d.settings.volume = Math.min(1, Math.max(0, num(d.settings.volume, 0.5)));
   if (!['close', 'standard', 'wide'].includes(d.settings.view)) d.settings.view = 'standard'; // phone view: saves from before have none
-  if (![1, 1.25, 1.5].includes(d.settings.textScale)) d.settings.textScale = 1;
+  if (![1, 1.25, 1.5, 1.75].includes(d.settings.textScale)) d.settings.textScale = 1;
   if (!COSTUME_IDS.includes(d.settings.costume)) d.settings.costume = 'plain';
   d.settings.tipsDone = object(d.settings.tipsDone) ? Object.fromEntries(Object.entries(d.settings.tipsDone).filter(([, v]) => v === true)) : {};
   d.ach = object(d.ach) ? Object.fromEntries(Object.entries(d.ach).filter(([, v]) => typeof v === 'string')) : {};
@@ -115,8 +118,10 @@ function delta(base, local, latest, route = '') {
 }
 
 export function loadSave() {
-  let loaded;
-  try { loaded = decoded(window.localStorage.getItem(KEY)); } catch (e) { /* unavailable or malformed */ }
+  let loaded, raw = null;
+  try { raw = window.localStorage.getItem(KEY); } catch (e) { blocked = true; }
+  try { loaded = decoded(raw); } catch (e) { /* malformed */ }
+  try { window.localStorage.setItem(KEY + '-probe', '1'); window.localStorage.removeItem(KEY + '-probe'); } catch (e) { blocked = true; } // reading can work where writing will not
   if (loaded) { persisted = copy(loaded); return loaded; }
   return mem ? copy(mem) : DEFAULT_SAVE();
 }
@@ -136,7 +141,7 @@ export function writeSave(s, { reset = false } = {}) {
     // the original local delta pending, rather than counting remote stats again on the next attempt.
     for (const k of Object.keys(s)) if (!Object.hasOwn(merged, k)) delete s[k];
     for (const k of Object.keys(merged)) setOwn(s, k, merged[k]);
-    persisted = copy(merged); mem = copy(merged); pendingReset = false;
+    persisted = copy(merged); mem = copy(merged); pendingReset = false; blocked = false;
     return true;
-  } catch (e) { return false; }
+  } catch (e) { blocked = true; return false; }
 }

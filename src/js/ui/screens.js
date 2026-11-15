@@ -78,6 +78,7 @@ const TEMPLATES = {
         ${btn('credits', 'Credits', '', 'btn small')}
       </nav>
       ${app.save.endless.unlocked ? dailyNote(app) : '<p class="note" id="lock-note">Clear level 6 to unlock the Moonlight Run and the Daily Run.</p>'}
+      ${app.storageBlocked && app.storageBlocked() ? '<p class="note warn" role="status">Progress will not be saved in this browser mode.</p>' : ''}
       <p class="brand">Hot Springs Games</p>
       <p class="fineprint">${FICTION}</p>
     </div>`,
@@ -123,13 +124,16 @@ const TEMPLATES = {
       <div class="bigstars">${res.stars.map((b, i) => `<span class="bs ${b ? 'on' : ''}" style="--i:${i}" aria-hidden="true">★<small>${['Den', 'Snacks', 'Par'][i]}</small></span>`).join('')}</div>
       <p class="sr-only">${res.stars.filter(Boolean).length} of 3 stars</p>
       <ul class="breakdown">
+        <li><span>Rows hopped${res.breakdown.bestMult > 1 ? ` (best ×${res.breakdown.bestMult})` : ''}</span><b>+${res.breakdown.rows}</b></li>
+        ${res.breakdown.snacks ? `<li><span>Snacks banked (${res.breakdown.snackN}${res.breakdown.washedN ? `, ${res.breakdown.washedN} washed ×2` : ''})</span><b>+${res.breakdown.snacks}</b></li>` : ''}
+        ${res.breakdown.capPts ? `<li><span>Caps (${res.breakdown.caps})</span><b>+${res.breakdown.capPts}</b></li>` : ''}
+        ${res.breakdown.ballPts ? `<li><span>Lost ball</span><b>+${res.breakdown.ballPts}</b></li>` : ''}
         <li><span>Den reached</span><b>+${res.breakdown.clear}</b></li>
-        <li><span>Time ${fmt(res.t)} (par ${fmt(res.par)})</span><b>+${res.breakdown.time}</b></li>
+        <li><span>Time ${fmt(res.t)} (par ${fmt(res.par)})${bestTime ? ' · new best time!' : ''}</span><b>+${res.breakdown.time}</b></li>
         ${res.breakdown.noDeath ? `<li><span>No rings lost</span><b>+${res.breakdown.noDeath}</b></li>` : ''}
         <li class="tot"><span>Score${best ? ' · new best!' : ''}</span><b>${res.score.toLocaleString('en-US')}</b></li>
       </ul>
       <p class="stars-why">${['Cleared', res.stars[1] ? 'All snacks home' : 'Snacks left behind', assist ? 'Par star off with Assist' : res.stars[2] ? 'Beat par' : 'Over par'].join(' · ')}</p>
-      ${bestTime ? '<p class="sr-only">New best time.</p>' : ''}
       ${earned.length ? `<p class="found">★ Achievement${earned.length > 1 ? 's' : ''}: ${earned.map((a) => esc(achName(a))).join(', ')}</p>` : ''}
       ${res.ball ? '<p class="found">⚾ You found the lost 1918 home-run ball! <small>(A game nod to Babe Ruth\'s real 1918 homer into the farm.)</small></p>' : ''}
       ${res.ticket ? '<p class="found">🎟 Merman ticket! Check the Farm Notebook.</p>' : ''}
@@ -195,6 +199,8 @@ const TEMPLATES = {
         <div class="rec"><b>${s.stats.treats}</b><span>Snacks banked</span></div>
         <div class="rec"><b>${s.stats.hops.toLocaleString('en-US')}</b><span>Hops</span></div>
         <div class="rec"><b>${s.stats.runs}</b><span>Runs played</span></div>
+        <div class="rec"><b>${s.stats.chomps}</b><span>Times chomped</span></div>
+        <div class="rec"><b>${s.stats.splashes}</b><span>Splashes</span></div>
       </div>
       <h3>Campaign bests</h3>
       <table class="bests"><thead><tr><th>Lv</th><th>Level</th><th>Best score</th><th>Best time</th></tr></thead><tbody>${app.LEVELS.map((L) => {
@@ -259,7 +265,7 @@ const TEMPLATES = {
       ${field('Ambience', seg('ambience', s.ambience, [[true, 'On'], [false, 'Off']]))}
       ${field('Volume', seg('volume', s.volume, [[0.25, 'Low'], [0.5, 'Medium'], [0.85, 'High']]))}
       ${field('Motion', seg('reducedMotion', s.reducedMotion, [[null, 'System'], [false, 'Full'], [true, 'Reduced']]))}
-      ${field('Text size', seg('textScale', s.textScale, [[1, '100%'], [1.25, '125%'], [1.5, '150%']]))}
+      ${field('Text size', seg('textScale', s.textScale, [[1, '100%'], [1.25, '125%'], [1.5, '150%'], [1.75, '175%']]))}
       ${field('Phone view', seg('view', s.view, [['close', 'Close'], ['standard', 'Standard'], ['wide', 'Wide']]))}
       <p class="sub">Phone view: how much of the board shows when the phone is held upright. Wide shows every column.</p>
       ${field('First-run tips', seg('tipsOn', s.tipsOn, [[true, 'On'], [false, 'Off']]))}
