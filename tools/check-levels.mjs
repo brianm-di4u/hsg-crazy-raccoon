@@ -17,6 +17,8 @@ const has = (k) => argv.includes('--' + k);
 const val = (k, d) => { const i = argv.indexOf('--' + k); return i >= 0 ? argv[i + 1] : d; };
 const assist = has('assist');
 let bad = 0;
+// par = PAR_K x the solver's time plus PAR_ADD seconds, up to the next whole second. Wave 3 (S3-03): 2 and 4. Before: 2.2 and 8, up to the next 5 s.
+const PAR_K = 2, PAR_ADD = 4;
 
 function validate(L) {
   const errs = [];
@@ -93,7 +95,7 @@ for (const src of LEVELS) {
     if (!r.ok) unreachable.push(`${it.k}@${it.r},${it.c}`);
   }
   if (unreachable.length) { bad++; console.log(`FAIL ${L.id}: unreachable items ${unreachable.join(', ')}`); }
-  const par = Math.ceil((res.t * 2.2 + 8) / 5) * 5;
+  const par = Math.ceil(res.t * PAR_K + PAR_ADD); // par = about twice the solver's time (S3-03)
   L.par = L.par || par;
   L.solve = { t: res.t, hops: res.moves.length, nodes: res.nodes };
   L.plan = res.moves.map((m) => [m.step, m.dir[0]]);

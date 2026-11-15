@@ -261,7 +261,7 @@ export const LEVELS = [
     items: [I(1, 1, 'drum'), I(5, 7, 'pecan'), I(7, 7, 'berry'), I(10, 3, 'pecan'), I(13, 3, 'berry'), I(15, 8, 'cap'), I(4, 5, 'ball')],
   },
   {
-    id: 'l12', n: 12, zone: 4, name: 'The Big Snooze', theme: 'barn', lures: 2,
+    id: 'l12', n: 12, zone: 4, name: 'The Big Snooze', theme: 'barn', lures: 2, rings: 5, // wave 3 (S3-02): five rings; the barn's four made this level a spike (casual clear 72 percent)
     intro: 'The whole wintering crowd is here. Read every eye and every tail.',
     rows: [
       check('straw'), safe('straw'),
@@ -332,23 +332,25 @@ export const LEVELS = [
   {
     id: 'l15', n: 15, zone: 5, name: 'Old Ruthless', theme: 'night', lures: 3, night: true, boss: true,
     intro: 'The legend of the pond: Old Ruthless, the gator that (so the joke goes) swallowed Babe Ruth\'s ball.',
-    beams: [{ r0: 13, r1: 13, x0: 288, amp: 230, per: 4.2, w: 1.0 }],
+    // wave 3 (S3-02), to make the finale a climb: a second beam on row 16 (before: one beam, row 13), the boss lane at 1.1 (0.9),
+    // lanes 9, 10, 14 and 15 at 1.85, 1.95, 2.1 and 2.0 (1.8, 1.9, 2.0 and 1.9). Casual bot clear rate 77 to 59 percent.
+    beams: [{ r0: 13, r1: 13, x0: 288, amp: 230, per: 4.2, w: 1.0 }, { r0: 16, r1: 16, x0: 288, amp: 230, per: 3.6, ph: 1.5, w: 1.0 }],
     rows: [
       check('start'), safe('path'),
       water(1, 1.5, [P(0), P(5), P(10)]),
       water(-1, 1.6, [P(1), P(6), P(11)]),
       check('boardwalk'),
-      water(1, 0.9, [{ k: 'boss', at: 0, len: 6 }, P(9), P(13)]),
-      water(1, 0.9, [P(9.5), P(13.5)]),
+      water(1, 1.1, [{ k: 'boss', at: 0, len: 6 }, P(9), P(13)]),
+      water(1, 1.1, [P(9.5), P(13.5)]),
       water(-1, 1.7, [P(0), P(5), P(10)], { pools: [4] }),
       check('grass'),
-      water(-1, 1.8, [WH(1), P(7), P(12)]),
-      water(1, 1.9, [P(0), P(5), P(10)]),
+      water(-1, 1.85, [WH(1), P(7), P(12)]),
+      water(1, 1.95, [P(0), P(5), P(10)]),
       water(-1, 1.7, [C(2, 3)], { pools: [1, 7] }),
       check('boardwalk'),
       safe('path'),
-      water(1, 2.0, [P(0), P(5), P(10)]),
-      water(-1, 1.9, [P(2), P(7), P(12)], { pools: [4] }),
+      water(1, 2.1, [P(0), P(5), P(10)]),
+      water(-1, 2.0, [P(2), P(7), P(12)], { pools: [4] }),
       safe('grass'), { t: 'goal' },
     ],
     items: [I(1, 6, 'drum'), I(4, 3, 'pecan'), I(7, 4, 'berry'), I(8, 8, 'drum'), I(11, 1, 'pecan'), I(15, 4, 'berry'), I(12, 0, 'cap'), I(11, 7, 'ball')],

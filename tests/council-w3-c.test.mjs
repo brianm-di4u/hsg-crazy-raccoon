@@ -136,6 +136,7 @@ export const tests = [
         t.expect(want[cause].test(txt), `the panel names the cause (${cause}): ${txt}`);
         t.expect(!/Lantern caught you/.test(txt), 'and the headline is not always the lantern');
         t.expect(await visible(t, '.panel .tip'), 'a tip is shown');
+        if (cause === 'caught') t.expect(/lantern/i.test(await t.page.evaluate(() => document.querySelector('.panel .tip').textContent)), 'and the lantern has its own');
         if (cause === 'caught') { await t.checkLayout({ allowScrollY: true }); await t.shot('P-N02-over'); }
       }
     },

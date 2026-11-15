@@ -321,6 +321,7 @@ function tipFor(c) {
     splash: 'Tip: wait for a gator to slide under your column before hopping onto the water.',
     swept: 'Tip: hop forward or sideways before your ride carries you off the edge.',
     spotted: 'Tip: flashlight beams sweep side to side. Cross right behind one.',
+    caught: 'Tip: the lantern never stops climbing. Keep hopping, and grab a snack only when it is on your way.',
   }[c] || 'Tip: rhythmic hops build your score multiplier.';
 }
 export { esc };
