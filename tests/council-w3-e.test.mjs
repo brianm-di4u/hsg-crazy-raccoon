@@ -99,4 +99,29 @@ export const tests = [
       t.expect((await cues(t)).includes('roar'), 'Old Ruthless roars when his jaws begin to open');
     },
   },
+
+  // ------------------------------------------------------------------ S2-14 HUD names
+  {
+    name: 'S2-14 the rings, score, snacks and time readouts each have a role and a name that follows the game',
+    viewports: ['desktop', 'mobile'],
+    async run(t) {
+      await t.game('newGame', { level: 'l1', seed: 5 }); await t.game('pause');
+      await t.game('step', 2); await t.waitFrames(3);
+      const read = () => t.page.evaluate(() => Object.fromEntries(['h-rings', 'h-scorepill', 'h-snacks', 'h-time'].map((id) => { const e = document.getElementById(id); return [id, { role: e.getAttribute('role'), name: e.getAttribute('aria-label') }]; })));
+      let r = await read();
+      for (const [id, v] of Object.entries(r)) t.expect(v.role === 'img' && v.name && v.name.length > 6, `${id} has role img and a name: ${JSON.stringify(v)}`);
+      t.expect(/^Score 0$/.test(r['h-scorepill'].name), 'the score says its value: ' + r['h-scorepill'].name);
+      t.expect(/^Snacks: 0 of 3 carried, 0 of \d+ banked$/.test(r['h-snacks'].name), 'the snacks say carried and banked: ' + r['h-snacks'].name);
+      t.expect(/^Time 0 minutes \d+ seconds, par 0 minutes 11 seconds$/.test(r['h-time'].name), 'the time says time and par: ' + r['h-time'].name);
+      t.expect(/^\d+ tail rings left$/.test(r['h-rings'].name), 'the rings say how many are left: ' + r['h-rings'].name);
+      await t.game('setState', { carry: ['pecan'] });
+      await t.game('act', 'hop', 'up'); await t.game('step', 40); await t.waitFrames(3);
+      r = await read();
+      t.expect(/^Snacks: 1 of 3 carried/.test(r['h-snacks'].name), 'carrying a snack changes the name: ' + r['h-snacks'].name);
+      t.expect(/^Score [1-9]/.test(r['h-scorepill'].name), 'a hop changes the score name: ' + r['h-scorepill'].name);
+      await t.game('newGame', { mode: 'endless', seed: 5 }); await t.game('pause'); await t.game('step', 2); await t.waitFrames(3);
+      r = await read();
+      t.expect(/^\d+ rows hopped$/.test(r['h-time'].name), 'in the Moonlight Run the time readout names the rows: ' + r['h-time'].name);
+    },
+  },
 ];

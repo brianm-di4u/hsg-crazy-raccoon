@@ -15,12 +15,12 @@ export class Hud {
     root.innerHTML = `
       <div class="top">
         <div class="pill rings" id="h-rings" role="img" aria-label="Tail rings"></div>
-        <div class="pill score"><span class="lbl">Score</span><b id="h-score">0</b><span class="mult" id="h-mult" hidden></span></div>
+        <div class="pill score" id="h-scorepill" role="img" aria-label="Score 0"><span class="lbl">Score</span><b id="h-score">0</b><span class="mult" id="h-mult" hidden></span></div>
         <button type="button" class="btn icon" id="h-pause" aria-label="Pause">❚❚</button>
       </div>
       <div class="sub">
-        <div class="pill snacks" id="h-snacks" aria-label="Snacks"></div>
-        <div class="pill time" id="h-time" aria-label="Time"></div>
+        <div class="pill snacks" id="h-snacks" role="img" aria-label="Snacks"></div>
+        <div class="pill time" id="h-time" role="img" aria-label="Time"></div>
         <div class="pill beam" id="h-beam" hidden></div>
       </div>
       <div class="pill tip" id="h-tip" hidden role="note"><span id="h-tiptext"></span><button type="button" class="btn small" id="h-tipskip">Skip tips</button></div>
@@ -46,6 +46,12 @@ export class Hud {
     clearTimeout(this.pulseT); this.pulseT = setTimeout(() => el.classList.remove('pulse'), 1400);
   }
   show(on) { this.root.classList.toggle('on', on); this.last = {}; if (!on) this.tip(''); }
+  // an accessible name for a readout, refreshed only when it changes (a screen reader reads it on request, not every frame)
+  name(id, text) {
+    const k = 'n:' + id;
+    if (this.last[k] === text) return;
+    this.last[k] = text; this.root.querySelector('#' + id).setAttribute('aria-label', text);
+  }
   set(id, v, html = false) {
     if (this.last[id] === v) return;
     this.last[id] = v;
@@ -61,8 +67,9 @@ export class Hud {
   update(run) {
     const max = run.mode === 'endless' ? Math.max(3, run.rings) : (run.L.rings || 5) + (run.assist ? 2 : 0);
     this.set('h-rings', ringSvg(run.rings, max), true);
-    this.root.querySelector('#h-rings').setAttribute('aria-label', `${run.rings} tail rings left`);
+    this.name('h-rings', `${run.rings} tail rings left`);
     this.set('h-score', run.score.toLocaleString('en-US'));
+    this.name('h-scorepill', `Score ${run.score.toLocaleString('en-US')}${run.mult > 1 ? `, multiplier ${run.mult}` : ''}`);
     const m = this.root.querySelector('#h-mult');
     if (this.last.mult !== run.mult) { this.last.mult = run.mult; m.hidden = run.mult <= 1; m.textContent = '×' + run.mult; m.classList.remove('pop'); void m.offsetWidth; m.classList.add('pop'); }
     const c = run.carried(), washed = c.filter((i) => i.washed).length;
@@ -73,6 +80,8 @@ export class Hud {
     const sn = this.root.querySelector('#h-snacks'), snackSeen = run.mode !== 'endless' || c.length > 0 || run.treatsBanked() > 0;
     if (this.last.snackSeen !== snackSeen) { this.last.snackSeen = snackSeen; sn.hidden = !snackSeen; }
     this.set('h-time', tt);
+    this.name('h-time', run.mode === 'endless' ? `${Math.max(0, run.maxRow)} rows hopped` : `Time ${fmtSay(run.t)}${run.L.par ? `, par ${fmtSay(run.L.par)}` : ''}`);
+    this.name('h-snacks', `Snacks: ${c.length} of 3 carried${washed ? `, ${washed} washed` : ''}${run.mode === 'endless' ? '' : `, ${run.treatsBanked()} of ${total} banked`}`);
     this.set('h-lures', String(run.lures));
     const lb = this.root.querySelector('#h-lure');
     if (this.last.lureOn !== run.lures > 0) { this.last.lureOn = run.lures > 0; lb.disabled = run.lures <= 0; }
@@ -83,4 +92,5 @@ export class Hud {
     if (run.beam != null) { bm.hidden = false; this.set('h-beam', `Lantern ${Math.max(0, Math.round(run.p.row - run.beam))} rows behind`); } else bm.hidden = true;
   }
 }
+const fmtSay = (t) => `${Math.floor(t / 60)} minutes ${Math.floor(t % 60)} seconds`;
 export const fmt = (t) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
