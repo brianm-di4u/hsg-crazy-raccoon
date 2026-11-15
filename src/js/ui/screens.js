@@ -283,6 +283,8 @@ const TEMPLATES = {
       ${navigator.vibrate ? field('Vibration', seg('vibration', s.vibration, [[true, 'On'], [false, 'Off']])) + '<p class="sub">A short buzz on landings, bites, banking and wins. Off when motion is reduced.</p>' : ''}
       ${field('Motion', seg('reducedMotion', s.reducedMotion, [[null, 'System'], [false, 'Full'], [true, 'Reduced']]))}
       ${field('Text size', seg('textScale', s.textScale, [[1, '100%'], [1.25, '125%'], [1.5, '150%'], [1.75, '175%']]))}
+      ${field('Lure button', seg('lureSide', s.lureSide, [['right', 'Right'], ['left', 'Left']]))}
+      <p class="sub">Which side of the screen the Lure button sits on, for left-handed play.</p>
       ${field('Phone view', seg('view', s.view, [['close', 'Close'], ['standard', 'Standard'], ['wide', 'Wide']]))}
       <p class="sub">Phone view: how much of the board shows when the phone is held upright. Wide shows every column.</p>
       ${field('First-run tips', seg('tipsOn', s.tipsOn, [[true, 'On'], [false, 'Off']]))}

@@ -164,6 +164,7 @@ body.reduced .mult.pop { animation: none; }
 .hint { position: fixed; left: 50%; top: calc(max(8px, env(safe-area-inset-top)) + 112px); transform: translateX(-50%); white-space: nowrap; pointer-events: none; background: rgba(27,26,23,0.86); color: #FFFFFF; border-color: #000; }
 .hud button { pointer-events: auto; }
 .btn.lure { position: absolute; right: max(12px, env(safe-area-inset-right)); bottom: 0; width: 76px; height: 76px; min-width: 76px; padding: 4px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; background: linear-gradient(#FFE07A, var(--gold)); }
+.lure-left .btn.lure { right: auto; left: max(12px, env(safe-area-inset-left)); }
 .btn.lure .lbl { font: 900 calc(12px * var(--text-scale)) var(--font-head); }
 .btn.lure b { font: 900 calc(18px * var(--text-scale)) var(--font-head); }
 .btn.lure .drum { width: 26px; height: 16px; border-radius: 50% 40% 40% 50%; background: #D68B3E; border: 2px solid var(--ink); }

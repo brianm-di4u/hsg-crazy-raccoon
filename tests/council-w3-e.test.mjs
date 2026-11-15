@@ -124,4 +124,35 @@ export const tests = [
       t.expect(/^\d+ rows hopped$/.test(r['h-time'].name), 'in the Moonlight Run the time readout names the rows: ' + r['h-time'].name);
     },
   },
+
+  // ------------------------------------------------------------------ S2-23 Lure button side
+  {
+    name: 'S2-23 a Lure button side setting moves the button to the left, keeps the choice, and an old save has it on the right',
+    viewports: ['desktop', 'mobile'],
+    async run(t) {
+      const side = () => t.page.evaluate(() => { const b = document.getElementById('h-lure').getBoundingClientRect(); return { left: Math.round(b.left), right: Math.round(b.right), w: innerWidth, shown: b.width > 0 }; });
+      t.equal((await t.state()).settings.lureSide, 'right', 'new profiles have the button on the right');
+      await t.game('newGame', { mode: 'endless', seed: 5 }); await t.game('pause'); await t.waitFrames(3);
+      let s = await side();
+      t.expect(s.shown && s.left > s.w / 2, 'on the right by default: ' + JSON.stringify(s));
+      await t.game('scene', 'settings'); await t.waitFrames(2);
+      t.expect(await t.page.evaluate(() => !!document.querySelector('[data-k="lureSide"][data-v="left"]')), 'Settings has a Lure button row');
+      await keep(t, 'S2-23', 'settings');
+      await t.page.click('[data-k="lureSide"][data-v="left"]');
+      await t.page.waitForFunction(() => window.__game.getState().settings.lureSide === 'left', null, { timeout: 3000 });
+      t.expect(await t.page.evaluate(() => document.querySelector('[data-k="lureSide"][data-v="left"]').getAttribute('aria-pressed') === 'true'), 'Left shows as chosen');
+      await t.game('newGame', { mode: 'endless', seed: 5 }); await t.game('pause'); await t.waitFrames(3);
+      s = await side();
+      t.expect(s.shown && s.right < s.w / 2, 'on the left once chosen: ' + JSON.stringify(s));
+      await keep(t, 'S2-23', 'lure-left');
+      await t.reload();
+      t.equal((await t.state()).settings.lureSide, 'left', 'kept across a reload');
+      await t.page.evaluate((k) => { const v = JSON.parse(localStorage.getItem(k)); delete v.settings.lureSide; localStorage.setItem(k, JSON.stringify(v)); }, KEY);
+      await t.reload();
+      t.equal((await t.state()).settings.lureSide, 'right', 'a save from before the setting has it on the right');
+      await t.page.evaluate((k) => { const v = JSON.parse(localStorage.getItem(k)); v.settings.lureSide = 'up'; localStorage.setItem(k, JSON.stringify(v)); }, KEY);
+      await t.reload();
+      t.equal((await t.state()).settings.lureSide, 'right', 'a damaged value falls back to the right');
+    },
+  },
 ];

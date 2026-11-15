@@ -68,6 +68,7 @@ function applySettings() {
   App.reduced = s.reducedMotion == null ? sys : !!s.reducedMotion;
   renderer.reduced = App.reduced;
   renderer.setView(s.view);
+  document.body.classList.toggle('lure-left', s.lureSide === 'left');
   renderer.costume = activeCostume(App.save);
   renderer.fx.scale = App.reduced ? 0.4 : 1;
   document.body.classList.toggle('reduced', App.reduced);
@@ -299,7 +300,7 @@ App.onMenu = (act, d = {}) => {
     case 'scores': return screens.show('scores', { from: screens.cur });
     case 'title': return showTitle();
     case 'set': {
-      const v = d.k === 'view' ? d.v : d.v === 'true' ? true : d.v === 'false' ? false : d.v === 'null' ? null : +d.v;
+      const v = d.k === 'view' || d.k === 'lureSide' ? d.v : d.v === 'true' ? true : d.v === 'false' ? false : d.v === 'null' ? null : +d.v;
       s.settings[d.k] = v; persist(); sfx('menu'); return screens.refresh();
     }
     case 'resetSave': return screens.show('confirmReset', { from: 'settings' });

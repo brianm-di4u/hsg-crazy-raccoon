@@ -112,7 +112,7 @@ test('actual earned all15 v1 fixture round trip and old-reader backward read ret
   // wave 2, batch C (S3-05, S2-01, S4-02) merges in defaults for its new fields: achievements, the ending flag, daily and best-run records,
   // costume, tips (off: this save is from before the tips, so its player is not a newcomer) and the daily-run count
   const added = { ach: {}, finale: false };
-  assert.deepEqual(s, { ...fixture, ...added, settings: { ...fixture.settings, ambience: true, vibration: true, view: 'standard', costume: 'plain', tipsOn: false, tipsDone: {} },
+  assert.deepEqual(s, { ...fixture, ...added, settings: { ...fixture.settings, ambience: true, vibration: true, view: 'standard', lureSide: 'right', costume: 'plain', tipsOn: false, tipsDone: {} },
     endless: { ...fixture.endless, bestRows: 0, bestScore: 0, daily: { last: '', streak: 0, bestStreak: 0, hist: {} } }, stats: { ...fixture.stats, dailies: 0 } }); s.settings.music = false; a.write(s);
   const legacy = await tab(store, fileURLToPath(new URL('../test-fixtures/save-v1-reader.mjs', import.meta.url)));
   const read = legacy.load(); assert.equal(read.v, 1); assert.deepEqual(read.progress, fixture.progress);
