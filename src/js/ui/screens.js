@@ -118,7 +118,7 @@ const TEMPLATES = {
       ${bandit(['bandit-portrait', 'raccoon-down-stand'], 'side')}
       <h2>${L.n ? `${L.n}. ` : ''}${esc(L.name)}</h2>
       <p class="lead">${esc(L.intro || '')}</p>
-      <ul class="goals"><li>Reach the den at the top.</li>${L.par ? `<li>★ Bank every snack (${L.items.filter((i) => i.k === 'pecan' || i.k === 'berry').length}) · ★ Beat par ${fmt(L.par)}</li>` : '<li>Stay ahead of the keeper\'s lantern!</li>'}<li>Tail rings: ${L.rings || 3}${assist ? ' + 2 (Assist)' : ''}</li></ul>
+      <ul class="goals">${L.par ? '<li>Reach the den at the top.</li>' : ''}${L.par ? `<li>★ Bank every snack (${L.items.filter((i) => i.k === 'pecan' || i.k === 'berry').length}) · ★ Beat par ${fmt(L.par)}</li>` : '<li>Stay ahead of the keeper\'s lantern!</li>'}<li>Tail rings: ${L.rings || 3}${assist ? ' + 2 (Assist)' : ''}</li></ul>
       ${factCard(fact)}
       <nav class="menu row">${btn('go', 'Go!', 'autofocus', 'btn primary')}${btn('back', 'Back', 'data-back')}</nav>
     </div>`,

@@ -246,4 +246,19 @@ export const tests = [
       await t.game('setState', { save: { notebook: [] } });
     },
   },
+
+  // ------------------------------------------------------------------ S4-08 Moonlight Run intro
+  {
+    name: 'S4-08 the Moonlight Run intro does not promise a den, and the levels still do',
+    viewports: ['desktop', 'mobile'],
+    async run(t) {
+      await t.game('newGame', { mode: 'endless', intro: true, seed: 5 }); await t.waitFrames(3);
+      let g = await t.page.evaluate(() => document.querySelector('.goals').textContent);
+      t.expect(!/den/i.test(g) && /lantern/.test(g), 'the endless goals name the lantern and no den: ' + g);
+      await keep(t, 'S4-08', 'intro-endless');
+      await t.game('newGame', { level: 'l1', intro: true, seed: 5 }); await t.waitFrames(3);
+      g = await t.page.evaluate(() => document.querySelector('.goals').textContent);
+      t.expect(/Reach the den at the top/.test(g) && /Beat par/.test(g), 'a level still starts with the den: ' + g);
+    },
+  },
 ];
