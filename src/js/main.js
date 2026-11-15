@@ -358,7 +358,7 @@ function cueHazards(run) {
     if (g.jaw !== 'tele') { c.tele.delete(g.id); continue; }
     if (c.tele.has(g.id)) continue;
     c.tele.add(g.id);
-    if (Math.abs(g.row - near) <= 4) sfx('tele');
+    if (Math.abs(g.row - near) <= 4) { sfx('tele'); sfx(g.k === 'boss' ? 'roar' : 'hiss'); }
   }
   for (const w of warnings(run.world)) {
     if (w.src !== 'feed' || c.feed.has(w)) continue;
@@ -408,7 +408,7 @@ function handleEvents(run) {
         break;
       case 'pickup': if (e.item === 'pecan' || e.item === 'berry') hud.pulse(); sfx(e.item === 'cap' ? 'cap' : e.item === 'ball' ? 'ball' : 'pickup'); if (e.item === 'ball') App.say('You found the lost home-run ball!'); if (e.item === 'ring') App.say(`A tail ring! ${run.rings} tail rings left.`); break;
       case 'wash': sfx('wash'); earn('squeaky'); break;
-      case 'bank': sfx('bank'); buzz('bank'); App.say(`${e.n} snack${e.n > 1 ? 's' : ''} banked.`); earn('snack'); if (tipId) { Object.assign(App.save.settings.tipsDone, { carry: true, bank: true }); persist(); endTip(); } break;
+      case 'bank': sfx('bank'); sfx('chitter'); buzz('bank'); App.say(`${e.n} snack${e.n > 1 ? 's' : ''} banked.`); earn('snack'); if (tipId) { Object.assign(App.save.settings.tipsDone, { carry: true, bank: true }); persist(); endTip(); } break;
       case 'lure': sfx('lure'); earn('lure'); break;
       case 'streak': sfx('streak', e.mult); if (e.mult >= 4) earn('streak4'); break;
       case 'whipWind': sfx('whip'); break;
