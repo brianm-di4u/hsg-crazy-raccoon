@@ -52,7 +52,10 @@ export const tests = [
     viewports: ['desktop'],
     async run(t) {
       // The music renders on a fixed seed, so its peak is the same every run. A cue's median of 7 renders is
-      // 0.2 to 0.45 by a wide margin (measured 0.22 to 0.37) and a single repeat only has to stay inside 0.12 to 0.7.
+      // 0.2 to 0.45 by a wide margin (measured 0.24 to 0.41) and a single repeat only has to stay inside 0.12 to 0.7.
+      // Chance of failing by luck: the play-to-play gain jitter is at most 1.5 dB either way, so a cue whose nominal peak is 0.245 or
+      // more can only reach 0.206 on the worst draw, and four of seven plays would have to fall 3 percent lower still by detune alone:
+      // well under 1 in 100,000. (The landings on wood, sand, straw and grass used to sit at 0.206 to 0.228, 0.2 to 1.2 percent of runs.)
       let loud = 0;
       for (const m of ['title', 'map', 'day', 'noon', 'barn', 'night', 'results']) { const r = await render(t, m, 30); loud = Math.max(loud, r.peak); t.expect(r.peak >= 0.06 && r.peak <= 0.16, `music ${m} peak ${r.peak} as heard is between 0.06 and 0.16`); }
       const out = [];
@@ -76,6 +79,7 @@ export const tests = [
     name: 'CL-01 every other cue is heard between 0.2 and 0.45 too',
     viewports: ['desktop'],
     async run(t) {
+      // Same reasoning as above: every nominal peak here is 0.24 or more, so the 1.5 dB jitter cannot bring a median of 5 under 0.2.
       const spec = [['whip', []], ['cap', []], ['wash', []], ['lure', []], ['feed', []], ['sweep', []], ['hum', []], ['spotted', []], ['streak', [2]], ['streak', [8]], ['nudge', []], ['ball', []], ['menu', []], ['back', []],
         ['denied', []], ['win', []], ['fail', []], ['star', [0]], ['star', [2]], ['best', []], ['par', []], ['fact', []], ['ach', []]];
       const out = [];
@@ -97,6 +101,8 @@ export const tests = [
     viewports: ['desktop'],
     async run(t) {
       // Volume 1 is higher than the Settings control offers (High is 0.85): the hardest case a hand-edited save can reach.
+      // The cues' random gain (1.5 dB) and detune move the peak, so this does not depend on a lucky draw: the soft clip tops out at 0.80
+      // and the oversampling rings about 14 percent above that, so the worst of 320 renders of the busiest moment was 0.911, under 0.95.
       const worst = [];
       const busy = [{ name: 'finale' }, { name: 'ach' }, { name: 'chomp' }, { name: 'splash' }, { name: 'hop', args: [0, 4] }, { name: 'land', args: ['back'] }, { name: 'bank' }, { name: 'win' }, { name: 'best' }, { name: 'par' }, { name: 'streak', args: [8] }, { name: 'whip' }];
       for (const [piece, intensity] of [['barn', 1], ['title', 0], ['night', 1], ['noon', 1]]) {
