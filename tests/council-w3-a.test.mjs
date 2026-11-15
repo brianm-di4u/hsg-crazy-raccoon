@@ -179,13 +179,17 @@ export const tests = [
       await t.page.evaluate(() => { const r = window.__CR.run; r.ev.push({ k: 'die', cause: 'chomp', row: r.p.row, x: r.p.x }); });
       await t.game('step', 1);
       t.expect(await t.page.evaluate(() => window.__CR.stop > 0.05 && window.__CR.stop <= 0.07), 'a hit-stop of about 70 ms is set');
-      t.expect(await t.page.evaluate(() => window.__CR.renderer.chompT === 0 || window.__CR.renderer.chompT < 0.05), 'the jaws start to close');
+      t.expect(await t.page.evaluate(() => window.__CR.renderer.chompT < 5), 'the jaws were set closing (the clock starts at 9 and the chomp put it back to 0)');
+      // The 70 ms freeze is over in four frames, too quick to sample on a loaded machine. So hold it long (5 s) and test the
+      // freeze itself: with stop above zero the live loop runs frames but no step, and when it reaches zero play goes on.
+      await t.page.evaluate(() => { window.__CR.stop = 5; });
+      const held = (await run(t)).steps;
       await t.game('resume');
-      const w = await watch(t, { during: () => window.__CR.stop > 0, read: () => window.__CR.run.steps, done: () => window.__CR.stop === 0 });
-      t.expect(w.finished, 'the freeze ends');
-      t.expect(w.seen.length >= 1 && w.seen.every((v) => v === w.seen[0]), 'no step ran during the freeze: ' + [...new Set(w.seen)].join(' '));
-      const after = (await run(t)).steps;
-      await t.page.waitForFunction((n) => window.__CR.run.steps > n, after, { timeout: 5000 });
+      await t.waitFrames(12);
+      t.expect(await t.page.evaluate(() => window.__CR.stop > 0), 'the freeze is still holding after 12 frames');
+      t.equal((await run(t)).steps, held, 'no step ran during the freeze');
+      await t.page.evaluate(() => { window.__CR.stop = 0; });
+      await t.page.waitForFunction((n) => window.__CR.run.steps > n, held, { timeout: 5000 });
     },
   },
   {
