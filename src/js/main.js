@@ -21,6 +21,8 @@ const LEVELS = typeof LEVELDATA !== 'undefined' ? LEVELDATA.levels : [];
 const ALLFACTS = typeof FACTS !== 'undefined' ? [...FACTS.bank, ...FACTS.research] : [];
 const GRACE_T = 0.7; // after Go, Restart or Resume the world holds this long so a hand can find the keys (S1-07)
 const HITSTOP_T = 0.07; // the freeze on a chomp, with the jaws shut on Bandit (S1-03)
+const FAILS_FOR_ASSIST = 2; // failing the same level this many times in a row puts "Try with Assist" on the fail panel (S2-03)
+const HINT_MIN_T = 2.5; // the level 1 hint stays at least this long, even if the first hop comes at once (S2-19)
 const STORAGE_NOTE = 'Progress will not be saved in this browser mode.';
 const THEME_MUSIC = { day: 'day', noon: 'noon', barn: 'barn', night: 'night' };
 // the ambience scene for each level theme (the music has the theme's own name)
@@ -87,7 +89,7 @@ if (backfill(App.save, 'before').length) writeSave(App.save);
 // first-run tips (S2-01): in the first two levels, one short line at the moment it matters. Shown once, saved with
 // the settings; a save from before the tips never shows them unless asked (Settings > Show tips again).
 const TIPS = { goal: 'Reach the den at the top. Bank snacks on bright rows.', carry: 'Bank snacks at the bright row. Paws hold three.', bank: 'Hop onto the bright BANK row to bank them.' };
-let tipId = null, tipUntil = 0;
+let tipId = null, tipUntil = 0, hintOff = 0;
 const tipsLive = () => App.save.settings.tipsOn && !!App.level && App.level.n >= 1 && App.level.n <= 2;
 function endTip() { tipId = null; hud.tip(''); }
 function showTip(id) {
@@ -135,7 +137,7 @@ function startEndless({ seed, intro = true, daily = null, grace = false } = {}) 
   App.run.daily = daily; // Assist is for the levels: the top-10 board is shared
   enterPlay();
   App.fact = ALLFACTS.length ? ALLFACTS[(Date.now() >> 10) % ALLFACTS.length] : null;
-  if (intro) { screens.show('intro', { L: { ...App.run.L, intro: daily ? `Daily Run, ${dayLabel(daily)}. Every player gets this same night today. Hop as far as you can. Three tail rings.` : 'Night falls. Hop as far as you can before the keeper\'s lantern catches up. Three tail rings.', rings: 3 }, fact: App.fact, assist: false }); setEnabled(false); }
+  if (intro) { screens.show('intro', { L: { ...App.run.L, intro: daily ? `Daily Run, ${dayLabel(daily)}. Every player gets this same night today. Hop as far as you can. Three tail rings.` : 'Night falls. Hop as far as you can before the keeper\'s lantern catches up. Snacks you carry are banked on bright rows. Three tail rings.', rings: 3 }, fact: App.fact, assist: false }); setEnabled(false); }
   else beginPlay(grace);
   return App.run;
 }
@@ -152,7 +154,8 @@ function beginPlay(grace = true) {
   screens.hide(); setEnabled(true); App.paused = false; App.grace = grace ? GRACE_T : 0;
   const L = App.run.L;
   App.say(L.n ? `Level ${L.n}, ${L.name}. Reach the den.` : 'Moonlight Run. Go!');
-  hud.hint(App.save.settings.hints && L.n === 1 ? (matchMedia('(pointer: coarse)').matches ? 'Tap where to hop' : 'Arrow keys or WASD to hop') : '');
+  const hint = App.save.settings.hints && L.n === 1 ? (matchMedia('(pointer: coarse)').matches ? 'Tap beside Bandit to hop' : 'Arrow keys or WASD to hop') : '';
+  hud.hint(hint); hintOff = hint ? App.run.steps + Math.round(HINT_MIN_T / DT) : 0;
   kick();
 }
 
@@ -189,12 +192,17 @@ function levelDone(run) {
     persist();
     if (daily) { earn('daily1'); if (daily.streak >= 7) earn('daily7'); }
     checkDerived();
-    screens.show('over', { res: { ...res, rows }, rank, entry, newBest, daily, earned: App.earned.slice() });
+    screens.show('over', { res: { ...res, rows }, rank, entry, newBest, daily, earned: App.earned.slice(), cause: run.p.cause });
     App.pendingScore = rank >= 0 ? entry : null;
     setEnabled(false); sfx('fail');
     return;
   }
-  if (!res.win) { screens.show('fail', { L, cause: run.p.cause }); setEnabled(false); sfx('fail'); persist(); return; }
+  if (!res.win) {
+    // a second failure in a row on one level offers Assist (S2-03); a win or another level starts the count again
+    App.fails = App.fails && App.fails.id === L.id ? { id: L.id, n: App.fails.n + 1 } : { id: L.id, n: 1 };
+    screens.show('fail', { L, cause: run.p.cause, offerAssist: App.fails.n >= FAILS_FOR_ASSIST && !s.settings.assist });
+    setEnabled(false); sfx('fail'); persist(); return; }
+  App.fails = null;
   const pr = s.progress[L.id] || { stars: [false, false, false], best: 0, bestT: null, ball: false };
   const best = res.score > pr.best, bestTime = pr.bestT != null && res.t < pr.bestT;
   pr.stars = pr.stars.map((b, i) => b || res.stars[i]); pr.best = Math.max(pr.best, res.score);
@@ -274,6 +282,7 @@ App.onMenu = (act, d = {}) => {
     case 'resetSave': return screens.show('confirmReset', { from: 'settings' });
     case 'resetYes': App.save = DEFAULT_SAVE(); persist({ reset: true }); return showTitle();
     case 'resume': return resumeGame();
+    case 'assistOn': s.settings.assist = true; persist(); App.say('Assist is on. Slower gators, longer warnings, two more tail rings.'); if (App.level) startLevel(App.level, { intro: false, grace: true }); return;
     case 'restart': if (App.run && App.run.mode === 'endless') return startEndless({ intro: false, grace: true, daily: App.run.daily ? App.today() : null }); if (App.level) return startLevel(App.level, { intro: false, grace: true }); return;
     case 'next': { const L = LEVELS.find((x) => x.n === App.level.n + 1); if (L) startLevel(L); return; }
     case 'map': App.scene = 'title'; App.run = null; hud.show(false); showTitle(); playTheme('map', 'meadow'); return screens.show('map', { levels: LEVELS });
@@ -311,6 +320,7 @@ function stepOnce(input = {}) {
   cueHazards(run);
   feelTension(run);
   feelTips(run);
+  if (hintOff && run.hops >= 1 && run.steps >= hintOff) { hintOff = 0; hud.hint(''); }
 }
 App.stepOnce = stepOnce;
 
@@ -363,7 +373,7 @@ function handleEvents(run) {
   for (const e of run.drain()) {
     renderer.onEvent(e, run);
     switch (e.k) {
-      case 'hop': sfx('hop', run.hops); App.save.stats.hops++; if (run.hops === 1) hud.hint(''); break;
+      case 'hop': sfx('hop', run.hops); App.save.stats.hops++; break;
       case 'land': if (!e.ride) sfx('land'); break;
       case 'bump': sfx('bump'); break;
       case 'knock': sfx('bump'); break;

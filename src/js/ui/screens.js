@@ -155,24 +155,27 @@ const TEMPLATES = {
       ${first ? '<p class="quote">Old Ruthless lowers his great jaw. "Keep the snacks, little bandit. The farm is yours tonight."</p>' : ''}
       <p class="epilogue">The lantern is out and the gators are drifting off to sleep. Bandit curls up in the den with the night's last pecan.</p>
       <p class="epilogue">${all ? 'All fifteen lost balls are home, the 1918 one too.' : `${t.balls} of 15 lost balls are home. The rest are still hiding somewhere on the farm.`}</p>
+      <p class="epilogue">${t.stars >= app.LEVELS.length * 3 ? '' : 'Some stars are still waiting on the map. '}The Moonlight Run is waiting on the title screen.</p>
       <div class="totals" aria-label="Totals"><span>★ ${t.stars}/45</span><span>⚾ ${t.balls}/15</span><span>Notebook ${app.save.notebook.length}/${app.FACTS.length}</span></div>
       <nav class="menu row">${btn('credits', 'Credits', 'autofocus', 'btn primary')}${btn('map', 'Farm map')}${btn('restart', 'Replay')}</nav>
     </div>`;
   },
 
-  fail: (app, { L, cause }) => `
+  fail: (app, { L, cause, offerAssist }) => `
     <div class="panel" role="dialog" aria-label="Out of rings">
       ${bandit(['bandit-sheepish', 'raccoon-down-stand'])}
       <h2>Out of tail rings!</h2>
       <p class="lead">${esc(L.name)}. ${causeText(cause)}</p>
       <p class="tip">${tipFor(cause)}</p>
-      <nav class="menu row">${btn('restart', 'Try again', 'autofocus', 'btn primary')}${btn('map', 'Farm map', 'data-back')}</nav>
+      ${offerAssist ? '<p class="sub" id="assist-why">Assist: slower gators, longer warnings, +2 tail rings (no par star). Turn it off again in Settings.</p>' : ''}
+      <nav class="menu row">${btn('restart', 'Try again', 'autofocus', 'btn primary')}${offerAssist ? btn('assistOn', 'Try with Assist', 'aria-describedby="assist-why"') : ''}${btn('map', 'Farm map', 'data-back')}</nav>
     </div>`,
 
-  over: (app, { res, rank, newBest, daily, earned = [] }) => `
+  over: (app, { res, rank, newBest, daily, earned = [], cause }) => `
     <div class="panel" role="dialog" aria-label="Moonlight Run over">
-      <h2>Lantern caught you!</h2>
-      <p class="lead">${res.rows} rows · ${res.score.toLocaleString('en-US')} points</p>
+      <h2>Run over!</h2>
+      <p class="lead">${res.rows} rows · ${res.score.toLocaleString('en-US')} points. ${causeText(cause)}</p>
+      <p class="tip">${tipFor(cause)}</p>
       ${newBest ? '<p><span class="newbest">New personal best!</span></p>' : ''}
       ${daily ? `<p class="dailyline">Daily Run, ${esc(dayLabel(daily.key))}: best today ${daily.best.rows} rows, ${daily.best.score.toLocaleString('en-US')} points${daily.newBest && !daily.first ? ' · new best today!' : ''}. ${daily.streak}-day streak.</p>` : ''}
       ${earned.length ? `<p class="found">★ Achievement${earned.length > 1 ? 's' : ''}: ${earned.map((a) => esc(achName(a))).join(', ')}</p>` : ''}
@@ -242,16 +245,16 @@ const TEMPLATES = {
       <p class="goalline">Goal: reach the den at the top. Bank snacks on the bright BANK rows, and beat par for the third star.</p>
       <div class="cols">
         <section><h3>Move</h3><p><b>Arrows</b> / <b>WASD</b>, the <b>d-pad</b>, or <b>tap</b> beside Bandit to hop that way (<b>swipes</b> work too). One hop = one tile.</p>
+          <h3>Stars</h3><p>★ Reach the den · ★ Bank every snack · ★ Beat par. Find the hidden ⚾ in every level.</p>
+          <h3>Tail rings</h3><p>Each splash, chomp or sweep off the edge costs a ring. You restart at the last checkpoint.</p></section>
+        <section><h3>Snacks</h3><p>Grab pecans and berries (paws hold 3). Bank them at the <b>bright BANK rows</b> or the den: snacks only count once banked. Dunk them in a <b>steaming spring stone</b> first to wash them for double points.</p>
+          <h3>Lure</h3><p><b>Space</b> / <b>E</b> / <b>Lure</b> button tosses a drumstick two rows ahead (and three tiles to the side you last hopped). A dashed ring shows the spot. Gators rush to it.</p>
           <h3>Gators</h3><ul>
           <li><b>Paddlers</b>: ride their backs across the water. Heads bite when the jaws open. A <b>⚠!</b> badge warns first.</li>
           <li><b>Whippers</b> (gold stripes): land on the tail and get flung two rows!</li>
           <li><b>Hatchlings</b>: banded mouths, can't bite, but they shove.</li>
           <li><b>Baskers</b> gape on the sand: closed mouth bumps you back, open mouth bites.</li>
           <li><b>Sleepers</b> in the barn: when the eye opens, they lunge a tile.</li></ul></section>
-        <section><h3>Snacks</h3><p>Grab pecans and berries (paws hold 3). Bank them at the <b>bright BANK rows</b> or the den: snacks only count once banked. Dunk them in a <b>steaming spring stone</b> first to wash them for double points.</p>
-          <h3>Lure</h3><p><b>Space</b> / <b>E</b> / <b>Lure</b> button tosses a drumstick two rows ahead (and three tiles to the side you last hopped). A dashed ring shows the spot. Gators rush to it.</p>
-          <h3>Tail rings</h3><p>Each splash, chomp or sweep off the edge costs a ring. You restart at the last checkpoint.</p>
-          <h3>Stars</h3><p>★ Reach the den · ★ Bank every snack · ★ Beat par. Find the hidden ⚾ in every level.</p></section>
       </div>
       <p class="fineprint">Game rules are made up for fun; the farm and its gators are real (see the Farm Notebook).</p>
       <nav class="menu row">${btn('back', 'Back', 'autofocus data-back')}</nav>

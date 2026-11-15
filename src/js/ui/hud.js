@@ -69,6 +69,9 @@ export class Hud {
     const total = run.treatsTotal();
     this.set('h-snacks', `<span class="nut" aria-hidden="true"></span><b>${c.length}/3</b>${washed ? `<span class="washed">✦${washed}</span>` : ''}${run.mode === 'endless' ? '' : `<span class="banked">${run.treatsBanked()}/${total} home</span>`}`, true);
     const tt = run.mode === 'endless' ? `${Math.max(0, run.maxRow)} rows` : `${fmt(run.t)}${run.L.par ? ` / ${fmt(run.L.par)}` : ''}`;
+    // the Moonlight Run shows the snack counter only once a snack has been picked up (S2-16)
+    const sn = this.root.querySelector('#h-snacks'), snackSeen = run.mode !== 'endless' || c.length > 0 || run.treatsBanked() > 0;
+    if (this.last.snackSeen !== snackSeen) { this.last.snackSeen = snackSeen; sn.hidden = !snackSeen; }
     this.set('h-time', tt);
     this.set('h-lures', String(run.lures));
     const lb = this.root.querySelector('#h-lure');
