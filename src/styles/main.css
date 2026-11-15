@@ -11,7 +11,7 @@
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html, body { margin: 0; height: 100%; overflow: hidden; background: #2B8FA3; color: var(--ink); font-family: var(--font-ui); font-size: calc(16px * var(--text-scale));
-  -webkit-user-select: none; user-select: none; touch-action: none; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; }
+  -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; overscroll-behavior: none; }
 #view { touch-action: none; position: fixed; inset: 0; width: 100vw; height: 100vh; height: 100dvh; display: block; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .boot-error { position: fixed; inset: auto 16px 16px; padding: 12px 16px; background: #5a1a12; color: #fff; border-radius: 10px; z-index: 50; }
@@ -138,7 +138,7 @@ body[data-screen]:not([data-screen='title']) .hud { visibility: hidden; }
 .initials input { width: 110px; min-height: 48px; font: 900 24px var(--font-head); text-transform: uppercase; text-align: center; border: 3px solid var(--ink); border-radius: 12px; }
 
 /* ---------- HUD ---------- */
-.hud { position: fixed; inset: 0; pointer-events: none; display: none; z-index: 5; }
+.hud { position: fixed; inset: 0; touch-action: none; pointer-events: none; display: none; z-index: 5; }
 .hud.on { display: block; }
 .hud .top, .hud .sub { position: absolute; left: 0; right: 0; display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; padding: 0 max(10px, env(safe-area-inset-right)) 0 max(10px, env(safe-area-inset-left)); }
 .hud .top { top: max(8px, env(safe-area-inset-top)); }

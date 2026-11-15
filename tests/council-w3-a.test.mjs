@@ -309,6 +309,20 @@ export const tests = [
     },
   },
   {
+    name: 'S2-13 nothing above the menus says touch-action none (which would refuse a pinch), but the canvas still does',
+    viewports: ['mobile'],
+    async run(t) {
+      await t.game('scene', 'settings'); await t.waitFrames(3);
+      // a pinch is limited by every ancestor up to the root, so walk them all; the canvas and HUD keep none
+      const none = (id) => t.page.evaluate((i) => { const out = []; for (let e = document.getElementById(i); e; e = e.parentElement) if (getComputedStyle(e).touchAction === 'none') out.push(e.id || e.tagName); return out; }, id);
+      t.equal((await none('screens')).join(','), '', 'nothing above the menus refuses a pinch');
+      t.expect((await none('view')).includes('view'), 'the play canvas still takes no browser gestures');
+      // and from the style rules themselves, not the computed value: no rule that says none may match the page root or body
+      const rules = await t.page.evaluate(() => { const out = []; for (const sh of document.styleSheets) for (const r of sh.cssRules) if (r.style && r.style.touchAction === 'none' && (document.documentElement.matches(r.selectorText) || document.body.matches(r.selectorText))) out.push(r.selectorText); return out; });
+      t.equal(rules.join(','), '', 'no touch-action none rule reaches html or body');
+    },
+  },
+  {
     name: 'S2-13 a save with a hand-edited text size falls back to 100 percent, and the old steps still load',
     async run(t) {
       await seedSave(t, { settings: { textScale: 3 } });
