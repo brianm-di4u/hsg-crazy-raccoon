@@ -12,7 +12,7 @@ export const tests = [
       const txt = await t.page.textContent('#screens');
       t.expect(/Crazy/.test(txt) && /Raccoon/.test(txt) && /Gator Farm Dash/.test(txt), 'game name');
       t.expect(/Hot Springs Games/.test(txt), 'brand');
-      t.expect(/made-up raccoon/i.test(txt) && /Not affiliated/i.test(txt), 'fiction and non-affiliation line');
+      t.expect(/made-up caper at a real Hot Springs landmark/i.test(txt), 'fiction line (the full non-affiliation wording is in Credits, S2-21)');
       await t.shot('m1-title');
       await t.checkLayout();
     },

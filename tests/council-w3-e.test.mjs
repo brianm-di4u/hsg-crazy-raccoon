@@ -180,4 +180,20 @@ export const tests = [
       t.equal((await said()).length, 1, 'a new run says it again');
     },
   },
+
+  // ------------------------------------------------------------------ S2-21 title line
+  {
+    name: 'S2-21 the title carries one short line about the story, and Credits keeps the full wording',
+    viewports: ['desktop', 'mobile'],
+    async run(t) {
+      await t.game('scene', 'title'); await t.waitFrames(3);
+      const line = await t.page.evaluate(() => document.querySelector('.title-wrap .fineprint').textContent.trim());
+      t.equal(line, 'A made-up caper at a real Hot Springs landmark.', 'the short line');
+      t.expect(!/affiliated/i.test(await panelText(t)) && !(await t.page.evaluate(() => /affiliated/i.test(document.getElementById('screens').textContent))), 'no legal paragraph on the title');
+      await keep(t, 'S2-21', 'title');
+      await t.game('scene', 'credits'); await t.waitFrames(3);
+      const c = await panelText(t);
+      t.expect(/made-up raccoon caper at a real Hot Springs landmark/.test(c) && /Not affiliated with the Arkansas Alligator Farm and Petting Zoo/.test(c), 'Credits has the full wording');
+    },
+  },
 ];

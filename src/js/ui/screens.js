@@ -9,6 +9,8 @@ const seg = (k, cur, opts) => `<div class="seg" role="group">${opts.map(([v, l])
 const field = (label, inner) => `<div class="field"><span class="flabel">${label}</span>${inner}</div>`;
 const stars = (st) => `<span class="stars" aria-label="${st.filter(Boolean).length} of 3 stars">${st.map((b) => (b ? '★' : '<span class="off">☆</span>')).join('')}</span>`;
 export const FICTION = 'A made-up raccoon caper at a real Hot Springs landmark. Not affiliated with the Arkansas Alligator Farm and Petting Zoo.';
+// the title carries one short line; the full wording lives in Credits (S2-21)
+export const FICTION_SHORT = 'A made-up caper at a real Hot Springs landmark.';
 const ZONES = ['', 'Front Pits', 'Hatchling Nursery', 'Noon Feeding Show', 'Winter Barn', 'Midnight Raid'];
 // where each zone sits in the farm story, in words the repo already holds (research/town-content.md section 1)
 const PLACES = ['', 'Over the wall from Whittington Ave.', 'Hatchlings, restocked from Louisiana', "Chicken for the gators, and the keeper's call", 'Warm under the heat lamps', 'After dark, when raccoons are about'];
@@ -92,7 +94,7 @@ const TEMPLATES = {
       ${app.save.endless.unlocked ? dailyNote(app) : '<p class="note" id="lock-note">Clear level 6 to unlock the Moonlight Run and the Daily Run.</p>'}
       ${app.storageBlocked && app.storageBlocked() ? '<p class="note warn" role="status">Progress will not be saved in this browser mode.</p>' : ''}
       <p class="brand">Hot Springs Games</p>
-      <p class="fineprint">${FICTION}</p>
+      <p class="fineprint">${FICTION_SHORT}</p>
     </div>`,
 
   map: (app, { levels }) => `
