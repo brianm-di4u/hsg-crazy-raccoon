@@ -133,8 +133,11 @@ function feelTips(run) {
 // runs
 function levelById(id) { return LEVELS.find((L) => L.id === id || L.n === +id) || null; }
 function pickFact(L) {
-  // a fact for the intro card: rotate through the bank by level and zone topic
+  // a fact for the intro card: one tagged for this level (data/facts.json "levels") when there is one, else rotate through
+  // the bank by level and zone topic (S4-06)
   if (!ALLFACTS.length) return null;
+  const tagged = ALLFACTS.filter((f) => f.levels && f.levels.includes(L.id));
+  if (tagged.length) return tagged.find((f) => !App.save.notebook.includes(f.id)) || tagged[0];
   const topic = { 1: 'farm', 2: 'gator', 3: 'farm', 4: 'farm', 5: 'raccoon' }[L.zone] || 'gator';
   const pool = ALLFACTS.filter((f) => f.topic === topic || f.topic === 'gator');
   return pool[hashStr(String(L.id)) % pool.length];
@@ -144,7 +147,7 @@ function startLevel(L, { seed, intro = true, grace = false } = {}) {
   App.level = L;
   App.run = new Run(JSON.parse(JSON.stringify(L)), { seed: seed ?? App.nextSeed ?? hashStr(L.id), assist: App.save.settings.assist });
   enterPlay();
-  App.fact = pickFact(L);
+  App.fact = pickFact(L); App.factSeen = intro;
   if (intro) { App.paused = false; screens.show('intro', { L: App.run.L, fact: App.fact, assist: App.save.settings.assist }); setEnabled(false); }
   else beginPlay(grace);
   return App.run;
@@ -229,8 +232,10 @@ function levelDone(run) {
   s.unlocked = Math.max(s.unlocked, Math.min(LEVELS.length, L.n + 1));
   if (L.n >= 6) s.endless.unlocked = true;
   if (res.ticket) s.merman = true;
-  // collect a fact card: the intro fact if new, else the first unseen one
+  // collect a fact card: the intro fact if new, else the first unseen one. A card the intro just showed is not shown again on
+  // the win panel (S4-06): the panel only says it went into the Notebook.
   let f = App.fact && !s.notebook.includes(App.fact.id) ? App.fact : ALLFACTS.find((x) => !s.notebook.includes(x.id));
+  const again = !!(f && f === App.fact && App.factSeen);
   if (f) s.notebook.push(f.id);
   s.stats.treats += run.treatsBanked();
   persist();
@@ -246,7 +251,7 @@ function levelDone(run) {
     duckMusic(8, 4600); sfx('finale');
     return;
   }
-  screens.show('win', { L, res, fact: f, next: true, best, bestTime, assist: App.save.settings.assist, earned: App.earned.slice(), nextUp: nextUnlock(s) });
+  screens.show('win', { L, res, fact: again ? null : f, noted: again, next: true, best, bestTime, assist: App.save.settings.assist, earned: App.earned.slice(), nextUp: nextUnlock(s) });
   duckMusic(8, 1600);
   sfx('win'); res.stars.forEach((b, i) => { if (b) setTimeout(() => sfx(i === 2 ? 'par' : 'star', i), 500 + i * 220); });
   // after the stars: a new best, then the fact card that went into the Notebook

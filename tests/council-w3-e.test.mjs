@@ -196,4 +196,54 @@ export const tests = [
       t.expect(/made-up raccoon caper at a real Hot Springs landmark/.test(c) && /Not affiliated with the Arkansas Alligator Farm and Petting Zoo/.test(c), 'Credits has the full wording');
     },
   },
+
+  // ------------------------------------------------------------------ S4-06 fact cards
+  {
+    name: 'S4-06 a level\'s intro card is the fact tagged for that level',
+    viewports: ['desktop'],
+    async run(t) {
+      const want = { l1: /Whittington/, l4: /rubber bands/, l6: /65 days/, l7: /chicken/, l10: /heat lamps/, l13: /nocturnal/, l15: /Babe Ruth/ };
+      for (const [id, re] of Object.entries(want)) {
+        await t.game('newGame', { level: id, intro: true, seed: 5 }); await t.waitFrames(2);
+        const fact = await t.page.evaluate(() => (document.querySelector('.fact p') || {}).textContent || '');
+        t.expect(re.test(fact), `${id} shows its own fact: ${fact}`);
+      }
+      // with the tagged card already in the Notebook it still shows (it is about this level), never an unrelated one
+      await t.game('setState', { save: { notebook: ['r-barn'] } });
+      await t.game('newGame', { level: 'l11', intro: true, seed: 5 }); await t.waitFrames(2);
+      t.expect(/heat lamps/.test(await t.page.evaluate(() => document.querySelector('.fact p').textContent)), 'a seen card is still the level\'s card');
+      await t.game('setState', { save: { notebook: [] } });
+    },
+  },
+  {
+    name: 'S4-06 the win panel does not read out the card the intro just showed, and says it went into the Notebook',
+    viewports: ['desktop', 'mobile'],
+    async run(t) {
+      await t.game('setState', { save: { notebook: [] } });
+      await t.game('newGame', { level: 'l1', intro: true, seed: 5 }); await t.waitFrames(2);
+      const intro = await t.page.evaluate(() => document.querySelector('.fact p').textContent);
+      await t.game('pause');
+      await t.page.click('[data-act="go"]');
+      await t.game('act', 'replay');
+      await t.game('resume');
+      await t.page.waitForFunction(() => window.__game.getState().screen === 'win', null, { timeout: 15000 });
+      const p = await panelText(t);
+      t.expect(!p.includes(intro), 'the intro card\'s text is not on the win panel');
+      t.expect(/Farm fact added to your Notebook/.test(p), 'the panel says the card was added');
+      t.equal((await t.state()).save.notebook, 1, 'one card went into the Notebook');
+      await keep(t, 'S4-06', 'win');
+      // a card the player had already: the win panel shows the next unseen one, a different card
+      await t.game('setState', { save: { notebook: ['hs-0399'] } });
+      await t.game('newGame', { level: 'l1', intro: true, seed: 5 }); await t.waitFrames(2);
+      const again = await t.page.evaluate(() => document.querySelector('.fact p').textContent);
+      await t.game('pause');
+      await t.page.click('[data-act="go"]');
+      await t.game('act', 'replay');
+      await t.game('resume');
+      await t.page.waitForFunction(() => window.__game.getState().screen === 'win', null, { timeout: 15000 });
+      const q = await t.page.evaluate(() => (document.querySelector('.panel .fact p') || {}).textContent || '');
+      t.expect(q && q !== again, 'a new card is shown when the intro card was already known: ' + q);
+      await t.game('setState', { save: { notebook: [] } });
+    },
+  },
 ];

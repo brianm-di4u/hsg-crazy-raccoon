@@ -130,7 +130,7 @@ const TEMPLATES = {
       <nav class="menu">${btn('resume', 'Resume', 'autofocus data-back', 'btn primary')}${btn('restart', 'Restart')}${btn('help', 'How to Play')}${btn('settings', 'Settings')}${btn('quit', app.run && app.run.mode === 'endless' ? 'Quit to title' : 'Farm map')}</nav>
     </div>`,
 
-  win: (app, { L, res, fact, next, best, assist, bestTime, earned = [], nextUp = '' }) => `
+  win: (app, { L, res, fact, noted, next, best, assist, bestTime, earned = [], nextUp = '' }) => `
     <div class="panel" role="dialog" aria-label="Level clear">
       ${bandit(['bandit-cheer', 'raccoon-down-hop'])}
       <h2>Home free!</h2>
@@ -151,7 +151,7 @@ const TEMPLATES = {
       ${earned.length ? `<p class="found">★ Achievement${earned.length > 1 ? 's' : ''}: ${earned.map((a) => esc(achName(a))).join(', ')}</p>` : ''}
       ${res.ball ? '<p class="found">⚾ You found the lost 1918 home-run ball! <small>(A game nod to Babe Ruth\'s real 1918 homer into the farm.)</small></p>' : ''}
       ${res.ticket ? '<p class="found">🎟 Merman ticket! Check the Farm Notebook.</p>' : ''}
-      ${factCard(fact)}
+      ${factCard(fact)}${noted ? '<p class="found">Farm fact added to your Notebook.</p>' : ''}
       ${nextUp ? `<p class="nextup">${esc(nextUp)}</p>` : ''}
       <nav class="menu row">${next ? btn('next', 'Next level', 'autofocus', 'btn primary') : btn('map', 'Farm map', 'autofocus', 'btn primary')}${btn('restart', 'Replay')}${next ? btn('map', 'Map') : ''}</nav>
     </div>`,
