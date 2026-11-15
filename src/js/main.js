@@ -151,7 +151,7 @@ function enterPlay() {
   kick();
 }
 function beginPlay(grace = true) {
-  screens.hide(); setEnabled(true); App.paused = false; App.grace = grace ? GRACE_T : 0;
+  screens.hide(); setEnabled(true); App.paused = false; App.grace = grace ? GRACE_T : 0; renderer.arrive = App.reduced ? 0 : 1;
   const L = App.run.L;
   App.say(L.n ? `Level ${L.n}, ${L.name}. Reach the den.` : 'Moonlight Run. Go!');
   const hint = App.save.settings.hints && L.n === 1 ? (matchMedia('(pointer: coarse)').matches ? 'Tap beside Bandit to hop' : 'Arrow keys or WASD to hop') : '';

@@ -16,12 +16,13 @@ const VIEW_COLS = { close: 6.5, standard: 7.5, wide: 9 }; // wave 1: 6.5 for eve
 const VIEW_RH = { close: 0.9, standard: 0.98, wide: 1.12 };
 // a lateral gator this many tiles outside the view gets an edge chevron
 const CHEVRON_TILES = 3;
+const ARRIVE_T = 0.5; // a level fades up out of the dark over this many seconds when play begins (S4-04)
 
 export class Renderer {
   constructor(canvas, fxRng) {
     this.c = canvas; this.g = canvas.getContext('2d');
     this.dpr = 1; this.w = 0; this.h = 0; this.cam = 0; this.camT = 0; this.camX = T * COLS / 2; this.camXT = this.camX; this.shake = 0;
-    this.fx = new Fx(fxRng); this.lights = []; this.art = null; this.cache = new WeakMap(); this.reduced = false; this.landT = 9; this.chompT = 9; this.grace = 0; this.ghost = null; this.deadFx = null; this.hudTop = 64; this.hudBot = 0; this.view = 'standard'; this.portrait = false; this.costume = 'plain';
+    this.fx = new Fx(fxRng); this.lights = []; this.art = null; this.cache = new WeakMap(); this.reduced = false; this.landT = 9; this.chompT = 9; this.grace = 0; this.arrive = 0; this.ghost = null; this.deadFx = null; this.hudTop = 64; this.hudBot = 0; this.view = 'standard'; this.portrait = false; this.costume = 'plain';
     this.resize();
   }
   resize() {
@@ -102,9 +103,10 @@ export class Renderer {
     this.cam += (this.camT - this.cam) * k;
     this.camX += (this.camXT - this.camX) * k; this.placeX();
     this.landT += dt; this.chompT += dt;
+    if (this.arrive > 0) this.arrive = Math.max(0, this.arrive - dt / ARRIVE_T);
     this.shake = Math.max(0, this.shake - dt * 2.5);
     this.fx.update(dt);
-    return Math.abs(this.camT - this.cam) > 0.002 || this.fx.busy() || this.shake > 0;
+    return Math.abs(this.camT - this.cam) > 0.002 || this.fx.busy() || this.shake > 0 || this.arrive > 0;
   }
 
   // ------------------------------------------------------------------------------------------------------------
@@ -178,6 +180,8 @@ export class Renderer {
       }
       g.fillStyle = 'rgba(15,25,20,0.3)'; g.fillRect(-20, -20, this.bx - fw + 20, h + 40); g.fillRect(this.bx + this.bw + fw, -20, this.bx + 20, h + 40);
     }
+    // arrival (S4-04): the level fades up out of the dark for half a second as the card goes
+    if (this.arrive > 0) { g.fillStyle = `rgba(10,28,36,${(this.arrive * this.arrive * 0.85).toFixed(3)})`; g.fillRect(-20, -20, w + 40, h + 40); }
   }
 
   ridges(g, run, P, t) {
@@ -707,7 +711,18 @@ export class Renderer {
     const z = this.reduced ? 1.04 : 1.06 + Math.sin(t * 0.15) * 0.03, sc = Math.max(w / img.width, h / img.height) * z;
     const dx = this.reduced ? 0 : Math.sin(t * 0.11) * w * 0.015;
     g.drawImage(img, (w - img.width * sc) / 2 + dx, (h - img.height * sc) / 2, img.width * sc, img.height * sc);
+    if (!this.reduced) this.steam(g, t);
     return true;
+  }
+  // the menus are never quite still (S4-04): soft wisps of spring steam rise past the key art and thin out near the top
+  steam(g, t) {
+    const { w, h } = this;
+    for (let i = 0; i < 9; i++) {
+      const ph = (t * 0.045 + i / 9) % 1, x = w * (0.08 + ((i * 0.37) % 0.84)) + Math.sin(t * 0.35 + i * 2) * w * 0.02, y = h * (1.08 - ph * 1.2), r = Math.min(w, h) * (0.12 + (i % 3) * 0.05 + ph * 0.1);
+      const a = Math.sin(Math.PI * ph) * 0.32, gr = g.createRadialGradient(x, y, 0, x, y, r);
+      gr.addColorStop(0, `rgba(255,255,255,${a.toFixed(3)})`); gr.addColorStop(1, 'rgba(255,255,255,0)');
+      g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2);
+    }
   }
 
   // events from the run → FX and camera kick

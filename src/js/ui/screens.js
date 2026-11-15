@@ -27,7 +27,16 @@ const dailyNote = (app) => {
 const factCard = (f) => f ? `<aside class="fact"><b>Farm fact</b><p>${esc(f.text)}</p><small>Source: ${esc(f.source)}</small></aside>` : '';
 
 export class Screens {
-  constructor(root, app) { this.root = root; this.app = app; this.cur = null; this.data = {}; this.trans = 0; }
+  constructor(root, app) {
+    this.root = root; this.app = app; this.cur = null; this.data = {}; this.trans = 0;
+    // the title scrolls itself when the screen is short (a phone held sideways): a cue says there is more below (S2-10)
+    root.addEventListener('scroll', () => this.titleCue(), { passive: true });
+    window.addEventListener('resize', () => this.titleCue());
+  }
+  titleCue() {
+    const r = this.root;
+    r.classList.toggle('more', this.cur === 'title' && r.scrollTop + r.clientHeight < r.scrollHeight - 8);
+  }
   show(name, data = {}) {
     this.cur = name; this.data = data;
     // the panel pop-in (0.22 s CSS) counts as a transition for isIdle()
@@ -43,6 +52,7 @@ export class Screens {
     if (this.app.say && data.say !== false) { const h = this.root.querySelector('h1, h2'); if (h) this.app.say(h.textContent); }
     // a panel taller than the screen shows a 'more' cue above its button row until it is scrolled to the end
     const pn = this.root.querySelector('.panel');
+    if (name === 'title') requestAnimationFrame(() => this.titleCue());
     if (pn) { const upd = () => pn.classList.toggle('more', pn.scrollTop + pn.clientHeight < pn.scrollHeight - 8); pn.addEventListener('scroll', upd, { passive: true }); requestAnimationFrame(upd); }
   }
   refresh() {
