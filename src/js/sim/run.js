@@ -62,11 +62,16 @@ export class Run {
     if (this.world.gators.length > 160) this.world.gators = this.world.gators.filter((g) => g.row >= floor || g.id === this.p.on);
   }
 
+  // where a lure tossed right now would land (also what the renderer previews, S1-10)
+  lureTarget() {
+    const p = this.p;
+    return { row: clamp(p.row + 2, 0, this.N - 1), c: clamp(xCol(p.x) + 3 * p.lastH, 0, COLS - 1) };
+  }
+
   lure() {
     if (this.phase !== 'play' || this.lures <= 0 || this.p.state === 'dead' || this.p.state === 'won') return false;
     const p = this.p;
-    const row = clamp(p.row + 2, 0, this.N - 1);
-    const c = clamp(xCol(p.x) + 3 * p.lastH, 0, COLS - 1);
+    const { row, c } = this.lureTarget();
     this.lures--;
     this.world.lures.push({ row, x: colX(c), land: this.world.t + LURE_FLIGHT, from: { row: p.row, x: p.x }, t0: this.world.t, done: false });
     this.ev.push({ k: 'lure', row, c });

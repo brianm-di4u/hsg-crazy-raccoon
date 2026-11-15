@@ -247,7 +247,7 @@ const TEMPLATES = {
           <li><b>Baskers</b> gape on the sand: closed mouth bumps you back, open mouth bites.</li>
           <li><b>Sleepers</b> in the barn: when the eye opens, they lunge a tile.</li></ul></section>
         <section><h3>Snacks</h3><p>Grab pecans and berries (paws hold 3). Bank them at the <b>bright BANK rows</b> or the den: snacks only count once banked. Dunk them in a <b>steaming spring stone</b> first to wash them for double points.</p>
-          <h3>Lure</h3><p><b>Space</b> / <b>E</b> / <b>Lure</b> button tosses a drumstick two rows ahead (and three tiles to the side you last hopped). Gators rush to it.</p>
+          <h3>Lure</h3><p><b>Space</b> / <b>E</b> / <b>Lure</b> button tosses a drumstick two rows ahead (and three tiles to the side you last hopped). A dashed ring shows the spot. Gators rush to it.</p>
           <h3>Tail rings</h3><p>Each splash, chomp or sweep off the edge costs a ring. You restart at the last checkpoint.</p>
           <h3>Stars</h3><p>★ Reach the den · ★ Bank every snack · ★ Beat par. Find the hidden ⚾ in every level.</p></section>
       </div>

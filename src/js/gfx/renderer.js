@@ -21,7 +21,7 @@ export class Renderer {
   constructor(canvas, fxRng) {
     this.c = canvas; this.g = canvas.getContext('2d');
     this.dpr = 1; this.w = 0; this.h = 0; this.cam = 0; this.camT = 0; this.camX = T * COLS / 2; this.camXT = this.camX; this.shake = 0;
-    this.fx = new Fx(fxRng); this.lights = []; this.art = null; this.cache = new WeakMap(); this.reduced = false; this.landT = 9; this.chompT = 9; this.grace = 0; this.deadFx = null; this.hudTop = 64; this.hudBot = 0; this.view = 'standard'; this.portrait = false; this.costume = 'plain';
+    this.fx = new Fx(fxRng); this.lights = []; this.art = null; this.cache = new WeakMap(); this.reduced = false; this.landT = 9; this.chompT = 9; this.grace = 0; this.ghost = null; this.deadFx = null; this.hudTop = 64; this.hudBot = 0; this.view = 'standard'; this.portrait = false; this.costume = 'plain';
     this.resize();
   }
   resize() {
@@ -677,6 +677,18 @@ export class Renderer {
       const u = Math.min(1, (run.world.t - L.t0) / (L.land - L.t0));
       const x = this.sx(L.from.x + (L.x - L.from.x) * u), r = L.from.row + (L.row - L.from.row) * u, y = this.sy(r) - Math.sin(Math.PI * u) * this.tile * 1.4;
       g.save(); g.translate(x, y); g.rotate(u * 9); item(g, this.tile, 'drum', t); g.restore();
+    }
+    // a faint drumstick where the next lure would land, so the toss is aimed and not a gamble (S1-10)
+    const aimed = run.phase === 'play' && run.lures > 0 && run.p.state !== 'dead' && run.p.state !== 'won';
+    this.ghost = aimed ? run.lureTarget() : null;
+    if (aimed) {
+      const tg = this.ghost, x = this.sx(colX(tg.c)), y = this.sy(tg.row) + this.rh * 0.2;
+      if (y > this.hudBand && y < this.h) {
+        const pu = this.reduced ? 0.8 : 0.7 + 0.2 * Math.sin(t * 5);
+        g.save(); g.globalAlpha = pu; g.lineWidth = 6; g.strokeStyle = INK; g.beginPath(); g.ellipse(x, y, this.tile * 0.5, this.tile * 0.2, 0, 0, Math.PI * 2); g.stroke();
+        g.lineWidth = 3; g.strokeStyle = '#FFF3A6'; g.setLineDash([8, 5]); g.stroke(); g.setLineDash([]);
+        g.globalAlpha = pu * 0.8; g.translate(x, y - this.tile * 0.4); item(g, this.tile * 1.05, 'drum', t); g.restore();
+      }
     }
     // the endless keeper's lantern line
     if (run.beam != null) {
