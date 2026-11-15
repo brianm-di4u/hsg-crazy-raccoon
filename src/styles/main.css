@@ -117,6 +117,7 @@ body[data-screen]:not([data-screen='title']) .hud { visibility: hidden; }
 .fact { margin: 12px 0 0; padding: 10px 12px; border-radius: 14px; border: 3px solid var(--ink); background: #E3F4F2; }
 .fact b { font-family: var(--font-head); color: var(--teal-dark); }
 .fact p { margin: 4px 0; font-weight: 700; }
+.fact .quip { font-style: italic; font-weight: 600; color: var(--teal-dark); }
 .fact small { color: #3E4A48; }
 .goals { padding-left: 20px; font-weight: 700; }
 .tip { background: #FFF9E0; border-radius: 12px; padding: 8px 10px; border: 2px solid var(--ink); font-weight: 700; }

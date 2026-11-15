@@ -26,7 +26,12 @@ const dailyNote = (app) => {
   const d = app.save.endless.daily, today = app.today(), e = d.hist[today], st = dailyStreak(d, today);
   return `<p class="note daily-note">${e ? `Today: best ${e.rows} rows.` : "Today's Daily Run is waiting."}${st ? ` ${st}-day streak.` : ''}</p>`;
 };
-const factCard = (f) => f ? `<aside class="fact"><b>Farm fact</b><p>${esc(f.text)}</p><small>Source: ${esc(f.source)}</small></aside>` : '';
+// Bandit's word after a fact (S4-07): the same few lines in turn, picked from the fact's id so a card always gets the same one.
+// They add no facts, only the voice, so the source line under the fact still stands for everything the card claims.
+const QUIPS = ['Bandit says: write that one down.', 'Bandit says: good to know before the next gator.', 'Bandit says: a raccoon never forgets a fact, or a snack.',
+  'Bandit says: that is a lot of history for one raccoon.', 'Bandit says: the gators knew that all along.', 'Bandit says: filing that under important.'];
+export const quipFor = (id) => QUIPS[[...String(id)].reduce((n, ch) => (n * 31 + ch.charCodeAt(0)) >>> 0, 7) % QUIPS.length];
+const factCard = (f) => f ? `<aside class="fact"><b>Farm fact</b><p>${esc(f.text)}</p><p class="quip">${esc(quipFor(f.id))}</p><small>Source: ${esc(f.source)}</small></aside>` : '';
 
 export class Screens {
   constructor(root, app) {
@@ -177,7 +182,7 @@ const TEMPLATES = {
     <div class="panel" role="dialog" aria-label="Out of rings">
       ${bandit(['bandit-sheepish', 'raccoon-down-stand'])}
       <h2>Out of tail rings!</h2>
-      <p class="lead">${esc(L.name)}. ${causeText(cause)}</p>
+      <p class="lead">${esc(L.name)}. ${causeText(cause, app.run && app.run.steps)}</p>
       <p class="tip">${tipFor(cause)}</p>
       ${offerAssist ? '<p class="sub" id="assist-why">Assist: slower gators, longer warnings, +2 tail rings (no par star). Turn it off again in Settings.</p>' : ''}
       <nav class="menu row">${btn('restart', 'Try again', 'autofocus', 'btn primary')}${offerAssist ? btn('assistOn', 'Try with Assist', 'aria-describedby="assist-why"') : ''}${btn('map', 'Farm map', 'data-back')}</nav>
@@ -186,7 +191,7 @@ const TEMPLATES = {
   over: (app, { res, rank, newBest, daily, earned = [], cause }) => `
     <div class="panel" role="dialog" aria-label="Moonlight Run over">
       <h2>Run over!</h2>
-      <p class="lead">${res.rows} rows · ${res.score.toLocaleString('en-US')} points. ${causeText(cause)}</p>
+      <p class="lead">${res.rows} rows · ${res.score.toLocaleString('en-US')} points. ${causeText(cause, app.run && app.run.steps)}</p>
       <p class="tip">${tipFor(cause)}</p>
       ${newBest ? '<p><span class="newbest">New personal best!</span></p>' : ''}
       ${daily ? `<p class="dailyline">Daily Run, ${esc(dayLabel(daily.key))}: best today ${daily.best.rows} rows, ${daily.best.score.toLocaleString('en-US')} points${daily.newBest && !daily.first ? ' · new best today!' : ''}. ${daily.streak}-day streak.</p>` : ''}
@@ -330,7 +335,16 @@ const TEMPLATES = {
     </div>`,
 };
 
-function causeText(c) { return { chomp: 'Chomped!', splash: 'Splash!', swept: 'Swept off the edge!', spotted: 'Spotted by the keeper!', caught: 'The lantern caught up!' }[c] || ''; }
+// Three lines for each way to lose (S4-07). The first words of every line are the plain cause; `n` picks the line, and the panels pass
+// the run's step count, so a panel keeps its line when it is drawn again and the next failure usually reads differently.
+export const CAUSE_LINES = {
+  chomp: ['Chomped!', 'Chomped! Those jaws are quick.', 'Chomped! Snap, and that was that.'],
+  splash: ['Splash!', 'Splash! The water wins that one.', 'Splash! Bandit is soaked, and not pleased.'],
+  swept: ['Swept off the edge!', 'Swept off the edge! The ride kept going without you.', 'Swept off the edge! Hop off before the edge.'],
+  spotted: ['Spotted by the keeper!', 'Spotted by the keeper! Stay out of the beam.', 'Spotted by the keeper! Bandit froze a moment too late.'],
+  caught: ['The lantern caught up!', 'The lantern caught up! Keep moving.', 'The lantern caught up! No time to stop and sniff.'],
+};
+function causeText(c, n = 0) { const l = CAUSE_LINES[c]; return l ? l[Math.abs(n | 0) % l.length] : ''; }
 function tipFor(c) {
   return {
     chomp: 'Tip: when the ⚠! badge pops up, jaws open soon. Ride the back half of a gator.',
