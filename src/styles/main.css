@@ -78,11 +78,17 @@ body.reduced .panel.more > .menu.row:last-child::before { animation: none; }
 .title-wrap .fineprint, .title-wrap .note { color: #FFFFFF; text-shadow: 0 1px 2px #000, 0 0 6px #000; max-width: 420px; margin: 4px 0 0; font-weight: 700; }
 
 /* map */
-.zones { display: grid; gap: 10px; }
-.zone { border: 3px solid var(--ink); border-radius: 16px; padding: 8px 10px 10px; background: #FFFFFF; }
+.zones { display: grid; gap: 26px; }
+.zone { position: relative; border: 3px solid var(--ink); border-radius: 16px; padding: 8px 10px 10px; background: #FFFFFF; }
 .zone h3 { margin: 0 0 6px; }
 .zone.z1 { background: #EAF6DA; } .zone.z2 { background: #F4F2D2; } .zone.z3 { background: #FFF0CC; } .zone.z4 { background: #F2E1C8; } .zone.z5 { background: #DCE2F2; }
-.lvls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.lvls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 20px; position: relative; isolation: isolate; }
+.place { margin: -2px 0 8px; font: italic 600 calc(13px * var(--text-scale)) var(--font-ui); color: #4A4436; }
+/* the farm trail (S4-03): a dotted path runs between the levels of a zone and down from zone to zone; it turns solid where the player has been */
+.lvl + .lvl::before { content: ''; position: absolute; right: calc(100% - 3px); top: 50%; width: 26px; border-top: 5px dotted #B8A678; transform: translateY(-50%); z-index: -1; }
+.lvl.open + .lvl.open::before { border-top-style: solid; border-top-color: #8A5A22; }
+.zone + .zone::before { content: ''; position: absolute; left: 50%; top: -28px; height: 28px; border-left: 5px dotted #B8A678; transform: translateX(-50%); }
+.zone.walked + .zone.walked::before { border-left-style: solid; border-left-color: #8A5A22; }
 .lvl { position: relative; display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; align-items: center; gap: 0 8px; min-height: 64px; padding: 6px 10px; text-align: left; cursor: pointer;
   border: 3px solid var(--ink); border-radius: 14px; background: linear-gradient(#FFFFFF, #EFE8D6); box-shadow: 0 4px 0 var(--ink); font: 700 calc(14px * var(--text-scale)) var(--font-ui); color: var(--ink); }
 .lvl .n { grid-row: span 2; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; border: 3px solid var(--ink); background: var(--gold); font: 900 18px var(--font-head); }
@@ -163,7 +169,8 @@ body.reduced .mult.pop { animation: none; }
 .btn.lure .drum { width: 26px; height: 16px; border-radius: 50% 40% 40% 50%; background: #D68B3E; border: 2px solid var(--ink); }
 
 @media (max-width: 520px) {
-  .lvls { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .lvls { grid-template-columns: repeat(3, 1fr); gap: 6px 14px; }
+  .lvl + .lvl::before { width: 20px; }
   .lvl { grid-template-columns: 1fr; grid-template-rows: auto auto auto; justify-items: center; text-align: center; padding: 6px 4px; gap: 2px; }
   .lvl .n { grid-row: auto; width: 30px; height: 30px; font-size: 15px; }
   .lvl .nm { font-size: calc(12px * var(--text-scale)); }

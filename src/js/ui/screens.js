@@ -10,6 +10,8 @@ const field = (label, inner) => `<div class="field"><span class="flabel">${label
 const stars = (st) => `<span class="stars" aria-label="${st.filter(Boolean).length} of 3 stars">${st.map((b) => (b ? '★' : '<span class="off">☆</span>')).join('')}</span>`;
 export const FICTION = 'A made-up raccoon caper at a real Hot Springs landmark. Not affiliated with the Arkansas Alligator Farm and Petting Zoo.';
 const ZONES = ['', 'Front Pits', 'Hatchling Nursery', 'Noon Feeding Show', 'Winter Barn', 'Midnight Raid'];
+// where each zone sits in the farm story, in words the repo already holds (research/town-content.md section 1)
+const PLACES = ['', 'Over the wall from Whittington Ave.', 'Hatchlings, restocked from Louisiana', "Chicken for the gators, and the keeper's call", 'Warm under the heat lamps', 'After dark, when raccoons are about'];
 /* global MANIFEST */
 const MAN = typeof MANIFEST !== 'undefined' && !/[?&]art=0/.test(location.search) ? MANIFEST : {};
 // a painted Bandit pose for a screen, falling back through the poses that exist
@@ -86,11 +88,11 @@ const TEMPLATES = {
   map: (app, { levels }) => `
     <div class="panel wide" role="dialog" aria-label="Farm map">
       <h2>The Farm</h2>
-      <p class="sub">Pick a level. Farm layout imagined for the game.</p>
+      <p class="sub">Follow the trail from Whittington Ave., Hot Springs, to the midnight raid. Pick a level. Farm layout imagined for the game.</p>
       <div class="zones">${[1, 2, 3, 4, 5].map((z) => `
-        <section class="zone z${z}"><h3>${z}. ${ZONES[z]}</h3><div class="lvls">${levels.filter((L) => L.zone === z).map((L) => {
+        <section class="zone z${z}${levels.some((L) => L.zone === z && L.n <= app.save.unlocked) ? ' walked' : ''}"><h3>${z}. ${ZONES[z]}</h3><p class="place">${PLACES[z]}</p><div class="lvls">${levels.filter((L) => L.zone === z).map((L) => {
           const open = L.n <= app.save.unlocked, pr = app.save.progress[L.id];
-          return `<button type="button" class="lvl" data-act="${open ? 'level' : 'locked'}" data-v="${L.id}" ${open ? '' : 'disabled'} ${L.n === Math.min(app.save.unlocked, 15) ? 'autofocus' : ''}
+          return `<button type="button" class="lvl ${open ? 'open' : ''}" data-act="${open ? 'level' : 'locked'}" data-v="${L.id}" ${open ? '' : 'disabled'} ${L.n === Math.min(app.save.unlocked, 15) ? 'autofocus' : ''}
             aria-label="Level ${L.n}: ${esc(L.name)}${open ? (pr ? `, ${pr.stars.filter(Boolean).length} stars${pr.ball ? ', ball found' : ''}` : ', not played') : ', locked'}">
             <span class="n">${L.n}</span><span class="nm">${esc(L.name)}</span><span class="st">${open ? (pr ? stars(pr.stars) : stars([false, false, false])) : '🔒'}</span>${pr && pr.ball ? '<span class="ballmark" aria-hidden="true">⚾</span>' : ''}</button>`;
         }).join('')}</div></section>`).join('')}
@@ -100,7 +102,7 @@ const TEMPLATES = {
 
   intro: (app, { L, fact, assist }) => `
     <div class="panel" role="dialog" aria-label="Level ${L.n}">
-      <p class="kicker">${L.zone ? `Zone ${L.zone} · ${ZONES[L.zone]}` : 'Moonlight Run'}</p>
+      <p class="kicker">${L.zone ? `Zone ${L.zone} · ${ZONES[L.zone]}` : 'Moonlight Run'}</p>${L.zone ? `<p class="place">${PLACES[L.zone]}</p>` : ''}
       ${bandit(['bandit-portrait', 'raccoon-down-stand'], 'side')}
       <h2>${L.n ? `${L.n}. ` : ''}${esc(L.name)}</h2>
       <p class="lead">${esc(L.intro || '')}</p>
