@@ -105,6 +105,7 @@ export class Run {
     switch (e.k) {
       case 'hop': this.hops++; break;
       case 'land': {
+        if (p.state === 'dead') break; // the landing ended in a bite: it pays no row, builds no streak, banks nothing, and a water death is the same (P-N03)
         if (e.fwd || e.fling) {
           if (this.t - this.lastFwd <= STREAK_WIN + 0.2) this.streak++; else this.streak = 1;
           this.lastFwd = this.t;
