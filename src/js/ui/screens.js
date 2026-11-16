@@ -104,6 +104,7 @@ const TEMPLATES = {
     </div>`,
 
   map: (app, { levels }) => `
+    <canvas class="mist" aria-hidden="true"></canvas>
     <div class="panel wide" role="dialog" aria-label="Farm map">
       <h2>The Farm</h2>
       <p class="sub">Follow the trail from Whittington Ave., Hot Springs, to the midnight raid. Pick a level. Farm layout imagined for the game.</p>

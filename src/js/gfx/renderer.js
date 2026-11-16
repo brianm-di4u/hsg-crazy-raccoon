@@ -17,13 +17,14 @@ const VIEW_RH = { close: 0.9, standard: 0.98, wide: 1.12 };
 // a lateral gator this many tiles outside the view gets an edge chevron
 const CHEVRON_TILES = 3;
 const LITE_DPR = 1.5; // the lighter picture caps the canvas backing store here (S6-03); the full picture uses up to 2
+const MIST_RGB = '70,160,175', MIST_ALPHA = 0.55; // the map's steam: pale teal, at this share of the title's strength (C4-08)
 const ARRIVE_T = 0.5; // a level fades up out of the dark over this many seconds when play begins (S4-04)
 
 export class Renderer {
   constructor(canvas, fxRng) {
     this.c = canvas; this.g = canvas.getContext('2d');
     this.dpr = 1; this.w = 0; this.h = 0; this.cam = 0; this.camT = 0; this.camX = T * COLS / 2; this.camXT = this.camX; this.shake = 0;
-    this.fx = new Fx(fxRng); this.lights = []; this.art = null; this.cache = new WeakMap(); this.reduced = false; this.landT = 9; this.chompT = 9; this.grace = 0; this.arrive = 0; this.ghost = null; this.deadFx = null; this.hudTop = 64; this.hudBot = 0; this.view = 'standard'; this.portrait = false; this.costume = 'plain'; this.cpSeen = new WeakMap(); this.lite = false;
+    this.fx = new Fx(fxRng); this.lights = []; this.art = null; this.cache = new WeakMap(); this.reduced = false; this.landT = 9; this.chompT = 9; this.grace = 0; this.arrive = 0; this.ghost = null; this.deadFx = null; this.hudTop = 64; this.hudBot = 0; this.view = 'standard'; this.portrait = false; this.costume = 'plain'; this.cpSeen = new WeakMap(); this.lite = false; this.mists = 0;
     this.resize();
   }
   resize() {
@@ -738,14 +739,27 @@ export class Renderer {
     return true;
   }
   // the menus are never quite still (S4-04): soft wisps of spring steam rise past the key art and thin out near the top
-  steam(g, t) {
-    const { w, h } = this;
+  steam(g, t, w = this.w, h = this.h, rgb = '255,255,255', k = 1) {
     for (let i = 0; i < 9; i++) {
       const ph = (t * 0.045 + i / 9) % 1, x = w * (0.08 + ((i * 0.37) % 0.84)) + Math.sin(t * 0.35 + i * 2) * w * 0.02, y = h * (1.08 - ph * 1.2), r = Math.min(w, h) * (0.12 + (i % 3) * 0.05 + ph * 0.1);
-      const a = Math.sin(Math.PI * ph) * 0.32, gr = g.createRadialGradient(x, y, 0, x, y, r);
-      gr.addColorStop(0, `rgba(255,255,255,${a.toFixed(3)})`); gr.addColorStop(1, 'rgba(255,255,255,0)');
+      const a = Math.sin(Math.PI * ph) * 0.32 * k, gr = g.createRadialGradient(x, y, 0, x, y, r);
+      gr.addColorStop(0, `rgba(${rgb},${a.toFixed(3)})`); gr.addColorStop(1, `rgba(${rgb},0)`);
       g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2);
     }
+  }
+  // the same wisps inside the farm map's panel, which covers a phone's whole screen (C4-08): a canvas laid over the panel, in a
+  // pale teal that shows on cream, faint enough to read through. Not drawn when motion is reduced. Returns whether it drew.
+  mist(c, panel, t) {
+    if (!c || !panel || this.reduced) return false;
+    const r = panel.getBoundingClientRect(), w = Math.round(r.width), h = Math.round(r.height);
+    if (w < 8 || h < 8) return false;
+    if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
+    c.style.left = r.left + 'px'; c.style.top = r.top + 'px'; c.style.width = w + 'px'; c.style.height = h + 'px';
+    const g = c.getContext('2d');
+    g.clearRect(0, 0, w, h);
+    this.steam(g, t, w, h, MIST_RGB, MIST_ALPHA);
+    this.mists++;
+    return true;
   }
 
   // the first landing on each checkpoint row of a run says so once: a ring and 'Checkpoint!' where Bandit will return (S2-04)

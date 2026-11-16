@@ -17,7 +17,7 @@ export function installHooks(App, api) {
       settings: App.save.settings, reduced: App.reduced, art: !!App.renderer.art,
       save: { unlocked: App.save.unlocked, endlessUnlocked: App.save.endless.unlocked, top: App.save.endless.top, progress: App.save.progress, notebook: App.save.notebook.length, merman: App.save.merman, ach: App.save.ach, costume: App.save.settings.costume, finale: App.save.finale, daily: App.save.endless.daily, bestRows: App.save.endless.bestRows, today: App.today() },
       tip: App.hud.last.tip || '', toast: document.getElementById('toast').textContent, costumeDrawn: App.renderer.costume,
-      quality: App.quality(), audio: api.audioState(), steps: App.steps, said: App.lastSaid, fx: App.renderer.fx.count(),
+      quality: App.quality(), mists: App.renderer.mists, audio: api.audioState(), steps: App.steps, said: App.lastSaid, fx: App.renderer.fx.count(),
     };
   };
   window.__game = {

@@ -494,6 +494,7 @@ function frame(now) {
       renderer.update(dtw, App.demo);
       renderer.draw(App.demo, { time: App.time });
     }
+    if (screens.cur === 'map' && renderer.mist(screens.root.querySelector('.mist'), screens.root.querySelector('.panel'), App.time)) busy = true;
     App.busy = busy;
     const ambient = (!!App.demo && !App.reduced && !document.hidden) || (App.padSeen && !document.hidden);
     if (busy || App.loading || renderer.fx.busy()) rafId = requestAnimationFrame(frame);

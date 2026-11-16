@@ -8,6 +8,11 @@ import path from 'node:path';
 
 const SHOTS = path.resolve('..', '_council', 'hsg-crazy-raccoon', 'wave-4', 'shots');
 const keep = async (t, id, what, opt) => { const r = await t.shot(`${id}-${what}`, opt); if (fs.existsSync(SHOTS)) fs.copyFileSync(path.resolve(r.file), path.join(SHOTS, `${id}-${what}-${t.viewport}.png`)); return r; };
+const render = (t, name, seconds, o, wav) => t.page.evaluate(([n, s, w, opt]) => window.__game.audioRender(n, s, w, opt), [name, seconds, !!wav, o || {}]);
+const median = (a) => [...a].sort((x, y) => x - y)[a.length >> 1];
+const cues = async (t) => (await t.state()).audio.cues;
+const count = (list, name) => list.filter((x) => x === name).length;
+const gesture = async (t) => { await t.page.mouse.click(3, 3); await t.page.waitForFunction(() => window.__game.getState().audio.started, null, { timeout: 5000 }); };
 const winLevel = async (t) => {
   await t.game('act', 'replay'); await t.game('resume');
   await t.page.waitForFunction(() => window.__game.getState().screen === 'win', null, { timeout: 15000 });
@@ -51,6 +56,43 @@ export const tests = [
       await t.game('pause'); await winLevel(t);
       t.expect(await t.page.evaluate(() => !!document.querySelector('.panel .fact')), 'an intro shown for another level does not count');
       await t.game('setState', { save: { notebook: [] } });
+    },
+  },
+
+  // ------------------------------------------------------------------ C4-08 steam inside the phone map
+  {
+    name: 'C4-08 spring steam drifts inside the farm map panel at both sizes, lets every tap through, and is gone when motion is reduced',
+    viewports: ['desktop', 'mobile'],
+    async run(t) {
+      const mist = () => t.page.evaluate(() => {
+        const c = document.querySelector('#screens .mist'), p = document.querySelector('#screens .panel'), r = p.getBoundingClientRect(), m = c.getBoundingClientRect();
+        const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let lit = 0, peak = 0;
+        for (let i = 3; i < d.length; i += 4) { if (d[i]) lit++; if (d[i] > peak) peak = d[i]; }
+        const b = document.querySelector('#screens .lvl.open').getBoundingClientRect(), hit = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2);
+        return { same: Math.abs(m.left - r.left) < 1.5 && Math.abs(m.top - r.top) < 1.5 && Math.abs(m.width - r.width) < 1.5 && Math.abs(m.height - r.height) < 1.5, lit, peak, area: c.width * c.height,
+          hidden: c.getAttribute('aria-hidden'), through: getComputedStyle(c).pointerEvents, tapOk: !!hit && !!hit.closest('.lvl'), shown: getComputedStyle(c).display !== 'none', mists: window.__CR.renderer.mists };
+      });
+      await t.game('setState', { settings: { reducedMotion: false } });
+      await t.game('scene', 'map');
+      await t.page.waitForFunction(() => window.__game.getState().mists >= 5, null, { timeout: 8000 });
+      const m = await mist();
+      t.expect(m.same, 'the steam layer covers exactly the panel: ' + JSON.stringify(m));
+      t.expect(m.lit > m.area * 0.1 && m.peak > 20 && m.peak <= 120, 'wisps are drawn, and faint: ' + m.lit + ' of ' + m.area + ' pixels, peak alpha ' + m.peak);
+      t.expect(m.hidden === 'true' && m.through === 'none' && m.tapOk, 'hidden from a screen reader, and a tap on a level reaches the level: ' + JSON.stringify(m));
+      await t.checkLayout({ allowScrollY: true });
+      await keep(t, 'C4-08', 'map-steam');
+      // the title has none of it
+      await t.game('scene', 'title'); await t.waitFrames(2);
+      t.expect(await t.page.evaluate(() => !document.querySelector('#screens .mist')), 'no steam layer on the title screen');
+      // reduced motion: nothing is drawn, and the layer is not shown
+      await t.game('setState', { settings: { reducedMotion: true } });
+      await t.game('scene', 'map'); await t.waitFrames(3);
+      const before = (await mist()).mists;
+      await t.waitFrames(6);
+      const r = await mist();
+      t.equal(r.mists, before, 'with reduced motion no steam is drawn');
+      t.expect(!r.shown, 'and the layer is not shown');
+      await t.game('setState', { settings: { reducedMotion: null } });
     },
   },
 ];

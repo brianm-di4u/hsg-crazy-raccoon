@@ -42,6 +42,9 @@ button:focus-visible, input:focus-visible { outline: 4px solid #FFFFFF; outline-
   background: linear-gradient(var(--cream), var(--cream-2)); box-shadow: 0 8px 0 var(--ink), 0 18px 40px rgba(0,0,0,0.35); animation: pop 0.22s ease-out; margin: auto; }
 .panel.wide { width: min(880px, 100%); }
 body.reduced .panel { animation: none; }
+/* spring steam drifting over the farm map's panel, drawn by the renderer into a canvas that follows the panel (C4-08) */
+.mist { position: fixed; left: 0; top: 0; width: 0; height: 0; border-radius: 22px; pointer-events: none; z-index: 2; }
+body.reduced .mist { display: none; }
 @keyframes pop { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 .panel h2 { margin: 0 0 6px; font: 900 calc(30px * var(--text-scale)) / 1.05 var(--font-head); color: #FFFFFF; -webkit-text-stroke: 1.5px var(--ink); paint-order: stroke fill;
   text-shadow: 0 3px 0 var(--ink), 2px 0 0 var(--ink), -2px 0 0 var(--ink), 0 -2px 0 var(--ink); }
