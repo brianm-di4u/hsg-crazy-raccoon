@@ -98,6 +98,7 @@ const TEMPLATES = {
       </nav>
       ${app.save.endless.unlocked ? dailyNote(app) : '<p class="note" id="lock-note">Clear level 6 to unlock the Moonlight Run and the Daily Run.</p>'}
       ${app.storageBlocked && app.storageBlocked() ? '<p class="note warn" role="status">Progress will not be saved in this browser mode.</p>' : ''}
+      ${app.saveIsNewer && app.saveIsNewer() && !app.newerSeen ? '<p class="note warn" id="newer-note">' + esc(app.newerNote) + '</p>' : ''}
       <p class="brand">Hot Springs Games</p>
       <p class="fineprint">${FICTION_SHORT}</p>
     </div>`,

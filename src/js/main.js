@@ -12,7 +12,7 @@ import { Screens, esc } from './ui/screens.js';
 import { dateKey, dailySeed, dayLabel, award, backfill, ACHIEVEMENTS, costumeUnlocked, activeCostume, nextUnlock, recordDaily } from './progress.js';
 import { initInput, initTouch, pollGamepads, readIntent, consumePause, consumeMenu, setEnabled } from './ui/input.js';
 import { initAudio, setAudio, sfx, playTheme, setTension, setAmbience, duckMusic, audioState, audioList, renderAudio, holdMusic, suspendAudio, resumeAudio } from './ui/audio.js';
-import { loadSave, writeSave, DEFAULT_SAVE, storageBlocked } from './save.js';
+import { loadSave, writeSave, DEFAULT_SAVE, storageBlocked, saveIsNewer } from './save.js';
 import { makeRng, hashStr } from './rng.js';
 import { installHooks } from './hooks.js';
 
@@ -24,6 +24,7 @@ const HITSTOP_T = 0.07; // the freeze on a chomp, with the jaws shut on Bandit (
 const FAILS_FOR_ASSIST = 2; // failing the same level this many times in a row puts "Try with Assist" on the fail panel (S2-03)
 const HINT_MIN_T = 2.5; // the level 1 hint stays at least this long, even if the first hop comes at once (S2-19)
 const STORAGE_NOTE = 'Progress will not be saved in this browser mode.';
+const NEWER_NOTE = 'This visit is not being saved, because your save comes from a newer version of the game.';
 const THEME_MUSIC = { day: 'day', noon: 'noon', barn: 'barn', night: 'night' };
 // the ambience scene for each level theme (the music has the theme's own name)
 const THEME_SCENE = { day: 'meadow', noon: 'showground', barn: 'loft', night: 'midnight' };
@@ -75,6 +76,8 @@ function applySettings() {
   setAudio(s);
 }
 App.storageBlocked = storageBlocked;
+App.saveIsNewer = saveIsNewer;
+App.newerNote = NEWER_NOTE; // shown on the title until the player moves on, and said once to a screen reader (C4-01)
 let storageWarned = false;
 function persist(options) {
   writeSave(App.save, options); applySettings();
@@ -284,6 +287,7 @@ function commitScore() {
 const BACK_ACTS = new Set(['back', 'resume', 'title', 'quitYes', 'map']);
 App.onMenu = (act, d = {}) => {
   const s = App.save;
+  App.newerSeen = true;
   if (act === 'locked' || ((act === 'endless' || act === 'daily') && !s.endless.unlocked)) sfx('denied');
   else if (act !== 'set') sfx(BACK_ACTS.has(act) ? 'back' : 'menu');
   if (App.pendingScore && screens.cur === 'over' && act !== 'saveScore') App.say('Score saved as ' + commitScore() + '.');
@@ -524,4 +528,5 @@ installHooks(App, { stepOnce, startLevel, startEndless, showTitle, pauseGame, re
 App.loading++;
 loadArt(typeof MANIFEST !== 'undefined' ? MANIFEST : null, App).then((art) => { renderer.art = art; }).finally(() => { App.loading--; kick(); });
 showTitle();
+if (saveIsNewer()) App.say(NEWER_NOTE);
 App.ready = true;

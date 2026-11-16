@@ -9,6 +9,11 @@ let pendingReset = false;
 let blocked = false; // the browser would not let us read or write storage (a private window, site data blocked): progress lives in memory only
 // true when this session's progress cannot be kept (S3-21)
 export const storageBlocked = () => blocked;
+// true when the stored save was written by a newer version of the game (its version number is higher than this build's).
+// Such a save is never written over: this visit plays from defaults in memory (C4-01).
+let newer = false;
+export const saveIsNewer = () => newer;
+const newerRaw = (raw) => { try { const s = raw ? JSON.parse(raw) : null; return !!s && typeof s.v === 'number' && s.v > DEFAULT_SAVE().v; } catch (e) { return false; } };
 
 export const DEFAULT_SAVE = () => ({
   v: 1,
@@ -122,6 +127,7 @@ function delta(base, local, latest, route = '') {
 export function loadSave() {
   let loaded, raw = null;
   try { raw = window.localStorage.getItem(KEY); } catch (e) { blocked = true; }
+  newer = newerRaw(raw);
   try { loaded = decoded(raw); } catch (e) { /* malformed */ }
   try { window.localStorage.setItem(KEY + '-probe', '1'); window.localStorage.removeItem(KEY + '-probe'); } catch (e) { blocked = true; } // reading can work where writing will not
   if (loaded) { persisted = copy(loaded); return loaded; }
@@ -132,9 +138,11 @@ export function writeSave(s, { reset = false } = {}) {
   const local = copy(s);
   if (reset) pendingReset = true;
   mem = copy(local);
+  if (newer) return false; // a newer version's save stays exactly as it is
   try {
     let latest;
     const raw = window.localStorage.getItem(KEY); // A failed read cannot safely overwrite another tab's data.
+    if (newerRaw(raw)) { newer = true; return false; } // another tab, or a stale page, met a newer save since we loaded
     try { latest = decoded(raw); } catch (e) { /* recover a malformed owned-key value */ }
     latest = latest || copy(persisted) || DEFAULT_SAVE();
     const merged = pendingReset ? local : delta(persisted || DEFAULT_SAVE(), local, latest);
