@@ -217,4 +217,49 @@ export const tests = [
       await t.game('setState', { settings: { textScale: 1, volume: 0.5 } });
     },
   },
+
+  // ------------------------------------------------------------------ S5-09 a switched-off layer is not scheduled
+  {
+    name: 'S5-09 with Music, Ambience or Sound off, that layer schedules no notes or sounds, the timer rests when both are off, and it all comes back',
+    viewports: ['desktop'],
+    async run(t) {
+      await gesture(t);
+      await t.page.waitForFunction(() => { const a = window.__game.getState().audio; return a.ctx === 'running' && a.sched && a.sched.timer; }, null, { timeout: 8000 });
+      const pump = (s) => t.game('act', 'audioPump', s);
+      const set = (settings) => t.game('setState', { settings });
+      // first prove the measure: with everything on, a look 40 s ahead schedules bars and one-shots
+      let a = await pump(40); const on0 = { ...a };
+      a = await pump(80);
+      t.expect(a.bars > on0.bars && a.spots > on0.spots, `with everything on, scheduling ahead adds bars (${on0.bars} to ${a.bars}) and one-shots (${on0.spots} to ${a.spots})`);
+      // Music off: no more bars, the ambience carries on
+      await set({ music: false });
+      a = await t.game('act', 'audioPump', 0); const m0 = { ...a };
+      a = await pump(200);
+      t.equal(a.bars, m0.bars, 'Music off: no bar is scheduled');
+      t.expect(a.spots > m0.spots && a.timer && !a.music && a.amb, 'Music off: the ambience still is, the timer still runs: ' + JSON.stringify(a));
+      // Ambience off too: nothing at all, and the timer stops
+      await set({ ambience: false });
+      a = await pump(0); const n0 = { ...a };
+      a = await pump(400);
+      t.expect(a.bars === n0.bars && a.spots === n0.spots, 'both off: nothing is scheduled');
+      t.expect(!a.timer && !a.music && !a.amb, 'both off: the scheduler timer is stopped: ' + JSON.stringify(a));
+      // Music back: bars again, from where the piece was, and the timer is running
+      await set({ music: true });
+      a = await pump(600); 
+      t.expect(a.bars > n0.bars && a.spots === n0.spots && a.timer, 'Music back on: bars again, still no ambience, timer running: ' + JSON.stringify(a));
+      await set({ ambience: true });
+      a = await pump(900);
+      t.expect(a.spots > n0.spots, 'Ambience back on: one-shots again');
+      // the Sound switch is the master: with it off, neither layer is scheduled even though both are on
+      await set({ sound: false });
+      a = await pump(0); const s0 = { ...a };
+      a = await pump(1500);
+      t.expect(a.bars === s0.bars && a.spots === s0.spots && !a.timer, 'Sound off: nothing scheduled and the timer rests: ' + JSON.stringify(a));
+      await set({ sound: true });
+      a = await pump(2000);
+      t.expect(a.bars > s0.bars && a.spots > s0.spots && a.timer, 'Sound on again: everything comes back: ' + JSON.stringify(a));
+      await t.page.waitForFunction(() => { const l = window.__game.getState().audio.levels; return l.music >= 0.98 && l.amb >= 0.98; }, null, { timeout: 5000 });
+      t.expect(true, 'and the buses are back at their levels');
+    },
+  },
 ];

@@ -73,16 +73,20 @@ function unlock() {
       levels();
       applyTheme(false);
       if (state.hold) kit.hold();
-      kit.start();
     } catch (e) { kit = null; }
     wake();
   } catch (e) { ctx = null; }
 }
 
+// What the buses are set to, and (S5-09) whether the scheduler works for them at all: with Sound, Music or Ambience off nothing is
+// scheduled for that layer, and with both layers off the scheduler's timer stops until one comes back.
 function levels() {
   if (!kit) return;
+  const music = state.on && state.music, amb = state.on && state.amb;
   kit.music.level(state.music ? MUSIC_LEVEL : 0);
   kit.amb.level(state.amb ? AMB_LEVEL : 0);
+  kit.music.enable(music); kit.amb.enable(amb);
+  if (music || amb) kit.start(); else kit.stop();
 }
 
 export function setAudio(settings) {
@@ -92,7 +96,7 @@ export function setAudio(settings) {
   levels();
 }
 export function audioState() {
-  return { started: state.started, on: state.on, music: state.music, ambience: state.amb, theme: state.theme, scene: state.scene, ctx: ctx ? ctx.state : 'none', held: state.hold, tension: +state.tension.toFixed(2), kit: !!kit, cues: state.cues.slice(), cueVol: state.cueVol, levels: kit ? { ...kit.levels(), master: +master.gain.value.toFixed(3) } : null };
+  return { started: state.started, on: state.on, music: state.music, ambience: state.amb, theme: state.theme, scene: state.scene, ctx: ctx ? ctx.state : 'none', held: state.hold, tension: +state.tension.toFixed(2), kit: !!kit, cues: state.cues.slice(), cueVol: state.cueVol, levels: kit ? { ...kit.levels(), master: +master.gain.value.toFixed(3) } : null, sched: kit ? kit.stats() : null };
 }
 
 // Every play of a cue is a little different (S5-04): playCue draws one detune (up to 25 cents) and one gain (up to 1.5 dB
@@ -267,6 +271,8 @@ function makeAudioKit(ctx, out, opt = {}) {
   const noise = (t, dur) => { const s = ctx.createBufferSource(); s.buffer = noiseBuf; s.loop = true; s.start(t, rr(0, 1.9)); if (dur) s.stop(t + dur); return s; };
 
   let mLevel = opt.music ?? 0.5, aLevel = opt.ambience ?? 0.5, inten = 0, held = false, timer = 0;
+  let mOn = true, aOn = true;   // a switched-off layer schedules nothing (S5-09); it keeps its place and picks up again from there
+  const made = { bars: 0, spots: 0 };   // for tests: how many bars and ambience one-shots were really scheduled
   const musicBus = gain(mLevel, out), ambBus = gain(aLevel, out);
   const dead = [];   // { at, nodes }: sub-buses to disconnect once their fade-out has finished
   const retire = (bus, nodes, at, fade) => {
@@ -428,6 +434,7 @@ function makeAudioKit(ctx, out, opt = {}) {
     },
     stop(fade = 1) { music.play(null, { fade }); },
     level(v) { mLevel = v; if (!held) musicBus.gain.setTargetAtTime(v, ctx.currentTime, 0.05); },
+    enable(on) { mOn = !!on; },
     duck(db = 6, ms = 400) { if (held) return; const t = ctx.currentTime; musicBus.gain.cancelScheduledValues(t); musicBus.gain.setTargetAtTime(mLevel * 10 ** (-db / 20), t, 0.02); musicBus.gain.setTargetAtTime(mLevel, t + ms / 1000, 0.25); },
     intensity(x) { inten = Math.max(0, Math.min(1, x)); },
     get score() { return cur && cur.score; },
@@ -477,6 +484,7 @@ function makeAudioKit(ctx, out, opt = {}) {
     },
     stop(fade = 1.5) { amb.play(null, { fade }); },
     level(v) { aLevel = v; if (!held) ambBus.gain.setTargetAtTime(v, ctx.currentTime, 0.05); },
+    enable(on) { aOn = !!on; },
     set(name, v, tc = 0.5) { params[name] = v; if (scene) applyParam(scene, name, v, ctx.currentTime, tc); },
     get scene() { return scene && scene.def; },
   };
@@ -485,13 +493,13 @@ function makeAudioKit(ctx, out, opt = {}) {
   function scheduleUntil(T) {
     const now = ctx.currentTime;
     if (!held) {
-      if (cur) { if (cur.t < now - 0.05) cur.t = now + 0.05; let guard = 0; while (cur.t < T && guard++ < 400) { cur.t += playBar(cur, cur.t); cur.bar++; } }
-      if (scene) for (const sp of scene.spots) {
+      if (cur && mOn) { if (cur.t < now - 0.05) cur.t = now + 0.05; let guard = 0; while (cur.t < T && guard++ < 400) { cur.t += playBar(cur, cur.t); cur.bar++; made.bars++; } }
+      if (scene && aOn) for (const sp of scene.spots) {
         if (sp.next < now - 0.05) sp.next = now + rr(0.2, sp.d.every[1]);
         let guard = 0;
         while (sp.next < T && guard++ < 400) {
           const on = sp.d.param ? (params[sp.d.param] ?? 0) : 1;
-          if (on > 0 && rnd() < on) { const p = sp.d.pan || [-0.5, 0.5], dst = panTo(rr(p[0], p[1]), scene.bus), v = (sp.d.gain ?? 0.05) * rr(0.6, 1); if (typeof sp.d.make === 'function') sp.d.make(ctx, dst, sp.next, rnd, v); else SPOT[sp.d.make](dst, sp.next, v); }
+          if (on > 0 && rnd() < on) { const p = sp.d.pan || [-0.5, 0.5], dst = panTo(rr(p[0], p[1]), scene.bus), v = (sp.d.gain ?? 0.05) * rr(0.6, 1); if (typeof sp.d.make === 'function') sp.d.make(ctx, dst, sp.next, rnd, v); else SPOT[sp.d.make](dst, sp.next, v); made.spots++; }
           sp.next += rr(sp.d.every[0], sp.d.every[1]);
         }
       }
@@ -505,6 +513,7 @@ function makeAudioKit(ctx, out, opt = {}) {
     // a noise buffer at offset o (seconds), so no two repeats of a cue are sample-identical.
     jit(cents = 25, db = 1.5) { return { f: 2 ** (rr(-cents, cents) / 1200), g: 10 ** (rr(-db, 0) / 20), o: rr(0, 1.5) }; },
     start() { if (!timer) timer = setInterval(() => { if (ctx.state === 'running') scheduleUntil(ctx.currentTime + 0.25); }, 25); },
+    stats() { return { ...made, music: mOn, amb: aOn, timer: !!timer }; },
     stop() { if (timer) clearInterval(timer); timer = 0; },
     // Pause card or hidden tab: fade both buses out and schedule nothing until release().
     hold(tc = 0.08) { held = true; const t = ctx.currentTime; musicBus.gain.cancelScheduledValues(t); musicBus.gain.setTargetAtTime(0, t, tc); ambBus.gain.setTargetAtTime(0, t, tc); },
@@ -693,6 +702,8 @@ const SCENES = {
 };
 
 // ---- music and ambience: what the game asks for -------------------------------------------------------------
+// test hook: schedule everything due in the next `seconds` of the audio clock now, as the timer would over that time
+export function pumpAudio(seconds = 8) { if (kit && ctx) kit.scheduleUntil(ctx.currentTime + seconds); return audioState().sched; }
 export function audioList() { return { music: Object.keys(SCORES), ambience: Object.keys(SCENES) }; }
 
 function applyTheme(force) {

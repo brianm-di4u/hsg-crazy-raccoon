@@ -11,7 +11,7 @@ import { Hud } from './ui/hud.js';
 import { Screens, esc } from './ui/screens.js';
 import { dateKey, dailySeed, dayLabel, award, backfill, ACHIEVEMENTS, costumeUnlocked, activeCostume, nextUnlock, recordDaily } from './progress.js';
 import { initInput, initTouch, pollGamepads, readIntent, consumePause, consumeMenu, setEnabled, holdHop } from './ui/input.js';
-import { initAudio, setAudio, sfx, playTheme, setTension, setAmbience, duckMusic, audioState, audioList, renderAudio, holdMusic, suspendAudio, resumeAudio } from './ui/audio.js';
+import { initAudio, setAudio, sfx, playTheme, setTension, setAmbience, duckMusic, audioState, audioList, renderAudio, pumpAudio, holdMusic, suspendAudio, resumeAudio } from './ui/audio.js';
 import { loadSave, writeSave, DEFAULT_SAVE, storageBlocked, saveIsNewer } from './save.js';
 import { makeRng, hashStr } from './rng.js';
 import { installHooks } from './hooks.js';
@@ -564,7 +564,7 @@ document.addEventListener('visibilitychange', () => {
 });
 
 applySettings();
-installHooks(App, { stepOnce, startLevel, startEndless, showTitle, pauseGame, resumeGame, levelDone, levelById, persist, applySettings, noteFrame, audioState, audioList, audioRender: renderAudio });
+installHooks(App, { stepOnce, startLevel, startEndless, showTitle, pauseGame, resumeGame, levelDone, levelById, persist, applySettings, noteFrame, audioState, audioList, audioRender: renderAudio, pumpAudio });
 App.loading++;
 loadArt(typeof MANIFEST !== 'undefined' ? MANIFEST : null, App).then((art) => { renderer.art = art; }).finally(() => { App.loading--; kick(); });
 showTitle();
