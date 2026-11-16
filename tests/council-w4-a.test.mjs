@@ -77,4 +77,31 @@ export const tests = [
       t.equal(store.get(KEY), JSON.stringify({ v: 2, keep: 1 }), 'the newer save is untouched');
     },
   },
+  // ------------------------------------------------------------------ S6-09 no Object.hasOwn in the save path
+  {
+    name: 'S6-09 the save path loads, merges and writes on an engine that has no Object.hasOwn, and no source file calls it',
+    node: true,
+    async run(t) {
+      const fs = await import('node:fs'), path = await import('node:path');
+      const walk = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]);
+      const users = walk((await import('node:url')).fileURLToPath(new URL('../src/js', import.meta.url))).filter((f) => f.endsWith('.js') && /Object\.hasOwn\(/.test(fs.readFileSync(f, 'utf8')));
+      t.equal(users.length, 0, 'no file under src/js calls Object.hasOwn: ' + users.join(', '));
+      const { loadSave, writeSave } = await import('../src/js/save.js?w4own');
+      const store = new Map();
+      globalThis.window = { localStorage: { getItem: (k) => store.get(k) ?? null, setItem: (k, v) => store.set(k, v), removeItem: (k) => store.delete(k) } };
+      const had = Object.hasOwn;
+      delete Object.hasOwn;
+      try {
+        const s = loadSave();
+        s.unlocked = 4; s.stats.hops = 10; s.progress.l1 = { stars: [true, false, false], best: 10, bestT: 5, ball: false };
+        t.equal(writeSave(s), true, 'a first write succeeds without Object.hasOwn');
+        t.equal(JSON.parse(store.get(KEY)).unlocked, 4, 'and the progress is stored');
+        const other = JSON.parse(store.get(KEY)); other.stats.hops = 25; store.set(KEY, JSON.stringify(other)); // another tab moved on
+        s.stats.hops = 12; s.progress.l1.best = 99;
+        t.equal(writeSave(s), true, 'a write that has to merge another tab\'s changes succeeds too');
+        const now = JSON.parse(store.get(KEY));
+        t.equal([now.stats.hops, now.progress.l1.best], [27, 99], 'and merges them: hops added, best kept');
+      } finally { Object.hasOwn = had; delete globalThis.window; }
+    },
+  },
 ];

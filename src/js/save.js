@@ -32,7 +32,10 @@ export const DEFAULT_SAVE = () => ({
 const copy = (v) => v === undefined ? undefined : JSON.parse(JSON.stringify(v));
 const object = (v) => v && typeof v === 'object' && !Array.isArray(v);
 const equal = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-const own = (o, k) => o && Object.hasOwn(o, k) ? o[k] : undefined;
+// Object.prototype.hasOwnProperty, not Object.hasOwn: Safari before 15.4, Chrome before 93 and Firefox before 92 lack hasOwn,
+// and on them every write would throw inside writeSave's try and nothing would be kept (S6-09)
+const has = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
+const own = (o, k) => o && has(o, k) ? o[k] : undefined;
 const setOwn = (o, k, value) => Object.defineProperty(o, k, { value, writable: true, enumerable: true, configurable: true });
 const num = (v, fallback) => (typeof v === 'number' && Number.isFinite(v) ? v : fallback);
 // Wrong-typed fields (hand edits, an older build's shape) are repaired on load so one bad value cannot break a
@@ -118,7 +121,7 @@ function delta(base, local, latest, route = '') {
       if (value === undefined) delete result[k];
       else setOwn(result, k, value);
     }
-    for (const k of Object.keys(base || {})) if (!Object.hasOwn(local, k)) delete result[k];
+    for (const k of Object.keys(base || {})) if (!has(local, k)) delete result[k];
     return result;
   }
   return copy(local);
@@ -149,7 +152,7 @@ export function writeSave(s, { reset = false } = {}) {
     window.localStorage.setItem(KEY, JSON.stringify(merged));
     // Rebase both the live object and snapshot only after persistence succeeds. A failed quota write leaves
     // the original local delta pending, rather than counting remote stats again on the next attempt.
-    for (const k of Object.keys(s)) if (!Object.hasOwn(merged, k)) delete s[k];
+    for (const k of Object.keys(s)) if (!has(merged, k)) delete s[k];
     for (const k of Object.keys(merged)) setOwn(s, k, merged[k]);
     persisted = copy(merged); mem = copy(merged); pendingReset = false; blocked = false;
     return true;
