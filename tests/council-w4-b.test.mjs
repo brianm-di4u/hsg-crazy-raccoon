@@ -63,4 +63,20 @@ export const tests = [
       t.expect(c.includes('A made-up raccoon caper at a real Hot Springs landmark. Not affiliated with the Arkansas Alligator Farm and Petting Zoo.'), 'Credits keeps the full notice word for word');
     },
   },
+  // ------------------------------------------------------------------ S4-12 Credits say how the art was made
+  {
+    name: 'S4-12 Credits say in one plain line that the art is 3D block-outs painted with AI image tools, and no longer claim it was all made by hand',
+    viewports: ['desktop', 'mobile'],
+    async run(t) {
+      await t.game('scene', 'credits'); await t.waitFrames(3);
+      const lines = await t.page.$$eval('.panel p', (p) => p.map((x) => x.textContent.trim()));
+      t.equal(lines.filter((l) => l === 'Art: 3D block-outs painted with AI image tools for this game.').length, 1, 'the art line is there exactly once: ' + lines.join(' | '));
+      t.expect(!lines.some((l) => /art and music made for this game/i.test(l)), 'nothing says "art ... made for this game" beside it');
+      t.expect(lines.some((l) => /Code and music made for this game/.test(l)), 'the line about code and music is kept');
+      t.expect(!/Codex|OpenAI|Blender|hand/i.test(lines.join(' ')), 'no company or product is named, and no hand finishing is claimed');
+      t.expect(lines.some((l) => /Not affiliated with the Arkansas Alligator Farm and Petting Zoo/.test(l)), 'the full notice is still there');
+      await t.checkLayout({ allowScrollY: true });
+      await keep(t, 'S4-12', 'credits');
+    },
+  },
 ];

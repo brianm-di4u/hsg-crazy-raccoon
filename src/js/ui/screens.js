@@ -335,7 +335,8 @@ const TEMPLATES = {
       <h2>Credits</h2>
       <p><b>Crazy Raccoon: Gator Farm Dash</b>, a Hot Springs Games original. MIT License.</p>
       <p>${FICTION} Bandit and Old Ruthless are made up. Facts come from the Encyclopedia of Arkansas, the Arkansas Democrat-Gazette, RoadsideAmerica, Smithsonian's National Zoo, the Arkansas Game and Fish Commission and the National Wildlife Federation (see the Farm Notebook).</p>
-      <p>Code, art and music made for this game; engine pieces shared from other Hot Springs Games titles. Sound is synthesized live in your browser.</p>
+      <p>Code and music made for this game; engine pieces shared from other Hot Springs Games titles. Sound is synthesized live in your browser.</p>
+      <p>Art: 3D block-outs painted with AI image tools for this game.</p>
       <nav class="menu row">${btn('back', 'Back', 'autofocus data-back')}</nav>
     </div>`,
 };
