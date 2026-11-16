@@ -166,7 +166,9 @@ function startLevel(L, { seed, intro = true, grace = false } = {}) {
   App.level = L;
   App.run = new Run(JSON.parse(JSON.stringify(L)), { seed: seed ?? App.nextSeed ?? hashStr(L.id), assist: App.save.settings.assist });
   enterPlay();
-  App.fact = pickFact(L); App.factSeen = intro;
+  // a restart skips the intro, but the card was already shown in this chain of tries at the level: the win panel must not show it again (C4-06)
+  const chain = App.introFor === L.id;
+  App.fact = pickFact(L); App.factSeen = intro || chain; App.introFor = intro || chain ? L.id : null;
   if (intro) { App.paused = false; screens.show('intro', { L: App.run.L, fact: App.fact, assist: App.save.settings.assist }); setEnabled(false); }
   else beginPlay(grace);
   return App.run;
