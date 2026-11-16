@@ -520,7 +520,7 @@ function frame(now) {
       else if (run.phase !== 'play' && App.endAt) busy = true;
       if (renderer.update(dtw, run)) busy = true;
       renderer.grace = App.grace / GRACE_T;
-      renderer.draw(run, { time: App.time, alpha });
+      renderer.draw(run, { time: App.time, alpha, intro: screens.cur === 'intro' });
       hud.update(run);
     } else if (App.scene === 'title' && titleHold(now, resting)) {
       held = true; titleOwed += dtw; busy = !resting; // a held frame comes round again at the next vsync; a resting title lets the loop sleep

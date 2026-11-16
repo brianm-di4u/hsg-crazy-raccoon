@@ -108,7 +108,8 @@ export function raccoon(g, s, o = {}) {
     g.fillStyle = '#2B2A2E'; for (let i = 0; i < 5; i++) g.fillRect(-s * 0.2, -s * 0.36 + i * s * 0.17, s * 0.4, s * 0.075);
     g.restore(); g.restore();
   };
-  if (f === 'up') tail(0, -s * 0.38, Math.sin((o.t || 0) * 6) * 0.15);
+  // from behind the ringed tail curls out past the body so its stripes show (S4-13); it was straight up behind it and hidden
+  if (f === 'up') tail(s * 0.3, -s * 0.5, 0.6 + Math.sin((o.t || 0) * 6) * 0.15);
   if (f === 'left' || f === 'right') tail(f === 'left' ? s * 0.32 : -s * 0.32, -s * 0.38, f === 'left' ? 0.9 : -0.9);
   // body
   blob(g, (p) => p.ellipse(0, -s * 0.33, s * 0.33, s * 0.31, 0, 0, Math.PI * 2), fur, lw);
@@ -131,7 +132,7 @@ export function raccoon(g, s, o = {}) {
     if (o.grin) { g.strokeStyle = INK; g.lineWidth = lw * 0.7; g.beginPath(); g.arc(hx + look * s * 0.05, hy + s * 0.12, s * 0.06, 0.2, Math.PI - 0.2); g.stroke(); }
   } else {
     // back of head: the dark mask band shows at the sides, a pale crown between the ears
-    g.fillStyle = '#2E2D33'; g.beginPath(); g.ellipse(hx - s * 0.2, hy + s * 0.02, s * 0.07, s * 0.06, 0, 0, Math.PI * 2); g.ellipse(hx + s * 0.2, hy + s * 0.02, s * 0.07, s * 0.06, 0, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#2E2D33'; g.beginPath(); g.ellipse(hx - s * 0.2, hy + s * 0.02, s * 0.09, s * 0.08, 0, 0, Math.PI * 2); g.ellipse(hx + s * 0.2, hy + s * 0.02, s * 0.09, s * 0.08, 0, 0, Math.PI * 2); g.fill();
     g.fillStyle = '#D9D9DD'; g.beginPath(); g.ellipse(hx, hy - s * 0.06, s * 0.08, s * 0.1, 0, 0, Math.PI * 2); g.fill();
   }
   if (f === 'down') tail(s * 0.3, -s * 0.18, 1.2);

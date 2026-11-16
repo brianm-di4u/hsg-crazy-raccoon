@@ -20,6 +20,7 @@ const LITE_DPR = 1.5; // the lighter picture caps the canvas backing store here 
 const MIST_RGB = '70,160,175', MIST_ALPHA = 0.55; // the map's steam: pale teal, at this share of the title's strength (C4-08)
 // the "×2" popup is smaller than the other popups and starts above Bandit's head, so it never covers him (S2-24); was size 1, lift 0
 const STREAK_POP = 0.75, STREAK_LIFT = 42;
+const INTRO_BAND_DIM = 0.35; // how far the level's sky is dimmed in the phone header behind a level card (S4-13)
 const ARRIVE_T = 0.5; // a level fades up out of the dark over this many seconds when play begins (S4-04)
 
 export class Renderer {
@@ -194,7 +195,9 @@ export class Renderer {
       g.fillStyle = 'rgba(92,140,60,0.55)'; g.fillRect(0, fy + 2, w, 4); g.fillStyle = 'rgba(0,0,0,0.22)'; g.fillRect(0, fy + 6, w, 6);
       g.strokeStyle = '#4F8A3A'; g.lineWidth = 2; g.lineCap = 'round';
       for (let x = (this.bx % (this.tile * 0.9)) + this.tile * 0.12; x < w; x += this.tile * 0.9) for (const [dx, hh] of [[-5, 9], [0, 13], [5, 8]]) { g.beginPath(); g.moveTo(x + dx * 0.4, fy + 3); g.quadraticCurveTo(x + dx * 0.7, fy - hh * 0.5, x + dx, fy - hh); g.stroke(); } }
-    if (this.portrait) { const hb = this.hudBand; g.fillStyle = '#1F3A2C'; g.fillRect(0, 0, w, hb); const gr = g.createLinearGradient(0, 0, 0, hb); gr.addColorStop(0, 'rgba(18,46,40,1)'); gr.addColorStop(1, 'rgba(30,66,54,1)'); g.fillStyle = gr; g.fillRect(0, 0, w, hb); g.fillStyle = 'rgba(0,0,0,0.45)'; g.fillRect(0, hb, w, 3); g.fillStyle = 'rgba(255,240,200,0.35)'; g.fillRect(0, hb - 2, w, 2); }
+    if (this.portrait) { const hb = this.hudBand; g.fillStyle = '#1F3A2C'; g.fillRect(0, 0, w, hb); const gr = g.createLinearGradient(0, 0, 0, hb); gr.addColorStop(0, 'rgba(18,46,40,1)'); gr.addColorStop(1, 'rgba(30,66,54,1)'); g.fillStyle = gr; g.fillRect(0, 0, w, hb);
+      if (o.intro) this.introBand(g, run, P, hb); // the header holds no pills while a level card is up: it shows the level's own sky (S4-13)
+      g.fillStyle = 'rgba(0,0,0,0.45)'; g.fillRect(0, hb, w, 3); g.fillStyle = 'rgba(255,240,200,0.35)'; g.fillRect(0, hb - 2, w, 2); }
     else { const hb = this.hudBand, gr = g.createLinearGradient(0, 0, 0, hb + 24); gr.addColorStop(0, 'rgba(12,30,36,0.55)'); gr.addColorStop(0.75, 'rgba(12,30,36,0.28)'); gr.addColorStop(1, 'rgba(12,30,36,0)'); g.fillStyle = gr; g.fillRect(0, 0, w, hb + 24); }
     // out-of-bounds dimming beside the board
     if (this.bx > 4) {
@@ -208,6 +211,16 @@ export class Renderer {
     }
     // arrival (S4-04): the level fades up out of the dark for half a second as the card goes
     if (this.arrive > 0) { g.fillStyle = `rgba(10,28,36,${(this.arrive * this.arrive * 0.85).toFixed(3)})`; g.fillRect(-20, -20, w + 40, h + 40); }
+  }
+
+  // the phone header behind a level card: the level's sky (the painted backdrop where there is one), dimmed so the card reads first
+  introBand(g, run, P, hb) {
+    g.save(); g.beginPath(); g.rect(0, 0, this.w, hb); g.clip();
+    g.fillStyle = vgrad(g, 0, hb, P.sky0, P.sky1); g.fillRect(0, 0, this.w, hb);
+    const bd = this.art && this.art.backdrop(run.L.theme);
+    if (bd) { const sc = Math.max(this.w / bd.width, hb / bd.height); this.blit(g, bd, (this.w - bd.width * sc) / 2, 0, bd.width * sc, bd.height * sc); }
+    g.fillStyle = `rgba(10,28,36,${INTRO_BAND_DIM})`; g.fillRect(0, 0, this.w, hb);
+    g.restore();
   }
 
   ridges(g, run, P, t) {
