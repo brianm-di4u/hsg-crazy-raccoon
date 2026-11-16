@@ -53,4 +53,28 @@ export const tests = [
       t.equal(k, 'Zone 5 · Midnight Raid', 'the last level still names zone 5');
     },
   },
+
+  // ------------------------------------------------------------------ S2-24
+  {
+    name: 'S2-24 the x2 popup is drawn clear above the head of Bandit in the Moonlight Run and in a level, while it rises',
+    viewports: ['desktop', 'mobile'],
+    async run(t) {
+      for (const [label, opt] of [['endless', { mode: 'endless', seed: 3 }], ['level', { level: 'l2', seed: 3 }]]) {
+        await t.game('newGame', opt); await t.game('pause'); await t.waitFrames(3);
+        const r = await t.page.evaluate(() => {
+          const A = window.__CR, R = A.renderer; R.fx.clear(); R.onEvent({ k: 'streak', mult: 2 }, A.run);
+          const o = R.fx.texts[0], head = R.playerScreen(A.run)[1] - R.tile * 0.63, out = [];
+          for (const u of [0, 0.35, 0.7]) { o.t = u * o.life; const b = R.fx.textBox(o, R.proj, R.k); out.push({ u, bottom: b.y + b.fs / 2, fs: b.fs }); }
+          o.t = 0; return { head, out, tile: R.tile, s: o.s };
+        });
+        for (const b of r.out) t.expect(b.bottom <= r.head, label + ': at ' + b.u + ' of its life the popup ends at ' + b.bottom.toFixed(1) + ' px, the head starts at ' + r.head.toFixed(1));
+        t.expect(r.out[0].fs < r.tile * 1.1, label + ': the popup is smaller than a tile and a bit: ' + r.out[0].fs.toFixed(1) + ' px, tile ' + r.tile.toFixed(1));
+        t.expect(r.out[0].fs >= 14, label + ': still legible');
+        if (label === 'endless') { await t.waitFrames(2); await keep(t, 'S2-24', 'streak-popup'); }
+      }
+      // the other popups (a snack, a bank) are as they were: the same size, no lift
+      const o = await t.page.evaluate(() => { const R = window.__CR.renderer; R.fx.clear(); R.fx.text(0, 0, 'x'); return R.fx.texts[0]; });
+      t.expect(o.size === 1 && o.lift === 0, 'a plain popup has size 1 and no lift');
+    },
+  },
 ];

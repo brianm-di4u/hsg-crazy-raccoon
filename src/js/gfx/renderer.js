@@ -18,6 +18,8 @@ const VIEW_RH = { close: 0.9, standard: 0.98, wide: 1.12 };
 const CHEVRON_TILES = 3;
 const LITE_DPR = 1.5; // the lighter picture caps the canvas backing store here (S6-03); the full picture uses up to 2
 const MIST_RGB = '70,160,175', MIST_ALPHA = 0.55; // the map's steam: pale teal, at this share of the title's strength (C4-08)
+// the "×2" popup is smaller than the other popups and starts above Bandit's head, so it never covers him (S2-24); was size 1, lift 0
+const STREAK_POP = 0.75, STREAK_LIFT = 42;
 const ARRIVE_T = 0.5; // a level fades up out of the dark over this many seconds when play begins (S4-04)
 
 export class Renderer {
@@ -788,7 +790,7 @@ export class Renderer {
       case 'pickup': this.fx.sparkle(colX(e.c), e.r, e.item === 'ball' ? '#FFFFFF' : '#FFF3A6', e.item === 'ball' ? 16 : 8); this.fx.text(colX(e.c), e.r, { cap: '+25', ball: '+500', drum: 'Lure!', ticket: 'Ticket!', ring: 'Tail ring!' }[e.item] || 'Snack!', '#FFF3A6'); break;
       case 'wash': this.fx.splash(x, r); this.fx.text(x, r, 'Washed ×2!', '#9FF0FF'); for (let i = 0; i < 6; i++) this.fx.steam(x, r); break;
       case 'bank': this.fx.text(x, r, `+${e.pts}`, '#FFE27A'); this.fx.sparkle(x, r, '#FFE27A', 12); break;
-      case 'streak': this.fx.text(x, r, `×${e.mult}`, '#FFB347'); break;
+      case 'streak': this.fx.text(x, r, `×${e.mult}`, '#FFB347', STREAK_POP, STREAK_LIFT); break;
       case 'fling': this.fx.splash(x, r); this.fx.text(x, r, 'Fling!', '#FFFFFF'); break;
       case 'respawn': this.snap(e.row, run.p.x); break;
       default: break;
