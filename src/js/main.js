@@ -443,7 +443,7 @@ function frame(now) {
     const m = consumeMenu();
     if (screens.cur) screens.nav(m);
     if (consumePause()) { if (App.paused && screens.cur === 'pause') resumeGame(); else pauseGame(); }
-    let busy = false;
+    let busy = false, alpha = 0; // alpha: how far between two steps this frame falls, for the renderer (S1-12)
     const run = App.run;
     if (run && App.scene === 'play') {
       if (!App.paused && !App.testPaused && !screens.cur && run.phase === 'play') {
@@ -456,12 +456,13 @@ function frame(now) {
           stepOnce(intent); acc -= DT; n++;
         }
         busy = true;
+        alpha = Math.min(1, acc / DT);
       } else acc = 0;
       if (run.phase !== 'play' && App.endAt && App.time >= App.endAt && !screens.cur) { App.endAt = 0; levelDone(run); }
       else if (run.phase !== 'play' && App.endAt) busy = true;
       if (renderer.update(dtw, run)) busy = true;
       renderer.grace = App.grace / GRACE_T;
-      renderer.draw(run, { time: App.time });
+      renderer.draw(run, { time: App.time, alpha });
       hud.update(run);
     } else if (App.scene === 'title' && renderer.drawTitle(App.time)) {
       busy = !App.reduced;

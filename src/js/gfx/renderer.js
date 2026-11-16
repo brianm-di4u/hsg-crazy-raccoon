@@ -2,9 +2,9 @@
 // concrete lips over sunken water, y-sorted actors with soft shadows, parallax ridges, night and barn lighting.
 // Painted/Blender art (this.art) replaces the vector drawings in draw.js when loaded. DPR-capped resize after
 // games/Furious Squirrels/src/js/gfx/renderer.js (Hot Springs Games, MIT).
-import { T, COLS, HOP_H, DEAD_T, colX } from '../sim/const.js';
+import { T, COLS, HOP_H, DEAD_T, DT, colX, wrapX } from '../sim/const.js';
 import { nose, beamAt, warnings } from '../sim/world.js';
-import { playerPose } from '../sim/player.js';
+import { playerPose, gatorById } from '../sim/player.js';
 import { PAL, INK, gator, raccoon, item, pool, post, rail, hay, den, pine, tomb, badge, shadow, star4, costume, bankPlaque } from './draw.js';
 import { Fx } from './fx.js';
 import { hashStr } from '../rng.js';
@@ -110,7 +110,27 @@ export class Renderer {
   }
 
   // ------------------------------------------------------------------------------------------------------------
+  // Between two fixed steps (120 Hz) the picture shows the state o.alpha of a step ahead of the last one (S1-12): on a 144 Hz
+  // screen a frame that falls between steps no longer repeats the last position. Only what is drawn moves; the run is put back
+  // exactly, and the simulation never sees it.
   draw(run, o = {}) {
+    const alpha = Math.min(1, Math.max(0, o.alpha || 0));
+    if (!(alpha > 0)) return this.drawScene(run, o);
+    const undo = this.ahead(run, alpha * DT);
+    try { return this.drawScene(run, o); } finally { undo(); }
+  }
+  // gators and a riding Bandit along their velocity, a hop or fling further along its arc (playerPose clamps it at the landing), and
+  // the world clock (beams, feeding warnings) by dt; returns the function that puts every value back
+  ahead(run, dt) {
+    const w = run.world, p = run.p, was = { t: w.t, pt: p.t, px: p.x }, moved = [];
+    for (const g of w.gators) if (g.vx) { moved.push(g, g.x); g.x = wrapX(g.x + g.vx * dt); }
+    w.t += dt;
+    if (p.state === 'hop' || p.state === 'fling') p.t += dt;
+    else if (p.on != null && (p.state === 'idle' || p.state === 'bump')) { const g = gatorById(w, p.on); if (g && g.vx) p.x += g.vx * dt; }
+    return () => { for (let i = 0; i < moved.length; i += 2) moved[i].x = moved[i + 1]; w.t = was.t; p.t = was.pt; p.x = was.px; };
+  }
+
+  drawScene(run, o = {}) {
     const g = this.g, { w, h, dpr } = this, L = run.L, theme = L.theme || 'day', P = PAL[theme] || PAL.day, t = o.time || 0;
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     if (this.shake > 0 && !this.reduced) { const a = this.shake * 6; g.translate(Math.sin(t * 90) * a, Math.cos(t * 77) * a); }

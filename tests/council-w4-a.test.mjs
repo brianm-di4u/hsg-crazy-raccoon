@@ -297,4 +297,93 @@ export const tests = [
       } finally { Object.hasOwn = had; delete globalThis.window; }
     },
   },
+
+  // ------------------------------------------------------------------ S1-12 drawing between steps
+  {
+    name: 'S1-12 a frame between two steps draws gators, a hop and a riding Bandit a fraction of a step ahead, and leaves the run exactly as it was',
+    viewports: ['desktop'],
+    async run(t) {
+      await t.game('newGame', { level: 'l1', seed: 3 });
+      await t.game('pause');
+      await t.game('step', 60);
+      const out = await t.page.evaluate(() => {
+        const A = window.__CR, r = A.renderer, DT = 1 / 120;
+        const snap = () => JSON.stringify([A.run.world.t, A.run.p.t, A.run.p.x, A.run.p.row, A.run.world.gators.map((g) => [g.id, g.x, g.vx])]);
+        const seen = { gx: {}, pt: null, px: null };
+        const dg = r.drawGator, dp = r.drawPlayer;
+        r.drawGator = function (g, run, gt, tt, rim) { if (!rim) seen.gx[gt.id] = gt.x; return dg.call(this, g, run, gt, tt, rim); };
+        r.drawPlayer = function (g, run, tt) { seen.pt = run.p.t; seen.px = run.p.x; return dp.call(this, g, run, tt); };
+        const draw = (alpha) => { const before = snap(); seen.gx = {}; r.draw(A.run, { time: 0, alpha }); return { same: before === snap(), gx: { ...seen.gx }, pt: seen.pt, px: seen.px }; };
+        const res = {};
+        res.rest = draw(0);
+        res.half = draw(0.5);
+        res.over = draw(7); // an alpha past 1 is held at 1
+        res.neg = draw(-3);
+        res.vx = Object.fromEntries(A.run.world.gators.map((g) => [g.id, g.vx]));
+        res.run = { x: A.run.p.x, t: A.run.p.t };
+        // a hop in flight
+        window.__game.act('hop', 'up');
+        window.__game.step(8);
+        res.hopState = A.run.p.state; res.hopT = A.run.p.t;
+        res.hopHalf = draw(0.5); res.hopRest = draw(0);
+        r.drawGator = dg; r.drawPlayer = dp;
+        return res;
+      });
+      t.expect(out.rest.same && out.half.same && out.over.same && out.neg.same, 'drawing leaves the world clock, Bandit and every gator exactly as they were');
+      const ids = Object.keys(out.rest.gx).filter((id) => out.vx[id]);
+      t.expect(ids.length >= 3, 'moving gators were drawn (' + ids.length + ')');
+      const DT = 1 / 120;
+      for (const id of ids) {
+        const d = out.half.gx[id] - out.rest.gx[id];
+        t.expect(Math.abs(d - out.vx[id] * 0.5 * DT) < 1e-6 || Math.abs(d) > 1000, `gator ${id} is drawn half a step on: ${d.toFixed(4)} against ${(out.vx[id] * 0.5 * DT).toFixed(4)}`);
+        const d1 = out.over.gx[id] - out.rest.gx[id];
+        t.expect(Math.abs(d1 - out.vx[id] * DT) < 1e-6 || Math.abs(d1) > 1000, `an alpha above 1 is held at one step: ${d1.toFixed(4)}`);
+        t.equal(out.neg.gx[id], out.rest.gx[id], 'a negative alpha draws the step as it stands');
+      }
+      t.equal(out.hopState, 'hop', 'Bandit is mid-hop');
+      t.expect(Math.abs(out.hopHalf.pt - (out.hopT + 0.5 * DT)) < 1e-9, `the hop is drawn half a step further along (${out.hopHalf.pt} against ${out.hopT + 0.5 * DT})`);
+      t.equal(out.hopRest.pt, out.hopT, 'and at alpha 0 exactly where the step left it');
+    },
+  },
+  {
+    name: 'S1-12 a riding Bandit is drawn along with his gator between steps',
+    viewports: ['desktop'],
+    async run(t) {
+      await t.game('newGame', { level: 'l1', seed: 3 });
+      await t.game('pause');
+      const out = await t.page.evaluate(() => {
+        const A = window.__CR, r = A.renderer, DT = 1 / 120, run = A.run;
+        const g = run.world.gators.find((q) => q.row === 2 && q.k === 'paddler');
+        window.__game.setState({ player: { row: 2, x: g.x - g.dir * 64, ride: true } });
+        const seen = {};
+        const dp = r.drawPlayer;
+        r.drawPlayer = function (gg, rn, tt) { seen.px = rn.p.x; return dp.call(this, gg, rn, tt); };
+        const ride = run.p.on, before = run.p.x;
+        r.draw(run, { time: 0, alpha: 0 }); const x0 = seen.px;
+        r.draw(run, { time: 0, alpha: 0.5 }); const x5 = seen.px;
+        r.drawPlayer = dp;
+        return { ride, vx: g.vx, before, after: run.p.x, x0, x5, DT };
+      });
+      t.expect(out.ride != null, 'Bandit is riding a gator');
+      t.equal(out.x0, out.before, 'at alpha 0 he is drawn where he is');
+      t.expect(Math.abs(out.x5 - out.x0 - out.vx * 0.5 * out.DT) < 1e-9, `at alpha 0.5 he moves with the gator by ${(out.x5 - out.x0).toFixed(4)} (gator ${(out.vx * 0.5 * out.DT).toFixed(4)})`);
+      t.equal(out.after, out.before, 'and the run keeps his real position');
+    },
+  },
+  {
+    name: 'S1-12 the live loop hands the renderer how far between steps each frame falls, and none while the game holds still',
+    viewports: ['desktop'],
+    async run(t) {
+      await t.page.evaluate(() => { const r = window.__CR.renderer, d = r.draw; window.__alphas = []; r.draw = function (run, o) { window.__alphas.push(o && o.alpha); return d.call(this, run, o); }; });
+      await t.game('newGame', { level: 'l1', seed: 3 });
+      await t.page.waitForFunction(() => window.__alphas.length >= 40, null, { timeout: 20000 });
+      const live = await t.page.evaluate(() => window.__alphas.slice());
+      t.expect(live.every((a) => typeof a === 'number' && a >= 0 && a <= 1), 'every alpha is a number from 0 to 1');
+      t.expect(live.some((a) => a > 0), 'and the frames are not all on a step boundary');
+      await t.game('pause');
+      await t.page.evaluate(() => { window.__alphas.length = 0; });
+      await t.page.waitForFunction(() => { window.__CR.kick(); return window.__alphas.length >= 3; }, null, { timeout: 20000 });
+      t.expect((await t.page.evaluate(() => window.__alphas)).every((a) => a === 0), 'a held-still game draws at alpha 0');
+    },
+  },
 ];
