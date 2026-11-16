@@ -43,6 +43,7 @@ const num = (v, fallback) => (typeof v === 'number' && Number.isFinite(v) ? v : 
 function sanitize(d) {
   d.settings.ambience = d.settings.ambience !== false; // saves from before the Ambience setting have none: on
   d.settings.vibration = d.settings.vibration !== false; // likewise for Vibration (S3-13)
+  d.settings.hints = d.settings.hints !== false; // the level 1 hop reminder (S2-12)
   d.settings.holdHop = d.settings.holdHop === true; // Hold to hop is off until it is asked for (S1-09)
   d.settings.volume = Math.min(1, Math.max(0, num(d.settings.volume, 0.5)));
   if (!['left', 'right'].includes(d.settings.lureSide)) d.settings.lureSide = 'right'; // Lure button side (S2-23)

@@ -224,7 +224,7 @@ export const tests = [
     },
   },
   {
-    name: 'S1-09 an old save that holds no Hold to hop setting reads it as off',
+    name: 'S1-09 and S2-12 an old save that holds neither setting reads Hold to hop as off and Hints as on',
     node: true,
     async run(t) {
       const { loadSave } = await import('../src/js/save.js?w4hold');
@@ -234,10 +234,42 @@ export const tests = [
       t.equal(load({ volume: 0.5 }).holdHop, false, 'a save with no holdHop reads off');
       t.equal(load({ holdHop: 'yes' }).holdHop, false, 'a wrong-typed value reads off');
       t.equal(load({ holdHop: true }).holdHop, true, 'an explicit on is kept');
+      t.equal(load({ volume: 0.5 }).hints, true, 'a save with no hints setting reads on');
+      t.equal(load({ hints: 'no' }).hints, true, 'a wrong-typed hints reads on');
+      t.equal(load({ hints: false }).hints, false, 'an explicit off is kept');
       delete globalThis.window;
     },
   },
 
+  // ------------------------------------------------------------------ S2-12 the Hints setting
+  {
+    name: 'S2-12 Settings has a Hints row that turns the level 1 hop reminder on and off and keeps the choice',
+    viewports: ['desktop', 'mobile'],
+    async run(t) {
+      const hint = () => t.page.evaluate(() => { const e = document.getElementById('h-hint'); return e && !e.hidden ? e.textContent : ''; });
+      await t.game('scene', 'settings');
+      const labels = await t.page.$$eval('#screens .flabel', (n) => n.map((x) => x.textContent));
+      t.expect(labels.includes('Hints') && labels.indexOf('Hints') > labels.indexOf('First-run tips'), 'the Hints row is in Settings: ' + labels.join(', '));
+      await t.waitForAnimations();
+      const box = await t.page.$eval('[data-k="hints"][data-v="false"]', (b) => { const q = b.getBoundingClientRect(); return [q.width, q.height]; });
+      t.expect(box[0] >= 44 && box[1] >= 44, 'its buttons are at least 44 px (' + box.join(' x ') + ')');
+      t.equal(await t.page.$eval('[data-k="hints"][data-v="true"]', (b) => b.getAttribute('aria-pressed')), 'true', 'On is pressed by default');
+      await t.game('act', 'menu', 'back');
+      await t.game('newGame', { level: 'l1', seed: 3 });
+      t.expect(/hop/i.test(await hint()), 'with Hints on, level 1 shows the reminder: ' + await hint());
+      await t.game('scene', 'settings');
+      await t.page.click('[data-k="hints"][data-v="false"]');
+      await t.page.waitForFunction(() => window.__game.getState().settings.hints === false);
+      t.equal(await t.page.$eval('[data-k="hints"][data-v="false"]', (b) => b.getAttribute('aria-pressed')), 'true', 'Off shows as pressed');
+      await t.checkLayout({ allowScrollY: true });
+      await t.page.$eval('[data-k="holdHop"][data-v="false"]', (b) => b.scrollIntoView({ block: 'center' }));
+      await t.shot('S2-12-settings');
+      await t.game('newGame', { level: 'l1', seed: 3 });
+      t.equal(await hint(), '', 'with Hints off, level 1 shows no reminder');
+      await t.reload();
+      t.equal((await t.state()).settings.hints, false, 'the choice survives a reload');
+    },
+  },
   // ------------------------------------------------------------------ S6-09 no Object.hasOwn in the save path
   {
     name: 'S6-09 the save path loads, merges and writes on an engine that has no Object.hasOwn, and no source file calls it',

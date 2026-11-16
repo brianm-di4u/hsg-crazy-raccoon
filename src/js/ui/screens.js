@@ -297,6 +297,8 @@ const TEMPLATES = {
       <p class="sub">Phone view: how much of the board shows when the phone is held upright. Wide shows every column.</p>
       ${field('First-run tips', seg('tipsOn', s.tipsOn, [[true, 'On'], [false, 'Off']]))}
       <p class="sub">Short hints in the first levels. ${btn('tipsAgain', 'Show tips again', '', 'btn small')}</p>
+      ${field('Hints', seg('hints', s.hints, [[true, 'On'], [false, 'Off']]))}
+      <p class="sub">The reminder of how to hop, shown at the start of level 1.</p>
       ${field('Hold to hop', seg('holdHop', s.holdHop, [[false, 'Off'], [true, 'On']]))}
       <p class="sub">Keep a direction key or pad direction held to keep hopping across open ground. It stops at water, walls and gators.</p>
       ${field('Assist', seg('assist', s.assist, [[false, 'Off'], [true, 'On']]))}
