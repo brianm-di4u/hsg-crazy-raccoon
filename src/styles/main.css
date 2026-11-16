@@ -1,3 +1,4 @@
+@import url('fonts.css');
 /* Crazy Raccoon. Chunky cartoon UI: thick ink outlines, soft top-lit gradients, bottom "pressed" shadows.
    Colours: linen-postcard cream and sky, thermal-water teal, gator greens (estimates, research/visual-style-guide.md;
    shared/design/tokens.css), raccoon greys and a feeding-show gold. */
@@ -5,6 +6,7 @@
   --ink: #1B1A17; --cream: #FFF6DF; --cream-2: #F3E6C4; --sky: #8ED1F2; --teal: #1E7F8F; --teal-dark: #145A66;
   --gator: #4F8A34; --gator-dark: #2F5A1F; --gold: #FFC93C; --gold-dark: #B9860F; --rust: #C2482B; --grey: #5A5A63; --night: #1C2747;
   --font-head: "Arial Black", "Arial Bold", Impact, "Helvetica Neue", sans-serif;
+  --font-title: "Titan One", var(--font-head); /* the title, the menu headings and the run-over screen (C4-03); buttons and labels stay on --font-head */
   --font-ui: "Trebuchet MS", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   --text-scale: 1;
 }
@@ -46,7 +48,7 @@ body.reduced .panel { animation: none; }
 .mist { position: fixed; left: 0; top: 0; width: 0; height: 0; border-radius: 22px; pointer-events: none; z-index: 2; }
 body.reduced .mist { display: none; }
 @keyframes pop { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-.panel h2 { margin: 0 0 6px; font: 900 calc(30px * var(--text-scale)) / 1.05 var(--font-head); color: #FFFFFF; -webkit-text-stroke: 1.5px var(--ink); paint-order: stroke fill;
+.panel h2 { margin: 0 0 6px; font: 900 calc(30px * var(--text-scale)) / 1.05 var(--font-title); color: #FFFFFF; -webkit-text-stroke: 1.5px var(--ink); paint-order: stroke fill;
   text-shadow: 0 3px 0 var(--ink), 2px 0 0 var(--ink), -2px 0 0 var(--ink), 0 -2px 0 var(--ink); }
 .panel h3 { margin: 12px 0 4px; font: 900 calc(17px * var(--text-scale)) var(--font-head); color: var(--teal-dark); }
 .panel p, .panel li { line-height: 1.4; }
@@ -72,11 +74,11 @@ body.reduced .panel.more > .menu.row:last-child::before { animation: none; }
 
 /* title */
 .title-wrap { width: min(520px, 100%); text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; margin: auto; }
-.logo h1 { margin: 0; line-height: 0.9; font-family: var(--font-head); font-weight: 900; transform: rotate(-3deg); }
+.logo h1 { margin: 0; line-height: 0.9; font-family: var(--font-title); font-weight: 900; transform: rotate(-3deg); }
 .logo h1 span { display: block; -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; text-shadow: 0 6px 0 var(--ink), 0 10px 20px rgba(0,0,0,0.35); }
 .logo .w1 { font-size: calc(54px * var(--text-scale)); color: var(--gold); }
 .logo .w2 { font-size: calc(66px * var(--text-scale)); color: #FFFFFF; }
-.subtitle { display: inline-block; margin: 12px 0 4px; padding: 6px 18px; border-radius: 12px; border: 3px solid var(--ink); background: var(--gator); color: #FFFFFF; font: 900 calc(20px * var(--text-scale)) var(--font-head); box-shadow: 0 4px 0 var(--ink); transform: rotate(-2deg); }
+.subtitle { display: inline-block; margin: 12px 0 4px; padding: 6px 18px; border-radius: 12px; border: 3px solid var(--ink); background: var(--gator); color: #FFFFFF; font: 900 calc(20px * var(--text-scale)) var(--font-title); box-shadow: 0 4px 0 var(--ink); transform: rotate(-2deg); }
 .title-wrap .menu { width: min(360px, 100%); }
 .brand { margin: 8px 0 0; font: 900 calc(15px * var(--text-scale)) var(--font-head); color: #FFFFFF; text-shadow: 0 2px 0 var(--ink); }
 .title-wrap .note.warn { color: var(--ink); background: #FFE27A; border: 3px solid var(--ink); border-radius: 12px; padding: 4px 10px; text-shadow: none; }

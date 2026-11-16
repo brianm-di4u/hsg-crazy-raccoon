@@ -127,4 +127,77 @@ export const tests = [
       t.expect(play.every((c) => dist(c, [24, 56, 47]) < 20), 'in play the header is the flat band again: ' + JSON.stringify(play));
     },
   },
+
+  // ------------------------------------------------------------------ C4-03
+  {
+    name: 'C4-03 the title, menu headings and run-over screen are set in Titan One from file://, and no heading overflows or wraps where it did not',
+    viewports: ['desktop', 'mobile'],
+    fileUrl: true,
+    async run(t) {
+      // the lines each visible heading is painted on, whether it stays inside its panel, and the family it computes to
+      const heads = () => t.page.evaluate(() => [...document.querySelectorAll('#screens h1, #screens h2, #screens .subtitle')].filter((h) => h.offsetParent !== null).map((h) => {
+        const r = document.createRange(); r.selectNodeContents(h); const tops = [];
+        for (const q of r.getClientRects()) if (q.width > 0 && !tops.some((x) => Math.abs(x - q.top) < 4)) tops.push(q.top);
+        const box = (h.closest('.panel') || h.closest('.title-wrap') || document.body).getBoundingClientRect(), tr = r.getBoundingClientRect();
+        return { text: h.textContent.trim(), lines: tops.length, inside: tr.left >= box.left - 1 && tr.right <= box.right + 1, fam: getComputedStyle(h).fontFamily, whole: h.scrollWidth <= h.clientWidth + 1 || getComputedStyle(h).display === 'inline-block' };
+      }));
+      const fallback = (on) => t.page.evaluate((o) => { if (o) document.documentElement.style.setProperty('--font-title', 'var(--font-head)'); else document.documentElement.style.removeProperty('--font-title'); return document.fonts.ready.then(() => true); }, on);
+      const show = {
+        title: () => t.game('scene', 'title'), map: () => t.game('scene', 'map'), settings: () => t.game('scene', 'settings'), help: () => t.game('scene', 'help'),
+        notebook: () => t.game('scene', 'notebook'), records: () => t.game('scene', 'records'), credits: () => t.game('scene', 'credits'), scores: () => t.game('scene', 'scores'),
+        pause: () => t.game('scene', 'pause'), win: () => t.game('scene', 'win'), fail: () => t.game('scene', 'fail'), finale: () => t.game('scene', 'finale'),
+        over: () => t.page.evaluate(() => { window.__CR.screens.show('over', { res: { rows: 42, score: 12345 }, rank: -1, newBest: true, daily: null, earned: [], cause: 'chomp' }); }),
+      };
+      for (let n = 1; n <= 15; n++) show['intro l' + n] = () => t.game('newGame', { level: 'l' + n, intro: true, seed: 3 });
+      show['intro run'] = () => t.game('newGame', { mode: 'endless', intro: true, seed: 3 });
+      let seen = 0;
+      for (const scale of [1, 1.5]) {
+        await t.game('setState', { settings: { textScale: scale } });
+        for (const [name, go] of Object.entries(show)) {
+          await go(); await t.waitFrames(2);
+          await fallback(false); const now = await heads(); await fallback(true); const was = await heads(); await fallback(false);
+          t.equal(now.length, was.length, name + ' x' + scale + ': the same headings are shown');
+          now.forEach((h, i) => {
+            seen++;
+            t.expect(/^"?Titan One/.test(h.fam), name + ' x' + scale + ': "' + h.text + '" computes to Titan One first: ' + h.fam);
+            t.expect(h.inside || !(was[i] && was[i].inside), name + ' x' + scale + ': "' + h.text + '" stays inside its panel (where it did before)');
+            t.expect(h.lines <= (was[i] ? was[i].lines : 99), name + ' x' + scale + ': "' + h.text + '" is on ' + h.lines + ' lines, it was on ' + (was[i] && was[i].lines));
+          });
+        }
+      }
+      t.expect(seen >= 50, 'checked a good number of headings: ' + seen);
+      t.expect(await t.page.evaluate(() => document.fonts.check('16px "Titan One"')), 'the face is loaded');
+      t.expect(await t.page.evaluate(() => [...document.fonts].some((f) => f.family.replace(/"/g, '') === 'Titan One' && f.status === 'loaded')), 'the @font-face rule is in the page and loaded');
+      await t.game('setState', { settings: { textScale: 1 } });
+      await t.game('scene', 'title'); await t.waitFrames(2);
+      // body text, small labels and buttons keep today's fonts
+      const other = await t.page.evaluate(() => ({ btn: getComputedStyle(document.querySelector('#screens .btn')).fontFamily, body: getComputedStyle(document.querySelector('#screens .fineprint')).fontFamily }));
+      t.expect(!/Titan/.test(other.btn) && !/Titan/.test(other.body), 'buttons and small print keep their fonts: ' + JSON.stringify(other));
+      await keep(t, 'C4-03', 'title');
+      await t.game('scene', 'pause'); await t.waitFrames(2); await keep(t, 'C4-03', 'menu-heading');
+      await show.over(); await t.waitFrames(2); await keep(t, 'C4-03', 'run-over');
+      await t.game('scene', 'credits'); await t.waitFrames(2);
+      t.expect(await t.page.evaluate(() => /Titan One/.test(document.querySelector('.panel').textContent) && /SIL Open Font License/.test(document.querySelector('.panel').textContent)), 'Credits name the face and its licence');
+    },
+  },
+  {
+    name: 'C4-03 the sideways and small-phone title still fits, with the new face',
+    viewports: ['desktop', 'mobile'],
+    async run(t) {
+      for (const [w, h] of [[844, 390], [667, 375], [390, 844], [360, 640], [320, 568]]) {
+        await t.page.setViewportSize({ width: w, height: h });
+        await t.game('scene', 'title'); await t.waitFrames(2);
+        const r = await t.page.evaluate(() => {
+          const view = { w: innerWidth, h: innerHeight }, bad = [];
+          for (const b of document.querySelectorAll('#screens .btn, #screens h1, #screens .subtitle')) { const q = b.getBoundingClientRect(); if (q.right > view.w + 1 || q.left < -1) bad.push(b.textContent.trim() + ' sideways'); }
+          const last = [...document.querySelectorAll('#screens .menu .btn')].pop().getBoundingClientRect();
+          return { bad, bottom: last.bottom, h: view.h, more: !!document.querySelector('.screens.title.more') };
+        });
+        t.equal(r.bad, [], w + 'x' + h + ': nothing pushed off the side: ' + r.bad.join(', '));
+        t.expect(r.bottom <= r.h + 1 || r.more, w + 'x' + h + ': the last menu button is on screen (' + r.bottom.toFixed(0) + ' of ' + r.h + '), or the page says scroll for more');
+        if (w === 844) await keep(t, 'C4-03', 'title-844x390');
+      }
+      await t.page.setViewportSize({ width: t.vp.width, height: t.vp.height });
+    },
+  },
 ];
