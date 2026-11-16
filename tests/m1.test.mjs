@@ -67,7 +67,9 @@ export const tests = [
       const s = await t.state();
       t.equal(s.scene, 'play'); t.equal(s.screen, null, 'playing');
       await kb.press('ArrowUp');
-      await t.waitFrames(30);
+      // Since wave 3 (S1-07) the world holds for 0.7 s after Go and a key pressed in that beat fires when it ends, so wait for
+      // the hop itself: 30 frames is shorter than the beat on a quiet machine.
+      await t.page.waitForFunction(() => window.__game.getState().run.hops >= 1, null, { timeout: 5000 }).catch(() => {});
       t.expect((await t.state()).run.hops >= 1, 'arrow key hops in game');
       await kb.press('Escape');
       t.equal((await t.state()).screen, 'pause', 'Esc pauses');
