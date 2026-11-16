@@ -178,4 +178,43 @@ export const tests = [
       t.equal((await ticks()) - tick2, 0, 'the Moonlight Run has no par clock');
     },
   },
+
+  // ------------------------------------------------------------------ S2-26 five volume steps
+  {
+    name: 'S2-26 Volume has five steps that keep the old Low, Medium and High at the same loudness, work by keyboard, and fit at both sizes',
+    viewports: ['desktop', 'mobile'],
+    async run(t) {
+      await gesture(t);
+      await t.game('scene', 'settings'); await t.waitForAnimations();
+      const row = () => t.page.$$eval('[data-k="volume"]', (b) => b.map((x) => { const r = x.getBoundingClientRect(); return { n: x.textContent.trim(), v: +x.dataset.v, on: x.getAttribute('aria-pressed'), label: x.getAttribute('aria-label'), w: Math.round(r.width), h: Math.round(r.height), inside: r.right <= innerWidth && r.left >= 0 }; }));
+      let b = await row();
+      t.equal(b.map((x) => x.v).join(','), '0.25,0.35,0.5,0.65,0.85', 'five steps, from the old Low to the old High');
+      t.equal(b.map((x) => x.n).join(','), '1,2,3,4,5', 'numbered one to five');
+      t.expect(b.every((x) => x.w >= 44 && x.h >= 44 && x.inside), 'each at least 44 px and on the screen: ' + JSON.stringify(b.map((x) => [x.w, x.h, x.inside])));
+      t.expect(b.every((x, i) => x.label === `Volume ${i + 1} of 5`), 'each is named for a screen reader: ' + b.map((x) => x.label).join(' | '));
+      t.expect(await t.page.evaluate(() => /quietest/.test(document.querySelector('[data-k="volume"]').closest('[role="group"]').getAttribute('aria-label'))), 'and the group says which end is quiet');
+      // a saved volume lands on its step, and the master gain is what it always was for that value (old Low, Medium and High)
+      for (const [vol, step, master] of [[0.25, 1, 0.35], [0.5, 3, 0.7], [0.85, 5, 1.19]]) {
+        await t.game('setState', { settings: { volume: vol } }); await t.game('scene', 'settings'); await t.waitFrames(2);
+        b = await row();
+        t.equal(b.filter((x) => x.on === 'true').map((x) => x.n).join(), String(step), `volume ${vol} shows step ${step}`);
+        await t.page.waitForFunction((m) => Math.abs(window.__game.getState().audio.levels.master - m) < 0.02, master, { timeout: 5000 });
+        t.expect(true, `and plays at master gain ${master}, as Low, Medium or High did`);
+      }
+      // a click and the keyboard both set a step, it is saved, and the click sound is heard at the new volume
+      await t.page.click('[data-k="volume"][data-v="0.65"]'); await t.waitFrames(2);
+      t.equal((await t.state()).settings.volume, 0.65, 'step 4 is 0.65');
+      t.equal((await t.state()).audio.cueVol, 0.65, 'and the click was heard at the new volume');
+      await t.page.focus('[data-k="volume"][data-v="0.35"]'); await t.page.keyboard.press('Enter'); await t.waitFrames(2);
+      t.equal((await t.state()).settings.volume, 0.35, 'Enter on step 2 sets 0.35');
+      await t.reload();
+      t.equal((await t.state()).settings.volume, 0.35, 'and it is still there after a reload');
+      await t.game('scene', 'settings'); await t.waitFrames(2);
+      t.equal((await row()).filter((x) => x.on === 'true').map((x) => x.n).join(), '2', 'step 2 is the one lit');
+      await t.game('setState', { settings: { textScale: 1.75 } }); await t.game('scene', 'settings'); await t.waitFrames(2);
+      await t.checkLayout({ allowScrollY: true });
+      await keep(t, 'S2-26', 'settings-volume');
+      await t.game('setState', { settings: { textScale: 1, volume: 0.5 } });
+    },
+  },
 ];
