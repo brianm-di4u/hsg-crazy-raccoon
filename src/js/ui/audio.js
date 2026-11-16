@@ -99,7 +99,11 @@ export function setAudio(settings) {
   levels();
 }
 export function audioState() {
-  return { started: state.started, on: state.on, music: state.music, ambience: state.amb, theme: state.theme, scene: state.scene, ctx: ctx ? ctx.state : 'none', held: state.hold, tension: +state.tension.toFixed(2), kit: !!kit, cues: state.cues.slice(), delays: state.delays.slice(), cueVol: state.cueVol, levels: kit ? { ...kit.levels(), master: +master.gain.value.toFixed(3) } : null, sched: kit ? kit.stats() : null, noise: { seconds: noiseBuf ? +noiseBuf.duration.toFixed(2) : 0, slack: +state.noiseSlack.toFixed(3) } };
+  return { started: state.started, on: state.on, music: state.music, ambience: state.amb, theme: state.theme, scene: state.scene, ctx: ctx ? ctx.state : 'none', held: state.hold, tension: +state.tension.toFixed(2), kit: !!kit, cues: state.cues.slice(), delays: state.delays.slice(), cueVol: state.cueVol, levels: kit ? { ...kit.levels(), master: +master.gain.value.toFixed(3) } : null, sched: kit ? kit.stats() : null };
+}
+// test hook: how long the live noise buffer is, and the least time any noise cue (live or rendered) has had to spare before its end
+export function noiseStats() {
+  return { seconds: noiseBuf && noiseBuf.duration ? +noiseBuf.duration.toFixed(2) : 0, slack: +state.noiseSlack.toFixed(3) };
 }
 
 // Every play of a cue is a little different (S5-04): playCue draws one detune (up to 25 cents) and one gain (up to 1.5 dB
@@ -138,8 +142,8 @@ function noise(dur, { vol = 0.2, at = 0, type = 'bandpass', freq = 1200, q = 1, 
   if (sweep) f.frequency.exponentialRampToValueAtTime(Math.max(40, freq * sweep), t + dur);
   g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + attack); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
   s.connect(f); f.connect(g); g.connect(bus);
-  const off = Math.random() * Math.max(0, noiseBuf.duration - dur - 0.05);
-  state.noiseSlack = Math.min(state.noiseSlack, noiseBuf.duration - (off + dur + 0.02));   // seconds to spare before the end of the buffer (never below 0)
+  const off = Math.random() * Math.max(0, NOISE_SECONDS - dur - 0.05);
+  state.noiseSlack = Math.min(state.noiseSlack, NOISE_SECONDS - (off + dur + 0.02));   // seconds to spare before the end of the buffer (never below 0)
   s.start(t, off); s.stop(t + dur + 0.02);
 }
 

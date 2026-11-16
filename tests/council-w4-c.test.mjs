@@ -304,13 +304,13 @@ export const tests = [
         'denied', 'win', 'fail', 'star', 'best', 'par', 'fact', 'ach', 'finale', 'full', 'respawn', 'tick', 'lastring'];
       const ARGS = { streak: [2], star: [1], tick: [3] };
       const SURF = ['grass', 'wood', 'sand', 'path', 'straw', 'back', 'wet'];
-      t.equal((await t.state()).audio.noise.seconds, 2, 'the live noise buffer is two seconds long');
+      t.equal((await t.game('act', 'noiseStats')).seconds, 2, 'the live noise buffer is two seconds long');
       // The offset is random, so play each cue several times: the longest noise (the splash and wash at 0.45 to 0.5 s, the sweep at 0.7 s, the ending's shimmer at 1.4 s) would
       // cross the seam of the old one-second buffer on most plays (a start anywhere in 1 s, a 1.4 s cue: every play does).
       let plays = 0;
       for (const name of NAMES) for (let i = 0; i < 3; i++) { await render(t, 'cue:' + name, name === 'finale' ? 5.5 : 2, { seed: 700 + i, args: ARGS[name] || (name === 'land' ? [SURF[i % 7]] : []) }); plays++; }
       for (const surface of SURF) { await render(t, 'cue:land', 1, { args: [surface], seed: 9 }); plays++; }
-      const n = (await t.state()).audio.noise;
+      const n = await t.game('act', 'noiseStats');
       t.expect(n.slack >= 0, `across ${plays} plays no noise cue ran past the end of the buffer (least spare ${n.slack} s)`);
       t.expect(n.slack < 9, 'and the measure saw noise being played');
     },

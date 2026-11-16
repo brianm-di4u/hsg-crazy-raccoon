@@ -101,6 +101,7 @@ export function installHooks(App, api) {
         case 'hud': for (const id of ['hud', 'screens']) { const el = document.getElementById(id); if (el) el.style.visibility = a[0] === false ? 'hidden' : ''; } return true;
         case 'frames': for (const ms of a[0] || []) api.noteFrame(ms / 1000); return App.quality(); // feed measured frame times (ms) to the automatic picture detail
         case 'titleDue': return App.titleDue(a[0], a[1]);
+        case 'noiseStats': return api.noiseStats();
         case 'audioPump': return api.pumpAudio(a[0]);
         case 'fxCount': return App.renderer.fx.count();
         case 'gatorAt': return run ? run.world.gators.filter((g) => g.row === a[0]).map((g) => ({ id: g.id, x: g.x, k: g.k, jaw: g.jaw, len: g.len, dir: g.dir })) : [];
