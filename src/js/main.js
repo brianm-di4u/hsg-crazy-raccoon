@@ -27,6 +27,8 @@ const HINT_MIN_T = 2.5; // the level 1 hint stays at least this long, even if th
 const STORAGE_NOTE = 'Progress will not be saved in this browser mode.';
 const SLOW_FRAME = 0.026; // a median frame over this long (under about 38 per second) over the last QUALITY_FRAMES counts as slow: Auto picture detail goes light (S6-03)
 const QUALITY_FRAMES = 90, FX_LITE = 0.5; // frames in the window (1.5 s at 60); the share of particles the light picture keeps
+const TITLE_FRAME_MS = 30; // the title and the menus behind it are redrawn about 30 times a second at most, not on every frame of a 60 or 144 Hz screen (S6-10)
+const TITLE_REST_S = 60; // and after this long with no key, tap, move or menu action the title stops redrawing until the next one (S6-10)
 const NEWER_NOTE = 'This visit is not being saved, because your save comes from a newer version of the game.';
 const THEME_MUSIC = { day: 'day', noon: 'noon', barn: 'barn', night: 'night' };
 // the ambience scene for each level theme (the music has the theme's own name)
@@ -203,7 +205,7 @@ function beginPlay(grace = true) {
 }
 
 function showTitle() {
-  App.run = null; App.level = null; App.scene = 'title'; document.body.dataset.scene = 'title';
+  App.run = null; App.level = null; App.scene = 'title'; document.body.dataset.scene = 'title'; lastInput = App.time;
   hud.show(false); setEnabled(false);
   // attract mode: a bot crosses level 1 behind the title (ambient: isIdle ignores it)
   const L = LEVELS[0];
@@ -306,6 +308,7 @@ function commitScore() {
 const BACK_ACTS = new Set(['back', 'resume', 'title', 'quitYes', 'map']);
 App.onMenu = (act, d = {}) => {
   const s = App.save;
+  lastInput = App.time;
   App.newerSeen = true;
   if (act === 'locked' || ((act === 'endless' || act === 'daily') && !s.endless.unlocked)) sfx('denied');
   else if (act !== 'set') sfx(BACK_ACTS.has(act) ? 'back' : 'menu');
@@ -361,6 +364,21 @@ document.getElementById('screens').addEventListener('submit', (e) => { e.prevent
 // ---------------------------------------------------------------------------------------------------------------
 // frame loop
 let rafId = 0, inFrame = false, last = 0, acc = 0;
+// The title is the only screen that animates with nothing for the player to do, so it is the one that drains a phone left on it (S6-10).
+// titleDue: has a 30 fps frame come due? (a quarter of a frame of slack at 60 Hz, so every second frame draws; a 30 Hz screen draws every frame)
+let lastInput = 0, lastTitleDraw = -1e9, restDrawn = false, titleOwed = 0;
+const titleDue = (since, now) => now - since >= TITLE_FRAME_MS - 4;
+App.titleDue = titleDue; App.titleDraws = 0; App.titleResting = false;
+function noteInput() { lastInput = App.time; kick(); }
+for (const type of ['keydown', 'pointerdown', 'pointermove', 'touchstart', 'wheel']) window.addEventListener(type, noteInput, { passive: true });
+// true: leave the title picture as it is this frame (it was drawn a moment ago, or has been drawn and the title is resting)
+function titleHold(now, resting) {
+  if (App.reduced) return false;
+  if (resting) { if (restDrawn) return true; restDrawn = true; lastTitleDraw = now; return false; }
+  restDrawn = false;
+  if (!titleDue(lastTitleDraw, now)) return true;
+  lastTitleDraw = now; return false;
+}
 function kick() { if (!rafId && !inFrame) { last = performance.now(); rafId = requestAnimationFrame(frame); } }
 App.kick = kick;
 
@@ -473,14 +491,16 @@ function frame(now) {
   try {
     const dtw = Math.min(0.1, (now - last) / 1000), raw = (now - last) / 1000; last = now;
     App.time = App.clock != null ? App.clock : App.time + dtw;
-    if (renderer.resize()) { if (App.run) renderer.snap(App.run.p.row, App.run.p.x); }
+    if (renderer.resize()) { restDrawn = false; if (App.run) renderer.snap(App.run.p.row, App.run.p.x); }
     pollGamepads();
     // once a pad is connected keep polling it in menus and pause too (the loop would otherwise sleep)
     if (!App.padSeen && navigator.getGamepads) App.padSeen = [...navigator.getGamepads()].some((p) => p && p.connected);
     const m = consumeMenu();
+    if (m.up || m.down || m.left || m.right || m.cancel) lastInput = App.time;
     if (screens.cur) screens.nav(m);
     if (consumePause()) { if (App.paused && screens.cur === 'pause') resumeGame(); else pauseGame(); }
-    let busy = false, alpha = 0; // alpha: how far between two steps this frame falls, for the renderer (S1-12)
+    const resting = App.scene === 'title' && !App.reduced && App.time - lastInput > TITLE_REST_S; App.titleResting = resting;
+    let busy = false, held = false, alpha = 0; // alpha: how far between two steps this frame falls, for the renderer (S1-12)
     const run = App.run;
     if (run && App.scene === 'play') {
       if (!App.paused && !App.testPaused && !screens.cur && run.phase === 'play') {
@@ -502,19 +522,21 @@ function frame(now) {
       renderer.grace = App.grace / GRACE_T;
       renderer.draw(run, { time: App.time, alpha });
       hud.update(run);
+    } else if (App.scene === 'title' && titleHold(now, resting)) {
+      held = true; titleOwed += dtw; busy = !resting; // a held frame comes round again at the next vsync; a resting title lets the loop sleep
     } else if (App.scene === 'title' && renderer.drawTitle(App.time)) {
-      busy = !App.reduced;
+      busy = !App.reduced && !resting; App.titleDraws++;
     } else if (App.demo) {
       // attract demo behind the title
-      const d = App.demo;
-      if (!App.reduced) { for (let i = 0; i < Math.round(dtw / DT); i++) { d.step(App.demoBot.input()); for (const e of d.drain()) renderer.onEvent(e, d); } }
+      const d = App.demo, dd = dtw + titleOwed; titleOwed = 0; App.titleDraws++;
+      if (!App.reduced) { for (let i = 0; i < Math.round(dd / DT); i++) { d.step(App.demoBot.input()); for (const e of d.drain()) renderer.onEvent(e, d); } }
       if (d.phase !== 'play') { App.demo = new Run(JSON.parse(JSON.stringify(LEVELS[0])), { seed: (d.seed + 1) >>> 0 }); App.demoBot = new Bot(App.demo, makeRng(d.seed + 7), 'good'); renderer.snap(0); }
-      renderer.update(dtw, App.demo);
+      renderer.update(dd, App.demo);
       renderer.draw(App.demo, { time: App.time });
     }
-    if (screens.cur === 'map' && renderer.mist(screens.root.querySelector('.mist'), screens.root.querySelector('.panel'), App.time)) busy = true;
+    if (!held && screens.cur === 'map') renderer.mist(screens.root.querySelector('.mist'), screens.root.querySelector('.panel'), App.time);
     App.busy = busy;
-    const ambient = (!!App.demo && !App.reduced && !document.hidden) || (App.padSeen && !document.hidden);
+    const ambient = (!!App.demo && !App.reduced && !document.hidden && !resting) || (App.padSeen && !document.hidden);
     if (busy || App.loading || renderer.fx.busy()) rafId = requestAnimationFrame(frame);
     else if (ambient) rafId = requestAnimationFrame(frame);
   } catch (err) { showError(err); }

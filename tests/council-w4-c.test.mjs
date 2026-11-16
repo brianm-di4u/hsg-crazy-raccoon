@@ -315,4 +315,68 @@ export const tests = [
       t.expect(n.slack < 9, 'and the measure saw noise being played');
     },
   },
+
+  // ------------------------------------------------------------------ S6-10 the title redraws at about 30 a second and rests after a minute
+  {
+    name: 'S6-10 the title redraws at about 30 frames a second on any screen rate, and stops after a minute with no input until the next one',
+    viewports: ['desktop', 'mobile'],
+    async run(t) {
+      // the pacing rule on its own: draws in one second of frames at each common screen rate (no wall clock: the frame times are made up here)
+      const due = (last, now) => t.game('act', 'titleDue', last, now);
+      for (const hz of [30, 60, 75, 90, 120, 144]) {
+        let last = -1e9, draws = 0;
+        const times = []; for (let n = 0; n * 1000 / hz < 1000; n++) times.push(n * 1000 / hz);
+        for (const now of times) { if (await due(last, now)) { draws++; last = now; } }
+        t.expect(hz <= 30 ? draws === times.length : draws >= 28 && draws <= 38, `${hz} Hz: ${draws} of ${times.length} frames drawn in a second`);
+      }
+      // live: the title is drawn again and again while the player is there
+      await t.game('setState', { settings: { reducedMotion: false } });
+      await t.game('scene', 'title');
+      const draws = () => t.page.evaluate(() => window.__game.getState().title.draws);
+      const d0 = await draws();
+      await t.page.waitForFunction((n) => window.__game.getState().title.draws >= n + 5, d0, { timeout: 10000 });
+      t.expect(true, 'the title keeps being drawn');
+      // a minute with no input: the game's own clock is moved on, so no time is waited
+      await t.game('act', 'clock', 0); await t.page.waitForFunction(() => window.__CR.time === 0, null, { timeout: 5000 }); // a frame must have read the clock before the key press is stamped with it
+      await t.page.keyboard.press('Shift');
+      await t.game('act', 'clock', 59000); await t.waitFrames(4);
+      t.expect(!(await t.state()).title.resting, 'at 59 s without input the title is still live');
+      await t.game('act', 'clock', 61000);
+      await t.page.waitForFunction(() => window.__game.getState().title.resting, null, { timeout: 5000 });
+      await t.waitFrames(4);
+      const rested = await draws();
+      await t.waitFrames(12);
+      t.equal(await draws(), rested, 'after a minute with no input it draws nothing more');
+      t.expect(await t.page.evaluate(() => !window.__CR.busy), 'and the loop is asleep');
+      await keep(t, 'S6-10', 'title-resting');
+      // the next key, tap or move wakes it
+      await t.page.keyboard.press('Shift');
+      await t.page.waitForFunction((n) => { const s = window.__game.getState().title; return !s.resting && s.draws > n; }, rested, { timeout: 5000 });
+      t.expect(true, 'a key press wakes it and it draws again');
+      await t.game('act', 'clock', 130000);
+      await t.page.waitForFunction(() => window.__game.getState().title.resting, null, { timeout: 5000 });
+      await t.page.mouse.move(40, 40); await t.page.mouse.move(60, 50);
+      await t.page.waitForFunction(() => !window.__game.getState().title.resting, null, { timeout: 5000 });
+      t.expect(true, 'so does moving the pointer');
+      // a resting title is redrawn once when the window changes size (a canvas that is resized goes blank)
+      await t.game('act', 'clock', 250000);
+      await t.page.waitForFunction(() => window.__game.getState().title.resting, null, { timeout: 5000 });
+      await t.waitFrames(4);
+      const r1 = await draws();
+      await t.page.setViewportSize({ width: t.vp.width + 40, height: t.vp.height });
+      await t.page.waitForFunction((n) => window.__game.getState().title.draws > n, r1, { timeout: 5000 });
+      t.expect(true, 'a resize redraws the resting title');
+      await t.page.setViewportSize({ width: t.vp.width, height: t.vp.height });
+      // the title is not cut off by any of it: a play screen, and the game itself, are not throttled
+      await t.game('act', 'clock', null);
+      await t.game('newGame', { level: 'l1', intro: false, seed: 5 });
+      t.expect(!(await t.state()).title.resting, 'a level in play never rests');
+      // reduced motion draws the title once and has never looped: nothing changes there
+      await t.game('setState', { settings: { reducedMotion: true } });
+      await t.game('scene', 'title'); await t.waitFrames(3);
+      const q0 = await draws(); await t.waitFrames(6);
+      t.equal(await draws(), q0, 'with reduced motion the title is still drawn once and not looped');
+      await t.game('setState', { settings: { reducedMotion: null } });
+    },
+  },
 ];
