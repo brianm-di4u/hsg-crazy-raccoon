@@ -302,6 +302,8 @@ const TEMPLATES = {
       <p class="sub">The reminder of how to hop, shown at the start of level 1.</p>
       ${field('Hold to hop', seg('holdHop', s.holdHop, [[false, 'Off'], [true, 'On']]))}
       <p class="sub">Keep a direction key or pad direction held to keep hopping across open ground. It stops at water, walls and gators.</p>
+      ${field('Picture detail', seg('quality', s.quality, [['auto', 'Auto'], ['full', 'Full'], ['light', 'Light']]))}
+      <p class="sub">Auto lightens the night glow and the sparkles only when the game is running slowly. Light always does; Full never does.</p>
       ${field('Assist', seg('assist', s.assist, [[false, 'Off'], [true, 'On']]))}
       <p class="sub">Assist: slower gators, longer warnings, +2 tail rings (no par star).</p>
       <nav class="menu row">${btn('back', 'Done', 'autofocus data-back', 'btn primary')}${btn('resetSave', 'Reset progress', 'data-confirm="1"', 'btn small danger')}</nav>

@@ -17,7 +17,7 @@ const newerRaw = (raw) => { try { const s = raw ? JSON.parse(raw) : null; return
 
 export const DEFAULT_SAVE = () => ({
   v: 1,
-  settings: { sound: true, music: true, ambience: true, volume: 0.5, vibration: true, reducedMotion: null, textScale: 1, assist: false, hints: true, holdHop: false, view: 'standard', lureSide: 'right', costume: 'plain', tipsOn: true, tipsDone: {} },
+  settings: { sound: true, music: true, ambience: true, volume: 0.5, vibration: true, reducedMotion: null, textScale: 1, assist: false, hints: true, holdHop: false, quality: 'auto', view: 'standard', lureSide: 'right', costume: 'plain', tipsOn: true, tipsDone: {} },
   progress: {}, // levelId → { stars: [b, b, b], best, bestT, ball }
   unlocked: 1, // highest playable level number
   notebook: [], // fact ids seen
@@ -47,6 +47,7 @@ function sanitize(d) {
   d.settings.holdHop = d.settings.holdHop === true; // Hold to hop is off until it is asked for (S1-09)
   d.settings.volume = Math.min(1, Math.max(0, num(d.settings.volume, 0.5)));
   if (!['left', 'right'].includes(d.settings.lureSide)) d.settings.lureSide = 'right'; // Lure button side (S2-23)
+  if (!['auto', 'full', 'light'].includes(d.settings.quality)) d.settings.quality = 'auto'; // picture detail (S6-03)
   if (!['close', 'standard', 'wide'].includes(d.settings.view)) d.settings.view = 'standard'; // phone view: saves from before have none
   if (![1, 1.25, 1.5, 1.75].includes(d.settings.textScale)) d.settings.textScale = 1;
   if (!COSTUME_IDS.includes(d.settings.costume)) d.settings.costume = 'plain';

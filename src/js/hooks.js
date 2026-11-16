@@ -17,7 +17,7 @@ export function installHooks(App, api) {
       settings: App.save.settings, reduced: App.reduced, art: !!App.renderer.art,
       save: { unlocked: App.save.unlocked, endlessUnlocked: App.save.endless.unlocked, top: App.save.endless.top, progress: App.save.progress, notebook: App.save.notebook.length, merman: App.save.merman, ach: App.save.ach, costume: App.save.settings.costume, finale: App.save.finale, daily: App.save.endless.daily, bestRows: App.save.endless.bestRows, today: App.today() },
       tip: App.hud.last.tip || '', toast: document.getElementById('toast').textContent, costumeDrawn: App.renderer.costume,
-      audio: api.audioState(), steps: App.steps, said: App.lastSaid, fx: App.renderer.fx.count(),
+      quality: App.quality(), audio: api.audioState(), steps: App.steps, said: App.lastSaid, fx: App.renderer.fx.count(),
     };
   };
   window.__game = {
@@ -99,6 +99,7 @@ export function installHooks(App, api) {
         case 'unlockAll': App.save.unlocked = App.LEVELS.length; App.save.endless.unlocked = true; api.persist(); if (App.screens.cur) App.screens.refresh(); return true;
         case 'clearSave': App.save.progress = {}; App.save.unlocked = 1; App.save.endless = { unlocked: false, top: [] }; App.save.notebook = []; App.save.merman = false; App.save.ach = {}; App.save.finale = false; App.save.endless.bestRows = 0; App.save.endless.bestScore = 0; App.save.endless.daily = { last: '', streak: 0, bestStreak: 0, hist: {} }; api.persist(); return true;
         case 'hud': for (const id of ['hud', 'screens']) { const el = document.getElementById(id); if (el) el.style.visibility = a[0] === false ? 'hidden' : ''; } return true;
+        case 'frames': for (const ms of a[0] || []) api.noteFrame(ms / 1000); return App.quality(); // feed measured frame times (ms) to the automatic picture detail
         case 'fxCount': return App.renderer.fx.count();
         case 'gatorAt': return run ? run.world.gators.filter((g) => g.row === a[0]).map((g) => ({ id: g.id, x: g.x, k: g.k, jaw: g.jaw, len: g.len, dir: g.dir })) : [];
         case 'menu': App.onMenu(a[0], a[1] || {}); return App.screens.cur;

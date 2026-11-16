@@ -126,4 +126,102 @@ export const tests = [
       t.expect(!/Course d/.test(text) && !(await t.page.$('[data-act="sameCourse"]')), 'the Daily Run panel has no course line and no second button');
     },
   },
+  // ------------------------------------------------------------------ S6-03 a lighter picture for slow devices
+  {
+    name: 'S6-03 Settings has a Picture detail row (Auto, Full, Light) that is saved, and Light caps the particles, the canvas and the night glow',
+    viewports: ['desktop', 'mobile'],
+    async run(t) {
+      const q = async () => (await t.state()).quality;
+      await t.game('scene', 'settings'); await t.waitForAnimations();
+      const labels = await t.page.$$eval('#screens .flabel', (n) => n.map((x) => x.textContent));
+      t.expect(labels.includes('Picture detail'), 'the row is in Settings: ' + labels.join(', '));
+      const sizes = await t.page.$$eval('[data-k="quality"]', (b) => b.map((x) => { const r = x.getBoundingClientRect(); return [x.textContent.trim(), Math.round(r.width), Math.round(r.height), x.getAttribute('aria-pressed')]; }));
+      t.equal(sizes.map((x) => x[0]).join(','), 'Auto,Full,Light', 'three choices');
+      t.expect(sizes.every((x) => x[1] >= 44 && x[2] >= 44), 'each at least 44 px: ' + JSON.stringify(sizes));
+      t.equal(sizes[0][3], 'true', 'Auto is the default');
+      t.equal((await q()).lite, false, 'and the full picture is what is drawn');
+      await t.page.$eval('[data-k="quality"][data-v="light"]', (b) => b.scrollIntoView({ block: 'center' }));
+      await keep(t, 'S6-03', 'settings');
+      await t.page.click('[data-k="quality"][data-v="light"]');
+      await t.page.waitForFunction(() => window.__game.getState().quality.lite === true);
+      const lite = await q();
+      t.equal(lite.setting, 'light', 'Light is pinned');
+      t.equal(lite.fxScale, 0.5, 'the particle cap halves');
+      await t.page.waitForFunction(() => window.__game.getState().quality.dpr === Math.min(1.5, window.devicePixelRatio));
+      await t.reload();
+      t.equal((await q()).setting, 'light', 'the choice survives a reload');
+      t.equal((await q()).lite, true, 'and the page comes back light');
+      await t.game('scene', 'settings');
+      await t.page.click('[data-k="quality"][data-v="full"]');
+      await t.page.waitForFunction(() => window.__game.getState().quality.lite === false);
+      t.equal((await q()).fxScale, 1, 'Full restores the particles');
+      await t.page.waitForFunction(() => window.__game.getState().quality.dpr === Math.min(2, window.devicePixelRatio));
+      await t.checkLayout({ allowScrollY: true });
+    },
+  },
+  {
+    name: 'S6-03 Auto goes light only after a window of measured slow frames, never on a steady 60 or on stalls, and Full and Light stay pinned',
+    viewports: ['desktop'],
+    async run(t) {
+      const feed = (ms, n) => t.game('act', 'frames', Array.from({ length: n }, () => ms));
+      let q = await feed(16.7, 300);
+      t.equal(q.lite, false, 'a steady 60 stays full');
+      q = await feed(7, 300);
+      t.equal(q.lite, false, 'and so does a 144 Hz screen');
+      q = await t.game('act', 'frames', Array.from({ length: 300 }, (_, i) => (i % 3 === 0 ? 900 : 16.7)));
+      t.equal(q.lite, false, 'stalls (a hidden tab, a long pause) are not slow frames');
+      q = await feed(24, 300);
+      t.equal(q.lite, false, 'a 24 ms frame (about 42 per second) is under the line');
+      q = await feed(40, 60);
+      t.equal(q.lite, false, 'a short run of slow frames, less than the window, is not enough');
+      q = await feed(40, 120);
+      t.expect(q.lite && q.auto, 'a window of 40 ms frames (25 per second) lightens the picture: ' + JSON.stringify(q));
+      t.equal(q.fxScale, 0.5, 'with the smaller particle cap');
+      q = await feed(7, 600);
+      t.expect(q.lite, 'and it stays light for the visit once it has gone light');
+      // pinned Full: never lightens
+      await t.reload();
+      await t.game('setState', { settings: { quality: 'full' } });
+      q = await feed(60, 500);
+      t.expect(!q.lite && !q.auto, 'Full is never lightened by slow frames: ' + JSON.stringify(q));
+      await t.game('setState', { settings: { quality: 'light' } });
+      t.equal((await t.state()).quality.lite, true, 'Light is light at once, with no frames measured');
+      await t.game('setState', { settings: { quality: 'auto' } });
+      t.equal((await t.state()).quality.lite, false, 'and Auto, with nothing measured, is full');
+      // reduced motion keeps its own, smaller particle cap
+      await t.game('setState', { settings: { quality: 'light', reducedMotion: true } });
+      t.equal((await t.state()).quality.fxScale, 0.4, 'reduced motion keeps 0.4');
+    },
+  },
+  {
+    name: 'S6-03 the light picture draws fewer particles and leaves out the night beam cones, counted on one fixed frame',
+    viewports: ['desktop', 'mobile'],
+    async run(t) {
+      await t.game('newGame', { level: 'l13', seed: 5 });
+      await t.game('pause');
+      await t.game('setState', { settings: { quality: 'full', reducedMotion: false }, player: { row: 4, col: 4 } });
+      const measure = () => t.page.evaluate(() => {
+        const A = window.__CR, g = A.renderer.g, n = { fill: 0, grad: 0 }, f = g.fill, cg = g.createRadialGradient;
+        A.renderer.fx.clear(); // nothing from an earlier count is drawn into this one
+        g.fill = function (...a) { n.fill++; return f.apply(this, a); };
+        g.createRadialGradient = function (...a) { n.grad++; return cg.apply(this, a); };
+        try { A.renderer.draw(A.run, { time: 5, alpha: 0 }); } finally { delete g.fill; delete g.createRadialGradient; }
+        A.renderer.fx.clear();
+        for (let i = 0; i < 40; i++) A.renderer.fx.splash(1000 + i, 3);
+        return { ...n, particles: A.renderer.fx.p.length };
+      });
+      const full = await measure();
+      await t.page.evaluate(() => { window.__CR.renderer.fx.clear(); }); await keep(t, 'S6-03', 'night-full');
+      await t.game('setState', { settings: { quality: 'light' } });
+      const light = await measure();
+      await t.page.waitForFunction(() => window.__game.getState().quality.dpr === Math.min(1.5, window.devicePixelRatio));
+      await t.page.evaluate(() => { window.__CR.renderer.fx.clear(); }); await keep(t, 'S6-03', 'night-light');
+      t.equal(full.particles, 500, 'forty splashes fill the full cap of 500 particles: ' + JSON.stringify(full));
+      t.equal(light.particles, 250, 'and half of it in the light picture: ' + JSON.stringify(light));
+      t.expect(light.fill < full.fill, 'the night frame has fewer filled shapes (the beam cones): ' + full.fill + ' full, ' + light.fill + ' light');
+      t.expect(light.grad <= full.grad, 'and no more gradients (fewer when a lantern is in view): ' + full.grad + ' full, ' + light.grad + ' light');
+      await t.page.waitForFunction(() => window.__game.getState().quality.dpr === Math.min(1.5, window.devicePixelRatio));
+      await t.game('setState', { settings: { quality: 'full' } });
+    },
+  },
 ];

@@ -16,18 +16,19 @@ const VIEW_COLS = { close: 6.5, standard: 7.5, wide: 9 }; // wave 1: 6.5 for eve
 const VIEW_RH = { close: 0.9, standard: 0.98, wide: 1.12 };
 // a lateral gator this many tiles outside the view gets an edge chevron
 const CHEVRON_TILES = 3;
+const LITE_DPR = 1.5; // the lighter picture caps the canvas backing store here (S6-03); the full picture uses up to 2
 const ARRIVE_T = 0.5; // a level fades up out of the dark over this many seconds when play begins (S4-04)
 
 export class Renderer {
   constructor(canvas, fxRng) {
     this.c = canvas; this.g = canvas.getContext('2d');
     this.dpr = 1; this.w = 0; this.h = 0; this.cam = 0; this.camT = 0; this.camX = T * COLS / 2; this.camXT = this.camX; this.shake = 0;
-    this.fx = new Fx(fxRng); this.lights = []; this.art = null; this.cache = new WeakMap(); this.reduced = false; this.landT = 9; this.chompT = 9; this.grace = 0; this.arrive = 0; this.ghost = null; this.deadFx = null; this.hudTop = 64; this.hudBot = 0; this.view = 'standard'; this.portrait = false; this.costume = 'plain'; this.cpSeen = new WeakMap();
+    this.fx = new Fx(fxRng); this.lights = []; this.art = null; this.cache = new WeakMap(); this.reduced = false; this.landT = 9; this.chompT = 9; this.grace = 0; this.arrive = 0; this.ghost = null; this.deadFx = null; this.hudTop = 64; this.hudBot = 0; this.view = 'standard'; this.portrait = false; this.costume = 'plain'; this.cpSeen = new WeakMap(); this.lite = false;
     this.resize();
   }
   resize() {
     // a hidden or collapsed pane reports 0×0; lay out for a minimum size so the camera maths stays finite
-    const dpr = Math.min(2, window.devicePixelRatio || 1), w = Math.max(160, window.innerWidth || 0), h = Math.max(160, window.innerHeight || 0);
+    const dpr = Math.min(this.lite ? LITE_DPR : 2, window.devicePixelRatio || 1), w = Math.max(160, window.innerWidth || 0), h = Math.max(160, window.innerHeight || 0);
     if (w === this.w && h === this.h && dpr === this.dpr) return false;
     this.w = w; this.h = h; this.dpr = dpr;
     this.c.width = Math.round(w * dpr); this.c.height = Math.round(h * dpr);
@@ -50,6 +51,8 @@ export class Renderer {
     this.hudBand = portrait ? 108 : 64;
     this.footBand = portrait ? 78 : 0;
   }
+  // the lighter picture (S6-03): a cap on the canvas backing store and no lantern pools or beam cones at night. The next resize() applies the cap.
+  setLite(on) { this.lite = !!on; }
   setView(v) { if (v === this.view || !VIEW_COLS[v]) return; this.view = v; this.layout(); }
   // horizontal camera: centred board when it fits, otherwise follow camX (world units) clamped to the board
   placeX() {
@@ -617,7 +620,7 @@ export class Renderer {
       gr.addColorStop(0, 'rgba(22,30,74,0.3)'); gr.addColorStop(0.3, 'rgba(12,18,50,0.62)'); gr.addColorStop(1, 'rgba(6,12,36,0.8)'); // moonlight tint and darkness in one pass
       g.fillStyle = gr; g.fillRect(-20, -20, this.w + 40, this.h + 40); }
     // the margin lanterns throw warm pools on the ground
-    if (this.lights.length) { g.save(); g.globalCompositeOperation = 'lighter';
+    if (this.lights.length && !this.lite) { g.save(); g.globalCompositeOperation = 'lighter';
       for (const l of this.lights) { const rr = this.tile * 1.5, gr = g.createRadialGradient(l.x, l.y, 0, l.x, l.y, rr); gr.addColorStop(0, 'rgba(255,190,90,0.38)'); gr.addColorStop(1, 'rgba(255,170,70,0)'); g.fillStyle = gr; g.fillRect(l.x - rr, l.y - rr, rr * 2, rr * 2); }
       g.restore(); }
     // moonlight: gators come back faintly so their shapes read, the eyes glow on top
@@ -647,7 +650,7 @@ export class Renderer {
       // the cone back to a keeper off the top-right of the board
       // feathered: three nested wedges, widest faintest
       const kx = this.bx + this.bw + this.tile, ky = y0 - this.rh * 4;
-      for (const [sp, a] of [[1.25, 0.03], [1, 0.035], [0.7, 0.04]]) { g.fillStyle = `rgba(255,240,180,${a})`; g.beginPath(); g.moveTo(kx, ky); g.lineTo(x - hw * this.k * sp, ym); g.lineTo(x + hw * this.k * sp, ym); g.closePath(); g.fill(); }
+      if (!this.lite) for (const [sp, a] of [[1.25, 0.03], [1, 0.035], [0.7, 0.04]]) { g.fillStyle = `rgba(255,240,180,${a})`; g.beginPath(); g.moveTo(kx, ky); g.lineTo(x - hw * this.k * sp, ym); g.lineTo(x + hw * this.k * sp, ym); g.closePath(); g.fill(); }
     }
     g.restore();
     // telegraphs sit above the darkness at full brightness (the feathered rim band marks the beam edge)

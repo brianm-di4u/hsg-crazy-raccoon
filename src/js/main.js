@@ -24,6 +24,8 @@ const HITSTOP_T = 0.07; // the freeze on a chomp, with the jaws shut on Bandit (
 const FAILS_FOR_ASSIST = 2; // failing the same level this many times in a row puts "Try with Assist" on the fail panel (S2-03)
 const HINT_MIN_T = 2.5; // the level 1 hint stays at least this long, even if the first hop comes at once (S2-19)
 const STORAGE_NOTE = 'Progress will not be saved in this browser mode.';
+const SLOW_FRAME = 0.026; // a median frame over this long (under about 38 per second) over the last QUALITY_FRAMES counts as slow: Auto picture detail goes light (S6-03)
+const QUALITY_FRAMES = 90, FX_LITE = 0.5; // frames in the window (1.5 s at 60); the share of particles the light picture keeps
 const NEWER_NOTE = 'This visit is not being saved, because your save comes from a newer version of the game.';
 const THEME_MUSIC = { day: 'day', noon: 'noon', barn: 'barn', night: 'night' };
 // the ambience scene for each level theme (the music has the theme's own name)
@@ -71,10 +73,24 @@ function applySettings() {
   renderer.setView(s.view);
   document.body.classList.toggle('lure-left', s.lureSide === 'left');
   renderer.costume = activeCostume(App.save);
-  renderer.fx.scale = App.reduced ? 0.4 : 1;
+  setQuality();
+  renderer.fx.scale = App.reduced ? 0.4 : renderer.lite ? FX_LITE : 1;
   document.body.classList.toggle('reduced', App.reduced);
   setAudio(s);
 }
+// Picture detail (S6-03): Auto lightens the picture only after frames were measured slow, never on a device that holds
+// 60; the player can pin Full or Light. The measure is kept for the visit and never saved.
+const frameDts = [];
+let autoLite = false, sinceCheck = 0;
+function setQuality() { renderer.setLite(App.save.settings.quality === 'light' || (App.save.settings.quality === 'auto' && autoLite)); }
+function noteFrame(dt) {
+  if (autoLite || App.save.settings.quality !== 'auto' || !(dt > 0 && dt <= 0.1)) return; // a stall (a hidden tab, a long pause) is not a slow frame
+  frameDts.push(dt); if (frameDts.length > QUALITY_FRAMES) frameDts.shift();
+  if (++sinceCheck < 30 || frameDts.length < QUALITY_FRAMES) return;
+  sinceCheck = 0;
+  if ([...frameDts].sort((a, b) => a - b)[QUALITY_FRAMES >> 1] > SLOW_FRAME) { autoLite = true; applySettings(); kick(); }
+}
+App.quality = () => ({ setting: App.save.settings.quality, lite: renderer.lite, auto: autoLite, dpr: renderer.dpr, fxScale: renderer.fx.scale });
 App.storageBlocked = storageBlocked;
 App.saveIsNewer = saveIsNewer;
 App.newerNote = NEWER_NOTE; // shown on the title until the player moves on, and said once to a screen reader (C4-01)
@@ -309,7 +325,7 @@ App.onMenu = (act, d = {}) => {
     case 'scores': return screens.show('scores', { from: screens.cur });
     case 'title': return showTitle();
     case 'set': {
-      const v = d.k === 'view' || d.k === 'lureSide' ? d.v : d.v === 'true' ? true : d.v === 'false' ? false : d.v === 'null' ? null : +d.v;
+      const v = d.k === 'view' || d.k === 'lureSide' || d.k === 'quality' ? d.v : d.v === 'true' ? true : d.v === 'false' ? false : d.v === 'null' ? null : +d.v;
       s.settings[d.k] = v; persist(); sfx('menu'); return screens.refresh();
     }
     case 'resetSave': return screens.show('confirmReset', { from: 'settings' });
@@ -435,7 +451,7 @@ function handleEvents(run) {
 function frame(now) {
   rafId = 0; inFrame = true;
   try {
-    const dtw = Math.min(0.1, (now - last) / 1000); last = now;
+    const dtw = Math.min(0.1, (now - last) / 1000), raw = (now - last) / 1000; last = now;
     App.time = App.clock != null ? App.clock : App.time + dtw;
     if (renderer.resize()) { if (App.run) renderer.snap(App.run.p.row, App.run.p.x); }
     pollGamepads();
@@ -458,6 +474,7 @@ function frame(now) {
         }
         busy = true;
         alpha = Math.min(1, acc / DT);
+        if (!window.__TEST__) noteFrame(raw); // the automatic picture detail watches real frames; a test sets the tier through the hooks
       } else acc = 0;
       if (run.phase !== 'play' && App.endAt && App.time >= App.endAt && !screens.cur) { App.endAt = 0; levelDone(run); }
       else if (run.phase !== 'play' && App.endAt) busy = true;
@@ -527,7 +544,7 @@ document.addEventListener('visibilitychange', () => {
 });
 
 applySettings();
-installHooks(App, { stepOnce, startLevel, startEndless, showTitle, pauseGame, resumeGame, levelDone, levelById, persist, applySettings, audioState, audioList, audioRender: renderAudio });
+installHooks(App, { stepOnce, startLevel, startEndless, showTitle, pauseGame, resumeGame, levelDone, levelById, persist, applySettings, noteFrame, audioState, audioList, audioRender: renderAudio });
 App.loading++;
 loadArt(typeof MANIFEST !== 'undefined' ? MANIFEST : null, App).then((art) => { renderer.art = art; }).finally(() => { App.loading--; kick(); });
 showTitle();
