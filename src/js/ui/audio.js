@@ -4,7 +4,10 @@
 // (generative scores written as data, ambience beds with sparse one-shots), with this game's own scores and scenes.
 
 let ctx = null, master = null, sfxBus = null, mixBus = null, noiseBuf = null, kit = null;
-const state = { on: true, music: true, amb: true, vol: 0.5, started: false, theme: null, scene: null, playing: null, playingScene: null, tension: 0, hold: false, suspended: false, cues: [], delays: [], cueVol: 0 };
+// The one noise buffer every noise cue plays from. A cue starts it at a random place and (S5-23) only where the whole cue fits before the end,
+// so none can run into the loop seam and click. It was 1 s, started anywhere, and looped.
+const NOISE_SECONDS = 2;
+const state = { noiseSlack: 9, on: true, music: true, amb: true, vol: 0.5, started: false, theme: null, scene: null, playing: null, playingScene: null, tension: 0, hold: false, suspended: false, cues: [], delays: [], cueVol: 0 };
 
 // What the music and ambience buses are set to when their setting is on (the scores and scenes are written to the
 // levels the mix targets, measured by audioRender: music peaks 0.06 to 0.16, ambience under 0.07).
@@ -64,7 +67,7 @@ function unlock() {
     master = makeMaster(ctx, ctx.destination, state.on ? state.vol * MASTER_K : 0);
     sfxBus = ctx.createGain(); sfxBus.gain.value = 0.9; sfxBus.connect(master);
     mixBus = ctx.createGain(); mixBus.gain.value = 1; mixBus.connect(master);
-    noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+    noiseBuf = ctx.createBuffer(1, ctx.sampleRate * NOISE_SECONDS, ctx.sampleRate);
     const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     state.started = true;
     try {
@@ -96,7 +99,7 @@ export function setAudio(settings) {
   levels();
 }
 export function audioState() {
-  return { started: state.started, on: state.on, music: state.music, ambience: state.amb, theme: state.theme, scene: state.scene, ctx: ctx ? ctx.state : 'none', held: state.hold, tension: +state.tension.toFixed(2), kit: !!kit, cues: state.cues.slice(), delays: state.delays.slice(), cueVol: state.cueVol, levels: kit ? { ...kit.levels(), master: +master.gain.value.toFixed(3) } : null, sched: kit ? kit.stats() : null };
+  return { started: state.started, on: state.on, music: state.music, ambience: state.amb, theme: state.theme, scene: state.scene, ctx: ctx ? ctx.state : 'none', held: state.hold, tension: +state.tension.toFixed(2), kit: !!kit, cues: state.cues.slice(), delays: state.delays.slice(), cueVol: state.cueVol, levels: kit ? { ...kit.levels(), master: +master.gain.value.toFixed(3) } : null, sched: kit ? kit.stats() : null, noise: { seconds: noiseBuf ? +noiseBuf.duration.toFixed(2) : 0, slack: +state.noiseSlack.toFixed(3) } };
 }
 
 // Every play of a cue is a little different (S5-04): playCue draws one detune (up to 25 cents) and one gain (up to 1.5 dB
@@ -135,7 +138,9 @@ function noise(dur, { vol = 0.2, at = 0, type = 'bandpass', freq = 1200, q = 1, 
   if (sweep) f.frequency.exponentialRampToValueAtTime(Math.max(40, freq * sweep), t + dur);
   g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + attack); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
   s.connect(f); f.connect(g); g.connect(bus);
-  s.start(t, Math.random()); s.stop(t + dur + 0.02);
+  const off = Math.random() * Math.max(0, noiseBuf.duration - dur - 0.05);
+  state.noiseSlack = Math.min(state.noiseSlack, noiseBuf.duration - (off + dur + 0.02));   // seconds to spare before the end of the buffer (never below 0)
+  s.start(t, off); s.stop(t + dur + 0.02);
 }
 
 // a note that holds its level and then lets go (the ending's chord), unlike tone(), which dies away from the start
@@ -758,7 +763,7 @@ export function stopTheme() { state.theme = null; state.scene = null; state.play
 function cuesOffline(oc, master, list, seed) {
   const keep = [ctx, sfxBus, noiseBuf];
   ctx = oc; sfxBus = oc.createGain(); sfxBus.gain.value = 0.9; sfxBus.connect(master);
-  noiseBuf = oc.createBuffer(1, oc.sampleRate, oc.sampleRate);
+  noiseBuf = oc.createBuffer(1, oc.sampleRate * NOISE_SECONDS, oc.sampleRate);
   const d = noiseBuf.getChannelData(0); let x = (seed || 0x2545F491) >>> 0; for (let i = 0; i < d.length; i++) { x = (Math.imul(x, 1664525) + 1013904223) >>> 0; d[i] = x / 2147483648 - 1; }
   try { for (const c of list) { if (!SFX[c.name]) throw new Error('unknown audio: cue:' + c.name); playCue(c.name, c.args || []); } } finally { [ctx, sfxBus, noiseBuf] = keep; }
 }
