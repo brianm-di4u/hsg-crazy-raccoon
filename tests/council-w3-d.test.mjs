@@ -51,24 +51,26 @@ export const tests = [
     name: 'CL-01 the cues heard most sit between 0.2 and 0.45 as heard and clearly above the loudest music; the music and beds stay in their bands',
     viewports: ['desktop'],
     async run(t) {
-      // The music renders on a fixed seed, so its peak is the same every run. A cue's median of 7 renders is
-      // 0.2 to 0.45 by a wide margin (measured 0.24 to 0.41) and a single repeat only has to stay inside 0.12 to 0.7.
-      // Chance of failing by luck: the play-to-play gain jitter is at most 1.5 dB either way, so a cue whose nominal peak is 0.245 or
-      // more can only reach 0.206 on the worst draw, and four of seven plays would have to fall 3 percent lower still by detune alone:
-      // well under 1 in 100,000. (The landings on wood, sand, straw and grass used to sit at 0.206 to 0.228, 0.2 to 1.2 percent of runs.)
+      // The music renders on a fixed seed, so its peak is the same every run. The cues do not: the noise in a cue starts at a random
+      // place in a looping buffer and the seed does not reach it, so plays of the same cue differ (C4-04: 200 plays of each cue on the
+      // real GPU, single plays from 0.15 to 0.56, the middle 80 percent of every cue inside 0.20 to 0.44). A median of 7 plays left the
+      // band by luck about 1 run in 700 (hop 2,4) and 1 in 200 (land path, before its trim) with 60 plays measured; so the median is of
+      // 15, which leaves the band only if 8 of 15 plays do. The most spread cue (hop 2,4) puts about 9 percent of single plays under 0.2:
+      // C(15,8) x 0.09^8 x 0.91^7 is 1.5 in 100,000, the other cues far less, all sixteen together about 2 in 100,000. A single play
+      // only has to stay inside 0.12 to 0.7 (the extremes over 3,200 plays were 0.147 and 0.561).
       let loud = 0;
       for (const m of ['title', 'map', 'day', 'noon', 'barn', 'night', 'results']) { const r = await render(t, m, 30); loud = Math.max(loud, r.peak); t.expect(r.peak >= 0.06 && r.peak <= 0.16, `music ${m} peak ${r.peak} as heard is between 0.06 and 0.16`); }
       const out = [];
       for (const [name, args] of FREQUENT) {
         const peaks = [];
-        for (let i = 0; i < 7; i++) peaks.push((await render(t, 'cue:' + name, 1.5, { args, seed: 100 + i })).peak);
+        for (let i = 0; i < 15; i++) peaks.push((await render(t, 'cue:' + name, 1.5, { args, seed: 100 + i })).peak);
         const med = median(peaks);
         out.push(`${name}${args.length ? ':' + args.join(',') : ''} ${med}`);
         t.expect(med >= 0.2 && med <= 0.45, `${name} ${args.join(',')}: median peak ${med} is between 0.2 and 0.45`);
         t.expect(Math.min(...peaks) >= 0.12 && Math.max(...peaks) <= 0.7, `${name} ${args.join(',')}: no single play outside 0.12 to 0.7 (${Math.min(...peaks)} to ${Math.max(...peaks)})`);
         t.expect(med >= loud * 1.3, `${name}: median ${med} is clearly above the loudest music ${loud}`);
       }
-      t.log('as heard at the default volume, median of 7: ' + out.join('; ') + `; loudest music ${loud}`);
+      t.log('as heard at the default volume, median of 15: ' + out.join('; ') + `; loudest music ${loud}`);
       for (const b of ['meadow', 'showground', 'loft', 'midnight']) {
         const r = await render(t, b, 30);
         t.expect(r.peak < 0.07 && r.rmsDb >= -52 && r.rmsDb <= -38 && r.longestSilence <= 2, `bed ${b}: peak ${r.peak}, RMS ${r.rmsDb} dBFS as heard`);

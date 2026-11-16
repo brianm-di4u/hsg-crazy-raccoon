@@ -14,7 +14,7 @@ const MUSIC_LEVEL = 1, AMB_LEVEL = 1;
 // the same chain, so its numbers are what the speakers get.
 const MASTER_K = 1.4, SHIPPED_VOLUME = 0.5;
 // After the compressor, a soft clip: straight up to 0.6, then folded smoothly under SOFT_TOP (old value 0.92; then 0.84 still let the oversampled
-// output ring about 14 percent above the curve (0.9322 in 320 renders; at 0.80 the worst of 320 renders is 0.911). The compressor needs a few
+// output ring about 14 percent above the curve: 0.9322 in 320 renders; at 0.80 the worst of 320 renders is 0.911). The compressor needs a few
 // milliseconds to react, so on its own a burst of cues at full volume gets through it; this catches what it lets by.
 const SOFT_TOP = 0.80;
 const SOFT_CLIP = (() => {
@@ -154,11 +154,11 @@ export const SFX = {
   // land: its own sound for each surface (S5-04): a soft thud on grass, a two-note wood tick on the boardwalk, a shaker
   // on sand, a clink on the path, a rustle on straw, a wet knock on a gator's back, a small splash in a pool
   land(surface = 'grass') {
-    const LAND_K = { wood: 1.2, sand: 1.12, straw: 1.17, grass: 1.08 }; // CL-01 follow-up: these sat 0.2056 to 0.2278 (median of 7) beside the 0.2 floor; now about 0.245 so the jitter of up to 1.5 dB cannot reach it
+    const LAND_K = { wood: 1.2, sand: 1.12, straw: 1.17, grass: 1.08, path: 1.19 }; // CL-01 follow-up: these sat 0.2056 to 0.2278 (median of 7) beside the 0.2 floor; now about 0.245 so the jitter of up to 1.5 dB cannot reach it; path (C4-04) 1.19, +1.5 dB, because its noise burst moves a single play by 0.13 to 0.42
     switch (surface) {
       case 'wood': tone(420, 0.05, { type: 'sine', vol: 0.546 * LAND_K.wood }); tone(330, 0.06, { type: 'triangle', vol: 0.473 * LAND_K.wood, at: 0.045 }); noise(0.02, { vol: 0.728 * LAND_K.wood, freq: 2200, q: 1.5 }); break;
       case 'sand': noise(0.09, { vol: 0.9 * LAND_K.sand, type: 'highpass', freq: 4200, q: 0.6 }); noise(0.05, { vol: 0.563 * LAND_K.sand, freq: 1800, q: 0.8, at: 0.03 }); break;
-      case 'path': tone(1850, 0.07, { type: 'sine', vol: 0.63 }); tone(2790, 0.05, { type: 'sine', vol: 0.367, at: 0.012 }); noise(0.025, { vol: 2.1, freq: 3000, q: 1.5 }); break;
+      case 'path': tone(1850, 0.07, { type: 'sine', vol: 0.63 * LAND_K.path }); tone(2790, 0.05, { type: 'sine', vol: 0.367 * LAND_K.path, at: 0.012 }); noise(0.025, { vol: 2.1 * LAND_K.path, freq: 3000, q: 1.5 }); break;
       case 'straw': noise(0.1, { vol: 1.219 * LAND_K.straw, freq: 2600, q: 0.5, sweep: 0.7 }); tone(180, 0.05, { type: 'sine', vol: 0.275 * LAND_K.straw }); break;
       case 'back': tone(170, 0.11, { type: 'sine', vol: 0.634, slide: 0.55 }); noise(0.08, { vol: 1.118, type: 'lowpass', freq: 800, q: 1, sweep: 0.5 }); tone(620, 0.04, { type: 'sine', vol: 0.112, slide: 0.5 }); tone(135, 0.09, { type: 'sine', vol: 0.42, slide: 0.6, at: 0.07 }); break;
       case 'wet': noise(0.2, { vol: 1.456, freq: 1800, q: 0.7, sweep: 0.45 }); tone(560, 0.1, { type: 'sine', vol: 0.218, slide: 0.5 }); break;
@@ -222,7 +222,7 @@ export const SFX = {
 // Set by measuring each cue's peak as heard (audioRender, default volume): the typical play of a cue lands between 0.2
 // and 0.45, the frequent ones (hop, land, bump, pickup, bank) near the bottom, the big events (chomp, splash, win) near
 // the top, all clearly above the music (S5-03, CL-01).
-const CUE_TRIM = { hop: 8.8, bump: 9, splash: 6.5, chomp: 5.5, tele: 4, whip: 6.6, pickup: 4.7, cap: 8.8, wash: 3.8, bank: 4.3, lure: 15, feed: 4.7, sweep: 2.8, hum: 2.9, spotted: 3.5,
+const CUE_TRIM = { hop: 8.8, bump: 9, splash: 6.1, chomp: 5.5, tele: 4, whip: 6.6, pickup: 4.7, cap: 8.8, wash: 3.8, bank: 4.3, lure: 15, feed: 4.7, sweep: 2.8, hum: 2.9, spotted: 3.5,
   chitter: 5, hiss: 2.6, roar: 1.6, streak: 5.7, nudge: 24, ball: 4.8, menu: 21, back: 13.5, denied: 5, win: 4.2, fail: 4.1, star: 15, best: 3.9, par: 2.75, fact: 4.6 };
 function playCue(name, args, jitter = true) {
   const g = ctx.createGain(), keep = sfxBus;
