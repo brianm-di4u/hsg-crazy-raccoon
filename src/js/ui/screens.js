@@ -111,7 +111,7 @@ const TEMPLATES = {
         <section class="zone z${z}${levels.some((L) => L.zone === z && L.n <= app.save.unlocked) ? ' walked' : ''}"><h3>${z}. ${ZONES[z]}</h3><p class="place">${PLACES[z]}</p><div class="lvls">${levels.filter((L) => L.zone === z).map((L) => {
           const open = L.n <= app.save.unlocked, pr = app.save.progress[L.id];
           return `<button type="button" class="lvl ${open ? 'open' : ''}" data-act="${open ? 'level' : 'locked'}" data-v="${L.id}" ${open ? '' : 'disabled'} ${L.n === Math.min(app.save.unlocked, 15) ? 'autofocus' : ''}
-            aria-label="Level ${L.n}: ${esc(L.name)}${open ? (pr ? `, ${pr.stars.filter(Boolean).length} stars${pr.ball ? ', ball found' : ''}` : ', not played') : ', locked'}">
+            aria-label="Level ${L.n}: ${esc(L.name)}${open ? (pr ? `, ${pr.stars.filter(Boolean).length} stars${pr.ball ? ', ball found' : ''}` : ', not played') : `, locked. Clear level ${L.n - 1} first`}">
             <span class="n">${L.n}</span><span class="nm">${esc(L.name)}</span><span class="st">${open ? (pr ? stars(pr.stars) : stars([false, false, false])) : '🔒'}</span>${pr && pr.ball ? '<span class="ballmark" aria-hidden="true">⚾</span>' : ''}</button>`;
         }).join('')}</div></section>`).join('')}
       </div>
