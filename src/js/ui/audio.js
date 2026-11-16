@@ -4,7 +4,7 @@
 // (generative scores written as data, ambience beds with sparse one-shots), with this game's own scores and scenes.
 
 let ctx = null, master = null, sfxBus = null, mixBus = null, noiseBuf = null, kit = null;
-const state = { on: true, music: true, amb: true, vol: 0.5, started: false, theme: null, scene: null, playing: null, playingScene: null, tension: 0, hold: false, suspended: false, cues: [], cueVol: 0 };
+const state = { on: true, music: true, amb: true, vol: 0.5, started: false, theme: null, scene: null, playing: null, playingScene: null, tension: 0, hold: false, suspended: false, cues: [], delays: [], cueVol: 0 };
 
 // What the music and ambience buses are set to when their setting is on (the scores and scenes are written to the
 // levels the mix targets, measured by audioRender: music peaks 0.06 to 0.16, ambience under 0.07).
@@ -96,16 +96,18 @@ export function setAudio(settings) {
   levels();
 }
 export function audioState() {
-  return { started: state.started, on: state.on, music: state.music, ambience: state.amb, theme: state.theme, scene: state.scene, ctx: ctx ? ctx.state : 'none', held: state.hold, tension: +state.tension.toFixed(2), kit: !!kit, cues: state.cues.slice(), cueVol: state.cueVol, levels: kit ? { ...kit.levels(), master: +master.gain.value.toFixed(3) } : null, sched: kit ? kit.stats() : null };
+  return { started: state.started, on: state.on, music: state.music, ambience: state.amb, theme: state.theme, scene: state.scene, ctx: ctx ? ctx.state : 'none', held: state.hold, tension: +state.tension.toFixed(2), kit: !!kit, cues: state.cues.slice(), delays: state.delays.slice(), cueVol: state.cueVol, levels: kit ? { ...kit.levels(), master: +master.gain.value.toFixed(3) } : null, sched: kit ? kit.stats() : null };
 }
 
 // Every play of a cue is a little different (S5-04): playCue draws one detune (up to 25 cents) and one gain (up to 1.5 dB
 // either way) and every note of that cue shares them, so an arpeggio stays in tune with itself.
-let cueDetune = 1, cueGain = 1;
+// cueBase (S5-12): a cue that belongs a moment later (the star pings after the win stinger) is placed on the audio clock, not on a timer,
+// so a busy main thread cannot move it off the arpeggio.
+let cueDetune = 1, cueGain = 1, cueBase = 0;
 function tone(freq, dur, { type = 'square', vol = 0.2, at = 0, slide = 0, attack = 0.005, bus = sfxBus, filter = 0, ftype = 'lowpass', fto = 0, q = 1, trem = 0 } = {}) {
   if (!ctx) return;
   freq *= cueDetune; vol *= cueGain;
-  const t = ctx.currentTime + at, o = ctx.createOscillator(), g = ctx.createGain();
+  const t = ctx.currentTime + cueBase + at, o = ctx.createOscillator(), g = ctx.createGain();
   o.type = type; o.frequency.setValueAtTime(freq, t);
   if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, freq * slide), t + dur);
   g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + attack); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
@@ -127,7 +129,7 @@ function tone(freq, dur, { type = 'square', vol = 0.2, at = 0, slide = 0, attack
 function noise(dur, { vol = 0.2, at = 0, type = 'bandpass', freq = 1200, q = 1, sweep = 0, bus = sfxBus, attack = 0.01 } = {}) {
   if (!ctx) return;
   vol *= cueGain;
-  const t = ctx.currentTime + at, s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+  const t = ctx.currentTime + cueBase + at, s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
   s.buffer = noiseBuf; s.loop = true;
   f.type = type; f.frequency.setValueAtTime(freq, t); f.Q.value = q;
   if (sweep) f.frequency.exponentialRampToValueAtTime(Math.max(40, freq * sweep), t + dur);
@@ -140,7 +142,7 @@ function noise(dur, { vol = 0.2, at = 0, type = 'bandpass', freq = 1200, q = 1, 
 function held(freq, dur, vol, at, type) {
   if (!ctx) return;
   freq *= cueDetune; vol *= cueGain;
-  const t = ctx.currentTime + at, o = ctx.createOscillator(), g = ctx.createGain();
+  const t = ctx.currentTime + cueBase + at, o = ctx.createOscillator(), g = ctx.createGain();
   o.type = type; o.frequency.setValueAtTime(freq, t);
   g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + 0.06); g.gain.setValueAtTime(vol, t + dur - 1.2); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
   o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + dur + 0.02);
@@ -244,10 +246,14 @@ function playCue(name, args, jitter = true) {
   cueGain = jitter ? Math.pow(10, (Math.random() * 2 - 1) * 1.5 / 20) : 1;
   try { SFX[name](...args); } finally { sfxBus = keep; cueDetune = 1; cueGain = 1; }
 }
-export function sfx(name, ...a) {
+export function sfx(name, ...a) { sfxAt(0, name, ...a); }
+// the same, `delay` seconds from now on the audio clock (S5-12)
+export function sfxAt(delay, name, ...a) {
   if (!ctx || !state.on || !SFX[name]) return;
-  state.cues.push(name + (typeof a[0] === 'string' ? ':' + a[0] : '')); state.cueVol = state.vol; if (state.cues.length > 80) state.cues.shift();
-  playCue(name, a);
+  state.cues.push(name + (typeof a[0] === 'string' ? ':' + a[0] : '')); state.delays.push(delay); state.cueVol = state.vol;
+  if (state.cues.length > 80) { state.cues.shift(); state.delays.shift(); }
+  cueBase = delay;
+  try { playCue(name, a); } finally { cueBase = 0; }
 }
 
 // ---- the audio kit (Hot Springs Games, MIT): generative music, ambience beds and a renderer for tests ----------

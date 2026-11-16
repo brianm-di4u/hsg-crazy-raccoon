@@ -262,4 +262,35 @@ export const tests = [
       t.expect(true, 'and the buses are back at their levels');
     },
   },
+
+  // ------------------------------------------------------------------ S5-12 the star pings are on the audio clock
+  {
+    name: 'S5-12 the win stinger, star pings, new best and fact card are all placed on the audio clock at the moment of the win, not left to timers',
+    viewports: ['desktop'],
+    async run(t) {
+      await gesture(t);
+      await t.game('setState', { save: { notebook: [] } });
+      await t.game('act', 'clearSave');
+      const n0 = (await cues(t)).length;
+      await t.game('scene', 'win');
+      // in the same turn of the page: nothing is waiting on a timer, so a busy main thread has nothing to shift
+      const st = (await t.state()).audio, k = st.cues.length - st.cues.lastIndexOf('win');
+      t.expect(st.cues.length > n0, 'cues were played');
+      const tail = st.cues.slice(st.cues.lastIndexOf('win')), delays = st.delays.slice(st.cues.lastIndexOf('win'));
+      t.equal(tail.join(' '), 'win star par best fact', 'the whole sequence is queued at once, in order: ' + tail.join(' '));
+      t.equal(delays.map((d) => +d.toFixed(2)).join(' '), '0 0.5 0.94 1.35 1.9', 'at the old spacing (the first star at 0.5 s, the par star at 0.94 s: the stored plan of level 1 earns those two), as offsets on the audio clock: ' + delays.join(' '));
+      t.equal(k, 5, 'five cues');
+      // with no new best the fact card follows the stars sooner
+      await t.game('scene', 'win');
+      const st2 = (await t.state()).audio, at = st2.cues.lastIndexOf('win'), tail2 = st2.cues.slice(at), d2 = st2.delays.slice(at);
+      t.expect(!tail2.includes('best') && tail2.includes('fact'), 'a repeat clear has no new-best cue: ' + tail2.join(' '));
+      t.equal(+d2[d2.length - 1].toFixed(2), 1.35, 'and its fact card is at 1.35 s');
+      // Sound off queues nothing
+      await t.game('setState', { settings: { sound: false } });
+      const before = (await cues(t)).length;
+      await t.game('scene', 'win');
+      t.equal((await cues(t)).length, before, 'with Sound off no cue is queued');
+      await t.game('setState', { settings: { sound: true } });
+    },
+  },
 ];

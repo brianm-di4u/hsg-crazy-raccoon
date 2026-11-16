@@ -11,7 +11,7 @@ import { Hud } from './ui/hud.js';
 import { Screens, esc } from './ui/screens.js';
 import { dateKey, dailySeed, dayLabel, award, backfill, ACHIEVEMENTS, costumeUnlocked, activeCostume, nextUnlock, recordDaily } from './progress.js';
 import { initInput, initTouch, pollGamepads, readIntent, consumePause, consumeMenu, setEnabled, holdHop } from './ui/input.js';
-import { initAudio, setAudio, sfx, playTheme, setTension, setAmbience, duckMusic, audioState, audioList, renderAudio, pumpAudio, holdMusic, suspendAudio, resumeAudio } from './ui/audio.js';
+import { initAudio, setAudio, sfx, sfxAt, playTheme, setTension, setAmbience, duckMusic, audioState, audioList, renderAudio, pumpAudio, holdMusic, suspendAudio, resumeAudio } from './ui/audio.js';
 import { loadSave, writeSave, DEFAULT_SAVE, storageBlocked, saveIsNewer } from './save.js';
 import { makeRng, hashStr } from './rng.js';
 import { installHooks } from './hooks.js';
@@ -22,6 +22,7 @@ const ALLFACTS = typeof FACTS !== 'undefined' ? [...FACTS.bank, ...FACTS.researc
 const GRACE_T = 0.7; // after Go, Restart or Resume the world holds this long so a hand can find the keys (S1-07)
 const HITSTOP_T = 0.07; // the freeze on a chomp, with the jaws shut on Bandit (S1-03)
 const FAILS_FOR_ASSIST = 2; // failing the same level this many times in a row puts "Try with Assist" on the fail panel (S2-03)
+const STAR_AT = 500, STAR_GAP = 220, BEST_AT = 1350, FACT_AT_BEST = 1900; // ms after the win stinger: the star pings, then a new best, then the fact card (S5-12)
 const HINT_MIN_T = 2.5; // the level 1 hint stays at least this long, even if the first hop comes at once (S2-19)
 const STORAGE_NOTE = 'Progress will not be saved in this browser mode.';
 const SLOW_FRAME = 0.026; // a median frame over this long (under about 38 per second) over the last QUALITY_FRAMES counts as slow: Auto picture detail goes light (S6-03)
@@ -274,10 +275,10 @@ function levelDone(run) {
   }
   screens.show('win', { L, res, fact: again ? null : f, noted: again, next: true, best, bestTime, assist: App.save.settings.assist, earned: App.earned.slice(), nextUp: nextUnlock(s) });
   duckMusic(8, 1600);
-  sfx('win'); res.stars.forEach((b, i) => { if (b) setTimeout(() => sfx(i === 2 ? 'par' : 'star', i), 500 + i * 220); });
-  // after the stars: a new best, then the fact card that went into the Notebook
-  if (best || bestTime) setTimeout(() => sfx('best'), 1350);
-  if (f) setTimeout(() => sfx('fact'), best || bestTime ? 1900 : 1350);
+  // the win stinger, then the star pings, a new best and the fact card, all placed on the audio clock (S5-12) so the arpeggio holds
+  sfx('win'); res.stars.forEach((b, i) => { if (b) sfxAt((STAR_AT + i * STAR_GAP) / 1000, i === 2 ? 'par' : 'star', i); });
+  if (best || bestTime) sfxAt(BEST_AT / 1000, 'best');
+  if (f) sfxAt((best || bestTime ? FACT_AT_BEST : BEST_AT) / 1000, 'fact');
 }
 
 // ---------------------------------------------------------------------------------------------------------------
