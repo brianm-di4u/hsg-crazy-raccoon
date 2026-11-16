@@ -95,7 +95,7 @@ const TEMPLATES = {
       <div class="logo" aria-label="Crazy Raccoon: Gator Farm Dash"><h1><span class="w1">Crazy</span><span class="w2">Raccoon</span></h1><p class="subtitle">Gator Farm Dash</p></div>
       <nav class="menu" aria-label="Main menu">
         ${btn('play', app.save.unlocked > 1 ? 'Play (continue)' : 'Play', 'autofocus', 'btn primary big')}
-        <div class="row2">${btn('endless', app.save.endless.unlocked ? 'Moonlight Run' : 'Moonlight Run 🔒', app.save.endless.unlocked ? '' : 'aria-describedby="lock-note"')}${btn('daily', app.save.endless.unlocked ? 'Daily Run' : 'Daily Run 🔒', app.save.endless.unlocked ? '' : 'aria-describedby="lock-note"')}</div>
+        <div class="row2">${btn('endless', app.save.endless.unlocked ? 'Moonlight Run' : 'Moonlight Run&nbsp;<span aria-hidden="true">🔒</span>', app.save.endless.unlocked ? '' : 'aria-describedby="lock-note"', app.save.endless.unlocked ? 'btn' : 'btn lockbtn')}${btn('daily', app.save.endless.unlocked ? 'Daily Run' : 'Daily Run&nbsp;<span aria-hidden="true">🔒</span>', app.save.endless.unlocked ? '' : 'aria-describedby="lock-note"', app.save.endless.unlocked ? 'btn' : 'btn lockbtn')}</div>
         <div class="row2">${btn('help', 'How to Play')}${btn('notebook', 'Farm Notebook')}</div>
         <div class="row2">${btn('records', 'Records')}${btn('settings', 'Settings')}</div>
         ${btn('credits', 'Credits', '', 'btn small')}
@@ -125,7 +125,7 @@ const TEMPLATES = {
 
   intro: (app, { L, fact, assist }) => `
     <div class="panel" role="dialog" aria-label="Level ${L.n}">
-      <p class="kicker">${L.zone ? `Zone ${L.zone} · ${ZONES[L.zone]}` : 'Moonlight Run'}</p>${L.zone ? `<p class="place">${PLACES[L.zone]}</p>` : ''}
+      <p class="kicker">${L.n ? `Zone ${L.zone} · ${ZONES[L.zone]}` : 'Moonlight Run'}</p>${L.n ? `<p class="place">${PLACES[L.zone]}</p>` : ''}
       ${bandit(['bandit-portrait', 'raccoon-down-stand'], 'side')}
       <h2>${L.n ? `${L.n}. ` : ''}${esc(L.name)}</h2>
       <p class="lead">${esc(L.intro || '')}</p>
