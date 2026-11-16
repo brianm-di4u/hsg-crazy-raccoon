@@ -117,3 +117,17 @@ name as their style reference, is kept as `art-src/pilot-keyart-old.png`. The ne
 `reference/backgrounds/`) and were packed with the usual tools.
 
 `npm test`: 62/62 passed.
+
+## Update: how far the Moonlight Run is proven crossable (wave 4, S3-09)
+
+`node tools/check-levels.mjs --endless N --chunks C` builds N seeded Moonlight Runs of C chunks (six rows each) and asks the
+solver to cross every one, ignoring the lantern. The default is still 12 chunks (row 74); the release proof above is 500 seeds
+at that depth. Players reach well past it, so a deeper run was made on this branch:
+
+| Seeds | Chunks | Rows | Result | Time |
+|---|---|---|---|---|
+| 1 to 10 | 30 | about 180 | 10 of 10 crossable | 1,666 s on a busy machine (about 170 s a seed) |
+| 1 to 12 (council probe, `evidence/seat-3-endless-deep.txt`) | 24 | about 146 | 12 of 12 crossable | not recorded |
+
+The proposed 200 seeds at 30 chunks would take about nine hours at that rate, so it was not run. Chunk 29 holds Old Ruthless,
+so the 30-chunk runs include three boss chunks (9, 19 and 29). To go deeper, run the command above in a quiet moment.

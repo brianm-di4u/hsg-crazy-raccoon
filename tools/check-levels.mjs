@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Proves every campaign level crossable at a human decision pace, sets par times, and (with --write) writes
-// data/levels.json from tools/levels-src.mjs. With --endless N it proves N Moonlight Run seeds' first 12 chunks.
-//   node tools/check-levels.mjs [--write] [--only l3] [--endless 500] [--assist]
+// data/levels.json from tools/levels-src.mjs. With --endless N it proves N Moonlight Run seeds crossable through --chunks C chunks
+// (default 12, about row 74; 30 chunks, about row 180, takes minutes a seed).
+//   node tools/check-levels.mjs [--write] [--only l3] [--endless 500 [--chunks 12]] [--assist]
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
