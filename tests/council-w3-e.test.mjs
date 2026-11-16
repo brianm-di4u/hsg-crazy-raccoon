@@ -188,8 +188,8 @@ export const tests = [
     async run(t) {
       await t.game('scene', 'title'); await t.waitFrames(3);
       const line = await t.page.evaluate(() => document.querySelector('.title-wrap .fineprint').textContent.trim());
-      t.equal(line, 'A made-up caper at a real Hot Springs landmark.', 'the short line');
-      t.expect(!/affiliated/i.test(await panelText(t)) && !(await t.page.evaluate(() => /affiliated/i.test(document.getElementById('screens').textContent))), 'no legal paragraph on the title');
+      t.equal(line, 'A made-up caper at a real Hot Springs landmark. Not affiliated with the Arkansas Alligator Farm.', 'the short line (it says so plainly since wave 4, C4-02)');
+      t.expect(!/Petting Zoo/i.test(await panelText(t)), 'no legal paragraph on the title: the full notice stays in Credits');
       await keep(t, 'S2-21', 'title');
       await t.game('scene', 'credits'); await t.waitFrames(3);
       const c = await panelText(t);

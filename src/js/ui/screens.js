@@ -10,7 +10,7 @@ const field = (label, inner) => `<div class="field"><span class="flabel">${label
 const stars = (st) => `<span class="stars" aria-label="${st.filter(Boolean).length} of 3 stars">${st.map((b) => (b ? '★' : '<span class="off">☆</span>')).join('')}</span>`;
 export const FICTION = 'A made-up raccoon caper at a real Hot Springs landmark. Not affiliated with the Arkansas Alligator Farm and Petting Zoo.';
 // the title carries one short line; the full wording lives in Credits (S2-21)
-export const FICTION_SHORT = 'A made-up caper at a real Hot Springs landmark.';
+export const FICTION_SHORT = 'A made-up caper at a real Hot Springs landmark. Not affiliated with the Arkansas Alligator Farm.';
 const ZONES = ['', 'Front Pits', 'Hatchling Nursery', 'Noon Feeding Show', 'Winter Barn', 'Midnight Raid'];
 // where each zone sits in the farm story, in words the repo already holds (research/town-content.md section 1)
 const PLACES = ['', 'Over the wall from Whittington Ave.', 'Hatchlings, restocked from Louisiana', "Chicken for the gators, and the keeper's call", 'Warm under the heat lamps', 'After dark, when raccoons are about'];

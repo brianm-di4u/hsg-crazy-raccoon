@@ -27,4 +27,40 @@ export const tests = [
       await keep(t, 'S2-25', 'map');
     },
   },
+  // ------------------------------------------------------------------ C4-02 the title says it is not the real farm
+  {
+    name: 'C4-02 the title carries one short "not affiliated" line, in small type, at every size, with the full notice still in Credits',
+    viewports: ['desktop', 'mobile'],
+    async run(t) {
+      const probe = () => t.page.evaluate(() => {
+        const f = document.querySelector('.title-wrap .fineprint'), r = f.getBoundingClientRect(), root = document.getElementById('screens');
+        const bs = [...document.querySelectorAll('.title-wrap button')].map((b) => b.getBoundingClientRect());
+        return {
+          text: f.textContent.trim(), count: [...document.querySelectorAll('.title-wrap .fineprint')].length, size: parseFloat(getComputedStyle(f).fontSize),
+          inside: r.left >= 0 && r.right <= innerWidth + 0.5, vis: r.width > 0 && r.height > 0, bottom: r.bottom, scroll: root.scrollHeight - root.clientHeight,
+          overlap: bs.some((b) => b.left < r.right && b.right > r.left && b.top < r.bottom && b.bottom > r.top),
+          offscreen: bs.filter((b) => b.top < 0 || b.bottom > innerHeight + 0.5 || b.left < 0 || b.right > innerWidth + 0.5).length,
+        };
+      });
+      const full = [[t.vp.width, t.vp.height, 'normal'], [844, 390, 'landscape'], [667, 375, 'small landscape']];
+      for (const [w, h, what] of full) {
+        await t.page.setViewportSize({ width: w, height: h });
+        await t.game('scene', 'title'); await t.waitFrames(4);
+        const p = await probe();
+        t.equal(p.text, 'A made-up caper at a real Hot Springs landmark. Not affiliated with the Arkansas Alligator Farm.', what + ': the line');
+        t.expect(p.count === 1 && p.vis && p.inside && !p.overlap, what + ': one line, visible, inside the screen, clear of the buttons: ' + JSON.stringify(p));
+        t.expect(p.size <= 14, what + ': small type (' + p.size + ' px)');
+        t.equal(p.offscreen, 0, what + ': every title button is on screen');
+        if (what === 'landscape') t.expect(p.scroll <= 1, 'landscape: nothing to scroll: ' + JSON.stringify(p));
+        await keep(t, 'C4-02', what.replace(' ', '-'));
+      }
+      await t.page.setViewportSize({ width: t.vp.width, height: t.vp.height });
+      await t.game('scene', 'title'); await t.waitFrames(3);
+      t.expect(!/affiliated/i.test(await t.page.evaluate(() => window.__CR.lastSaid)), 'the live region announces only the heading, so a screen reader meets the line once, in the page');
+      t.expect(await t.page.evaluate(() => { const f = document.querySelector('.title-wrap .fineprint'); return !f.closest('[aria-hidden="true"]') && !f.hasAttribute('aria-hidden'); }), 'and the line is not hidden from it');
+      await t.game('scene', 'credits'); await t.waitFrames(3);
+      const c = await t.page.evaluate(() => document.querySelector('.panel').textContent);
+      t.expect(c.includes('A made-up raccoon caper at a real Hot Springs landmark. Not affiliated with the Arkansas Alligator Farm and Petting Zoo.'), 'Credits keeps the full notice word for word');
+    },
+  },
 ];
