@@ -10,6 +10,9 @@ const render = (t, name, seconds, opts) => t.page.evaluate(([n, s, o]) => window
 const peaks = { music: 0, amb: 0 };
 const gesture = async (t) => { await t.page.mouse.click(3, 3); await t.page.waitForTimeout(150); };
 const aud = async (t) => (await t.state()).audio;
+// wait until the buses read the wanted levels (they fade, so a fixed sleep reads them mid-fade). A bus that never arrives is
+// not hidden: the timeout ends the wait and the assertions that follow report what it read.
+const busAt = (t, want) => t.page.waitForFunction((w) => { const l = window.__game.getState().audio.levels; return !!l && Object.entries(w).every(([k, v]) => Math.abs(l[k] - v) <= 0.02); }, want, { timeout: 10000 }).catch(() => {});
 const near = (t, a, b, msg, eps = 0.02) => t.expect(Math.abs(a - b) <= eps, `${msg} (got ${a}, wanted ${b})`);
 
 const musicTests = MUSIC.map((name) => ({
@@ -151,7 +154,7 @@ export const tests = [
     async run(t) {
       await gesture(t);
       await t.game('newGame', { level: 'l1' });
-      await t.page.waitForTimeout(400);
+      await busAt(t, { music: 1, amb: 1 });
       let a = await aud(t);
       near(t, a.levels.music, 1, 'music bus is up by default');
       near(t, a.levels.amb, 1, 'ambience bus is up by default');
@@ -165,17 +168,17 @@ export const tests = [
       t.expect(box[0] >= 44 && box[1] >= 44, 'the Ambience buttons are at least 44 px');
 
       await t.page.click('[data-k="music"][data-v="false"]');
-      await t.page.waitForTimeout(700);
+      await busAt(t, { music: 0 });
       a = await aud(t);
       near(t, a.levels.music, 0, 'Music off silences the music bus');
       near(t, a.levels.amb, 1, 'and leaves the ambience');
       t.equal(await t.page.$eval('[data-k="music"][data-v="false"]', (b) => b.getAttribute('aria-pressed')), 'true', 'the button shows it pressed');
       await t.page.click('[data-k="ambience"][data-v="false"]');
-      await t.page.waitForTimeout(700);
+      await busAt(t, { amb: 0 });
       a = await aud(t);
       near(t, a.levels.amb, 0, 'Ambience off silences the ambience bus');
       await t.page.click('[data-k="music"][data-v="true"]');
-      await t.page.waitForTimeout(700);
+      await busAt(t, { music: 1 });
       near(t, (await aud(t)).levels.music, 1, 'Music back on brings the music bus back');
       await t.page.click('[data-k="music"][data-v="false"]');
 
@@ -183,14 +186,14 @@ export const tests = [
       const s = (await t.state()).settings;
       t.equal([s.music, s.ambience], [false, false], 'both settings survive a reload');
       await gesture(t);
-      await t.page.waitForTimeout(300);
+      await busAt(t, { music: 0, amb: 0 });
       a = await aud(t);
       near(t, a.levels.music, 0, 'after the reload the music bus starts silent');
       near(t, a.levels.amb, 0, 'and so does the ambience bus');
       await t.game('scene', 'settings');
       await t.page.click('[data-k="music"][data-v="true"]');
       await t.page.click('[data-k="ambience"][data-v="true"]');
-      await t.page.waitForTimeout(700);
+      await busAt(t, { music: 1, amb: 1 });
       a = await aud(t);
       near(t, a.levels.music, 1, 'music is back');
       near(t, a.levels.amb, 1, 'ambience is back');
