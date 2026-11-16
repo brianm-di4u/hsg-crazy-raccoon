@@ -17,7 +17,7 @@ const newerRaw = (raw) => { try { const s = raw ? JSON.parse(raw) : null; return
 
 export const DEFAULT_SAVE = () => ({
   v: 1,
-  settings: { sound: true, music: true, ambience: true, volume: 0.5, vibration: true, reducedMotion: null, textScale: 1, assist: false, hints: true, view: 'standard', lureSide: 'right', costume: 'plain', tipsOn: true, tipsDone: {} },
+  settings: { sound: true, music: true, ambience: true, volume: 0.5, vibration: true, reducedMotion: null, textScale: 1, assist: false, hints: true, holdHop: false, view: 'standard', lureSide: 'right', costume: 'plain', tipsOn: true, tipsDone: {} },
   progress: {}, // levelId → { stars: [b, b, b], best, bestT, ball }
   unlocked: 1, // highest playable level number
   notebook: [], // fact ids seen
@@ -43,6 +43,7 @@ const num = (v, fallback) => (typeof v === 'number' && Number.isFinite(v) ? v : 
 function sanitize(d) {
   d.settings.ambience = d.settings.ambience !== false; // saves from before the Ambience setting have none: on
   d.settings.vibration = d.settings.vibration !== false; // likewise for Vibration (S3-13)
+  d.settings.holdHop = d.settings.holdHop === true; // Hold to hop is off until it is asked for (S1-09)
   d.settings.volume = Math.min(1, Math.max(0, num(d.settings.volume, 0.5)));
   if (!['left', 'right'].includes(d.settings.lureSide)) d.settings.lureSide = 'right'; // Lure button side (S2-23)
   if (!['close', 'standard', 'wide'].includes(d.settings.view)) d.settings.view = 'standard'; // phone view: saves from before have none

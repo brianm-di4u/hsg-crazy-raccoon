@@ -1,7 +1,9 @@
 // Input: keyboard, gamepads (polled once per frame) and touch folded into latched hop and lure edges for the
-// fixed step. Structure after games/Cart Racing/src/js/ui/input.js (Hot Springs Games, MIT). Hops are edges, not
-// held keys: one hop per keydown, e.repeat ignored. Touch: tap beside Bandit to hop that way, or swipe; acts on
+// fixed step. Structure after games/Cart Racing/src/js/ui/input.js (Hot Springs Games, MIT). Hops are edges: one hop
+// per keydown, e.repeat ignored (the optional Hold to hop setting repeats a held direction, see holdHop). Touch: tap beside Bandit to hop that way, or swipe; acts on
 // pointerup, and a swipe acts as soon as it passes 24 px (shared/LESSONS.md).
+
+import { hopTarget, rowType } from '../sim/player.js';
 
 const KEYS = {
   up: ['ArrowUp', 'KeyW'], down: ['ArrowDown', 'KeyS'], left: ['ArrowLeft', 'KeyA'], right: ['ArrowRight', 'KeyD'],
@@ -15,7 +17,23 @@ let enabled = true;
 // Hops wait in a short line (S1-08): two presses inside one frame both count, one hop is handed to each step of the
 // loop that asks. A third press replaces the second, so the newest intent is kept.
 const pushHop = (d) => { if (I.hops.length < 2) I.hops.push(d); else I.hops[1] = d; };
-export function setEnabled(on) { enabled = on; if (!on) { I.hops.length = 0; I.lure = false; } }
+// Hold to hop (S1-09, an option that is off until the player turns it on): the directions held right now, keyboard and pad,
+// newest last. The step loop asks holdHop() each frame and repeats the newest one once Bandit has landed and it has been held
+// for HOLD_DELAY. A tap, or a press that lands as the key goes up, never repeats.
+export const HOLD_DELAY = 0.1;
+const holds = [];
+const holdOn = (key, dir, pad = -1) => { if (!holds.some((h) => h.key === key)) holds.push({ key, dir, pad, t: performance.now() }); };
+const holdOff = (key) => { const i = holds.findIndex((h) => h.key === key); if (i >= 0) holds.splice(i, 1); };
+export function setEnabled(on) { enabled = on; if (!on) { I.hops.length = 0; I.lure = false; holds.length = 0; } }
+// The direction to repeat now, or null. Only on a safe repeat: Bandit is standing still on the ground, nothing is queued, the
+// tile ahead is free and is not open water. A held key never walks Bandit into a wall, a bump or the river by itself.
+export function holdHop(run, now = performance.now()) {
+  const h = holds[holds.length - 1], p = run.p;
+  if (!h || now - h.t < HOLD_DELAY * 1000 || run.phase !== 'play') return null;
+  if (p.state !== 'idle' || p.on != null || p.queue || I.hops.length) return null;
+  const to = hopTarget(p, run.world, run.L, h.dir);
+  return to && rowType(run.L, to.row) !== 'water' ? h.dir : null;
+}
 
 export function initInput(onKey) {
   window.addEventListener('keydown', (e) => {
@@ -27,9 +45,10 @@ export function initInput(onKey) {
     if (e.repeat) return;
     if (a === 'lure') I.lure = true;
     else if (a === 'pause') I.pause = true;
-    else pushHop(a);
+    else { pushHop(a); holdOn('k:' + e.code, a); }
   });
-  window.addEventListener('blur', () => { I.hops.length = 0; I.lure = false; });
+  window.addEventListener('keyup', (e) => holdOff('k:' + e.code));
+  window.addEventListener('blur', () => { I.hops.length = 0; I.lure = false; holds.length = 0; });
 }
 
 // Gamepads (standard mapping): d-pad or left stick (edge) hop, A hops up, X / B / LB lure, Start pause.
@@ -37,16 +56,21 @@ const prev = {};
 export function pollGamepads() {
   const pads = navigator.getGamepads ? navigator.getGamepads() : [];
   let any = false;
+  for (let i = holds.length - 1; i >= 0; i--) if (holds[i].pad >= 0 && !pads[holds[i].pad]?.connected) holds.splice(i, 1); // a pad unplugged while held
   for (const p of pads) {
     if (!p || !p.connected) continue;
     const b = (i) => !!(p.buttons[i] && (p.buttons[i].pressed || p.buttons[i].value > 0.5));
-    const ax = p.axes[0] || 0, ay = p.axes[1] || 0;
-    const now = { up: b(12) || ay < -0.6, down: b(13) || ay > 0.6, left: b(14) || ax < -0.6, right: b(15) || ax > 0.6, a: b(0), b: b(1), x: b(2), lb: b(4), start: b(9) };
+    // the stick gives one direction, along the axis it is pushed furthest (S1-13): a diagonal push hops the way it leans most
+    const ax = p.axes[0] || 0, ay = p.axes[1] || 0, sx = Math.abs(ax) >= Math.abs(ay) ? ax : 0, sy = Math.abs(ay) > Math.abs(ax) ? ay : 0;
+    const now = { up: b(12) || sy < -0.6, down: b(13) || sy > 0.6, left: b(14) || sx < -0.6, right: b(15) || sx > 0.6, a: b(0), b: b(1), x: b(2), lb: b(4), start: b(9) };
     const o = prev[p.index] || {};
     const edge = (k) => now[k] && !o[k];
     if (Object.values(now).some(Boolean)) { any = true; I.last = 'gamepad'; }
     const m = I.menu;
-    for (const d of ['up', 'down', 'left', 'right']) if (edge(d)) { if (enabled) pushHop(d); m[d] = true; }
+    for (const d of ['up', 'down', 'left', 'right']) {
+      if (edge(d)) { if (enabled) { pushHop(d); holdOn('p:' + p.index + d, d, p.index); } m[d] = true; }
+      else if (!now[d]) holdOff('p:' + p.index + d);
+    }
     if (edge('a')) { if (enabled) pushHop('up'); m.ok = true; }
     if (edge('x') || edge('lb')) I.lure = true;
     if (edge('b')) { I.lure = true; m.cancel = true; }

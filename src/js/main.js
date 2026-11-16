@@ -10,7 +10,7 @@ import { loadArt } from './gfx/art.js';
 import { Hud } from './ui/hud.js';
 import { Screens, esc } from './ui/screens.js';
 import { dateKey, dailySeed, dayLabel, award, backfill, ACHIEVEMENTS, costumeUnlocked, activeCostume, nextUnlock, recordDaily } from './progress.js';
-import { initInput, initTouch, pollGamepads, readIntent, consumePause, consumeMenu, setEnabled } from './ui/input.js';
+import { initInput, initTouch, pollGamepads, readIntent, consumePause, consumeMenu, setEnabled, holdHop } from './ui/input.js';
 import { initAudio, setAudio, sfx, playTheme, setTension, setAmbience, duckMusic, audioState, audioList, renderAudio, holdMusic, suspendAudio, resumeAudio } from './ui/audio.js';
 import { loadSave, writeSave, DEFAULT_SAVE, storageBlocked, saveIsNewer } from './save.js';
 import { makeRng, hashStr } from './rng.js';
@@ -451,6 +451,7 @@ function frame(now) {
         if (App.grace > 0 || App.stop > 0) { App.grace = Math.max(0, App.grace - dtw); App.stop = Math.max(0, App.stop - dtw); acc = 0; } else acc += dtw;
         while (acc >= DT && n < 12 && App.stop <= 0) {
           const intent = n === 0 ? readIntent() : { hop: null, lure: false };
+          if (n === 0 && !intent.hop && App.save.settings.holdHop) intent.hop = holdHop(run); // a held direction keeps hopping (S1-09, off by default)
           if (App.lureReq) { intent.lure = true; App.lureReq = false; }
           stepOnce(intent); acc -= DT; n++;
         }

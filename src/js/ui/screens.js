@@ -297,6 +297,8 @@ const TEMPLATES = {
       <p class="sub">Phone view: how much of the board shows when the phone is held upright. Wide shows every column.</p>
       ${field('First-run tips', seg('tipsOn', s.tipsOn, [[true, 'On'], [false, 'Off']]))}
       <p class="sub">Short hints in the first levels. ${btn('tipsAgain', 'Show tips again', '', 'btn small')}</p>
+      ${field('Hold to hop', seg('holdHop', s.holdHop, [[false, 'Off'], [true, 'On']]))}
+      <p class="sub">Keep a direction key or pad direction held to keep hopping across open ground. It stops at water, walls and gators.</p>
       ${field('Assist', seg('assist', s.assist, [[false, 'Off'], [true, 'On']]))}
       <p class="sub">Assist: slower gators, longer warnings, +2 tail rings (no par star).</p>
       <nav class="menu row">${btn('back', 'Done', 'autofocus data-back', 'btn primary')}${btn('resetSave', 'Reset progress', 'data-confirm="1"', 'btn small danger')}</nav>
