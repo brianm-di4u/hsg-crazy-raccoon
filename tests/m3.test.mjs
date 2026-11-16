@@ -84,6 +84,7 @@ export const tests = [
       let s = await t.game('act', 'hop', 'up'); s = await t.game('step', 22);
       t.equal(s.run.ticket, true, 'ticket picked up');
       await t.game('setState', { player: { row: ball.r - 1, col: ball.c } });
+      await t.page.evaluate(() => { window.__CR.run.p.invT = 5; }); // the ball's tile can hold a gator's open jaws; a bitten landing picks nothing up (P-N03)
       s = await t.game('act', 'hop', 'up'); s = await t.game('step', 22);
       t.equal(s.run.ball, true, 'ball picked up');
       // finish the level from a row next to the den
