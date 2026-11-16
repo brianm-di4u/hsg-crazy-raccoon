@@ -95,4 +95,87 @@ export const tests = [
       await t.game('setState', { settings: { reducedMotion: null } });
     },
   },
+  // ------------------------------------------------------------------ S5-11 cues for the full bag, the respawn, the par clock and the last ring
+  {
+    name: 'S5-11 the four new cues are heard between 0.2 and 0.45, and nothing clips at full volume',
+    viewports: ['desktop'],
+    async run(t) {
+      // The noise in the respawn swoosh starts at a random place in the buffer, so single plays differ (S5-23 keeps it off the seam). The median of
+      // 7 plays leaves the band only if 4 of 7 do, and a play is 1.5 dB at most from the nominal peak, so with the nominal peak at least 0.24 it cannot.
+      const out = [];
+      for (const [name, args] of [['full', []], ['respawn', []], ['tick', [5]], ['tick', [4]], ['lastring', []]]) {
+        const peaks = [];
+        for (let i = 0; i < 7; i++) peaks.push((await render(t, 'cue:' + name, 1.8, { args, seed: 400 + i })).peak);
+        const med = median(peaks);
+        out.push(`${name}${args.length ? ':' + args.join(',') : ''} ${med}`);
+        t.expect(med >= 0.2 && med <= 0.45, `${name} ${args.join(',')}: median peak ${med} is between 0.2 and 0.45`);
+        t.expect(Math.min(...peaks) >= 0.12 && Math.max(...peaks) <= 0.7, `${name}: no single play outside 0.12 to 0.7 (${Math.min(...peaks)} to ${Math.max(...peaks)})`);
+        for (let i = 0; i < 5; i++) { const r = await render(t, 'cue:' + name, 1.8, { args, volume: 1, seed: 500 + i }); t.expect(r.peak < 0.95, `${name} at volume 1: peak ${r.peak}`); }
+      }
+      t.log('as heard at the default volume, median of 7: ' + out.join('; '));
+      const busy = [{ name: 'chomp' }, { name: 'lastring' }, { name: 'full' }, { name: 'respawn' }, { name: 'tick', args: [3] }, { name: 'win' }, { name: 'best' }];
+      for (const [piece, intensity] of [['barn', 1], ['night', 1]]) {
+        const r = await render(t, piece, 9, { volume: 1, intensity, cues: busy, cueAt: 4, params: { tension: 1 } });
+        t.expect(r.peak < 0.95, `${piece} with the new cues among the loud ones at volume 1: peak ${r.peak}`);
+      }
+    },
+  },
+  {
+    name: 'S5-11 a full bag, a respawn, the last ring and the par clock are each heard, once, where they happen',
+    viewports: ['desktop'],
+    async run(t) {
+      await gesture(t);
+      // paws full: three snacks carried, a fourth on the next tile
+      await t.game('newGame', { level: 'l1', intro: false, seed: 5 }); await t.game('pause');
+      await t.game('setState', { player: { row: 0, col: 4 }, carry: ['pecan', 'pecan', 'pecan'] });
+      await t.page.evaluate(() => { window.__CR.run.items.push({ id: 9999, r: 1, c: 4, k: 'pecan', st: 'free', washed: false }); });
+      const full0 = count(await cues(t), 'full');
+      await t.game('act', 'hop', 'up');
+      await t.stepUntil((s) => s.run.player.row === 1 && s.run.player.state === 'idle', { max: 200, chunk: 5, label: 'the hop lands' });
+      t.equal(count(await cues(t), 'full') - full0, 1, 'one "full" cue when a fourth snack will not fit');
+      // a bag with room is not "full"
+      await t.game('newGame', { level: 'l1', intro: false, seed: 5 }); await t.game('pause');
+      await t.game('setState', { player: { row: 0, col: 4 } });
+      await t.page.evaluate(() => { window.__CR.run.items.push({ id: 9999, r: 1, c: 4, k: 'pecan', st: 'free', washed: false }); });
+      const full1 = count(await cues(t), 'full');
+      await t.game('act', 'hop', 'up');
+      await t.stepUntil((s) => s.run.player.row === 1 && s.run.player.state === 'idle', { max: 200, chunk: 5, label: 'the hop lands' });
+      t.equal(count(await cues(t), 'full') - full1, 0, 'no "full" cue when there is room');
+      // the last ring and the respawn: a Moonlight Run, two rings, the lantern catches Bandit
+      await t.game('newGame', { mode: 'endless', seed: 777002 }); await t.game('pause');
+      await t.game('setState', { rings: 2 });
+      const last0 = count(await cues(t), 'lastring'), res0 = count(await cues(t), 'respawn');
+      await t.stepUntil((s) => s.run.rings === 1, { max: 20000, chunk: 100, label: 'the lantern catches Bandit once' });
+      t.equal(count(await cues(t), 'lastring') - last0, 1, 'one "last ring" cue when the second-to-last ring goes');
+      await t.stepUntil((s) => s.run.player.state !== 'dead', { max: 2000, chunk: 5, label: 'Bandit is back on his feet' });
+      t.equal(count(await cues(t), 'respawn') - res0, 1, 'one respawn swoosh when Bandit gets up');
+      await t.game('setState', { rings: 3 });
+      t.equal(count(await cues(t), 'lastring') - last0, 1, 'a ring picked up or set does not play it again');
+      // the par clock: five ticks in the last five seconds before par, none with Assist, none after par
+      await t.game('newGame', { level: 'l1', intro: false, seed: 5, assist: false }); await t.game('pause');
+      const par = (await t.state()).level.par;
+      t.equal(par, 11, 'level 1 has a par of 11 s (this test counts the ticks from it)');
+      const ticks = async () => count(await cues(t), 'tick');
+      const tick0 = await ticks();
+      await t.stepUntil((s) => s.run.t >= 5.8, { max: 5000, chunk: 5, label: 'just before the warning' });
+      t.equal((await ticks()) - tick0, 0, 'no tick more than five seconds before par');
+      await t.stepUntil((s) => s.run.t >= 6.3, { max: 5000, chunk: 5, label: 'into the warning' });
+      t.equal((await ticks()) - tick0, 1, 'the first tick five seconds before par');
+      await t.stepUntil((s) => s.run.t >= 10.3, { max: 5000, chunk: 5, label: 'the last second before par' });
+      t.equal((await ticks()) - tick0, 5, 'one tick a second for the last five seconds');
+      await t.stepUntil((s) => s.run.t >= 12, { max: 5000, chunk: 5, label: 'past par' });
+      t.equal((await ticks()) - tick0, 5, 'and none once par has gone');
+      // with Assist there is no par star, so no clock
+      await t.game('newGame', { level: 'l1', intro: false, seed: 5, assist: true }); await t.game('pause');
+      const tick1 = await ticks();
+      await t.stepUntil((s) => s.run.t >= 12, { max: 5000, chunk: 5, label: 'past par with Assist' });
+      t.equal((await ticks()) - tick1, 0, 'Assist has no par clock');
+      await t.game('newGame', { level: 'l1', intro: false, seed: 5, assist: false });
+      // the Moonlight Run has no par
+      await t.game('newGame', { mode: 'endless', seed: 777003 }); await t.game('pause');
+      const tick2 = await ticks();
+      await t.stepUntil((s) => s.run.t >= 12, { max: 5000, chunk: 5, label: 'twelve seconds of Moonlight Run' });
+      t.equal((await ticks()) - tick2, 0, 'the Moonlight Run has no par clock');
+    },
+  },
 ];

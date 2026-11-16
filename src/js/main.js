@@ -372,9 +372,24 @@ function stepOnce(input = {}) {
   cueHazards(run);
   feelTension(run);
   feelTips(run);
+  cueParClock(run);
   if (hintOff && run.hops >= 1 && run.steps >= hintOff) { hintOff = 0; hud.hint(''); }
 }
 App.stepOnce = stepOnce;
+
+// the par star's clock is heard in its last seconds (S5-11): a tick a second for the last PAR_WARN, while the star can still be won
+// (a level, not the Moonlight Run, and not with Assist, which has no par star)
+const PAR_WARN = 5;
+const parTick = new WeakMap();
+function cueParClock(run) {
+  const par = run.L.par;
+  if (!par || run.assist || run.phase !== 'play') return;
+  const left = par - run.t;
+  if (left > PAR_WARN || left <= 0) return;
+  const n = Math.ceil(left);
+  if (parTick.get(run) === n) return;
+  parTick.set(run, n); sfx('tick', n);
+}
 
 // the hazard telegraph is heard as well as seen: a jaw warning ('tele') the step a gator near Bandit starts one,
 // and the feeding-show cue ('feed') the step a drumstick shadow appears. Tracked here, not in the sim.
@@ -433,6 +448,7 @@ function handleEvents(run) {
       case 'die':
         sfx({ chomp: 'chomp', spotted: 'spotted', swept: 'sweep', caught: 'hum' }[e.cause] || 'splash'); buzz('hurt');
         if (e.cause === 'chomp') { App.save.stats.chomps++; App.stop = HITSTOP_T; checkDerived(); } if (e.cause === 'splash') App.save.stats.splashes++;
+        if (run.rings === 1) sfx('lastring'); // one tail ring left (S5-11)
         App.say({ chomp: 'Chomped!', splash: 'Splash!', swept: 'Swept away!', spotted: 'Spotted!', caught: 'Caught by the lantern!' }[e.cause] + ` ${run.rings} tail rings left.`);
         break;
       case 'pickup': if (e.item === 'pecan' || e.item === 'berry') hud.pulse(); sfx(e.item === 'cap' ? 'cap' : e.item === 'ball' ? 'ball' : 'pickup'); if (e.item === 'ball') App.say('You found the lost home-run ball!'); if (e.item === 'ring') App.say(`A tail ring! ${run.rings} tail rings left.`); break;
@@ -442,7 +458,8 @@ function handleEvents(run) {
       case 'streak': sfx('streak', e.mult); if (e.mult >= 4) earn('streak4'); break;
       case 'whipWind': sfx('whip'); break;
       case 'fling': sfx('whip'); break;
-      case 'full': hud.hint('Paws full!'); setTimeout(() => hud.hint(''), 900); break;
+      case 'full': sfx('full'); hud.hint('Paws full!'); setTimeout(() => hud.hint(''), 900); break;
+      case 'respawn': sfx('respawn'); break;
       case 'win': App.say('Home free!'); buzz('win'); break;
       default: break;
     }

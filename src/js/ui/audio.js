@@ -199,6 +199,14 @@ export const SFX = {
   win() { [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, 0.2, { type: 'square', vol: 0.08, at: i * 0.11, filter: 2600 })); },
   fail() { [392, 349, 311, 262].forEach((f, i) => tone(f, 0.25, { type: 'triangle', vol: 0.09, at: i * 0.16 })); },
   star(i) { tone(1047 * Math.pow(1.26, i), 0.18, { type: 'square', vol: 0.07, filter: 3000 }); },
+  // a bag that is full and a pick-up that cannot go in (S5-11): two soft blips, the second lower
+  full() { tone(740, 0.06, { type: 'triangle', vol: 0.1 }); tone(587, 0.09, { type: 'triangle', vol: 0.09, at: 0.08 }); },
+  // Bandit is back on his feet at the last checkpoint: a short rising swoosh (S5-11)
+  respawn() { noise(0.34, { vol: 0.1, freq: 500, q: 0.8, sweep: 4, attack: 0.12 }); tone(330, 0.3, { type: 'sine', vol: 0.09, slide: 2, attack: 0.08 }); },
+  // the par clock in its last seconds (S5-11): a dry tick, alternating a little in pitch
+  tick(n = 0) { tone(n % 2 ? 1250 : 1500, 0.035, { type: 'square', vol: 0.05, filter: 2600 }); },
+  // one tail ring left (S5-11): a low double pulse, like a heartbeat, a beat after the bite so the two do not pile up
+  lastring() { tone(82, 0.2, { type: 'sine', vol: 0.3, slide: 0.7, at: 0.45 }); tone(82, 0.24, { type: 'sine', vol: 0.24, slide: 0.7, at: 0.68 }); },
   // rewards at the end of a level (S5-16): a new best, the par star, a fact card for the Notebook
   best() { [784, 1047, 1319, 1568].forEach((f, i) => tone(f, 0.22, { type: 'triangle', vol: 0.11, at: i * 0.07 })); tone(2093, 0.5, { type: 'sine', vol: 0.06, at: 0.28 }); },
   par() { tone(1760, 0.04, { type: 'square', vol: 0.05, filter: 3000 }); tone(1760, 0.04, { type: 'square', vol: 0.05, at: 0.1, filter: 3000 }); tone(2349, 0.4, { type: 'sine', vol: 0.12, at: 0.2 }); tone(3136, 0.4, { type: 'sine', vol: 0.05, at: 0.2 }); },
@@ -223,7 +231,8 @@ export const SFX = {
 // and 0.45, the frequent ones (hop, land, bump, pickup, bank) near the bottom, the big events (chomp, splash, win) near
 // the top, all clearly above the music (S5-03, CL-01).
 const CUE_TRIM = { hop: 8.8, bump: 9, splash: 6.1, chomp: 5.5, tele: 4, whip: 6.6, pickup: 4.7, cap: 8.8, wash: 3.8, bank: 4.3, lure: 15, feed: 4.7, sweep: 2.8, hum: 2.9, spotted: 3.5,
-  chitter: 5, hiss: 2.6, roar: 1.6, streak: 5.7, nudge: 24, ball: 4.8, menu: 21, back: 13.5, denied: 5, win: 4.2, fail: 4.1, star: 15, best: 3.9, par: 2.75, fact: 4.6 };
+  chitter: 5, hiss: 2.6, roar: 1.6, streak: 5.7, nudge: 24, ball: 4.8, menu: 21, back: 13.5, denied: 5, win: 4.2, fail: 4.1, star: 15, best: 3.9, par: 2.75, fact: 4.6,
+  full: 4.5, respawn: 4.5, tick: 24, lastring: 1.4 };
 function playCue(name, args, jitter = true) {
   const g = ctx.createGain(), keep = sfxBus;
   g.gain.value = CUE_TRIM[name] ?? 1; g.connect(sfxBus); sfxBus = g;
