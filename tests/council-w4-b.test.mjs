@@ -79,4 +79,51 @@ export const tests = [
       await keep(t, 'S4-12', 'credits');
     },
   },
+  // ------------------------------------------------------------------ S6-17 the Moonlight Run's course is shown and can be run again
+  {
+    name: 'S6-17 the Over panel shows the Moonlight Run course number and "Run this course again" plays the same night; the Daily Run keeps its own button',
+    viewports: ['desktop', 'mobile'],
+    async run(t) {
+      const lose = async () => {
+        await t.game('pause');
+        await t.game('setState', { rings: 1 });
+        await t.stepUntil((s) => s.run.phase !== 'play', { max: 20000, chunk: 200, label: 'the lantern catches Bandit' });
+        await t.game('resume');
+        await t.page.waitForFunction(() => window.__game.getState().screen === 'over', null, { timeout: 15000 });
+      };
+      const course = () => t.page.evaluate(() => { const r = window.__CR.run; return { seed: r.seed, rows: JSON.stringify(r.L.rows.slice(0, 14)), steps: r.steps, daily: r.daily }; });
+      // a Moonlight Run on a chosen course
+      await t.game('act', 'unlockAll');
+      await t.game('newGame', { mode: 'endless', seed: 777001 });
+      const first = await course();
+      t.equal(first.seed, 777001, 'the run is on course 777001');
+      await lose();
+      let text = await t.page.evaluate(() => document.querySelector('.panel').textContent);
+      t.expect(/Course 777001./.test(text), 'the Over panel shows the course number: ' + text.slice(0, 160));
+      const labels = await t.page.$$eval('#screens .menu button', (b) => b.map((x) => x.textContent.trim()));
+      t.expect(labels.includes('Run this course again') && labels.includes('Run again'), 'both buttons are offered: ' + labels.join(', '));
+      await t.checkLayout({ allowScrollY: true });
+      await keep(t, 'S6-17', 'over');
+      await t.page.click('[data-act="sameCourse"]');
+      await t.page.waitForFunction(() => window.__game.getState().screen === null && window.__game.getState().scene === 'play', null, { timeout: 5000 });
+      const again = await course();
+      t.equal(again.seed, 777001, 'the same course number');
+      t.equal(again.rows, first.rows, 'and the same first rows');
+      t.expect(again.steps < 40 && !again.daily, 'a fresh run (steps ' + again.steps + '), not the daily');
+      // "Run again" is still a new random course, and a run with no chosen seed is not the daily's
+      await lose();
+      await t.page.evaluate(() => { window.__CR.nextSeed = null; }); // the test hook keeps the seed it was given; a player has none
+      await t.page.click('[data-act="endless"]');
+      await t.page.waitForFunction(() => window.__game.getState().screen === 'intro', null, { timeout: 5000 });
+      await t.game('act', 'menu', 'go');
+      const fresh = await t.page.evaluate(() => ({ seed: window.__CR.run.seed, daily: window.__CR.run.daily }));
+      t.expect(fresh.seed !== 777001 && !fresh.daily && Number.isInteger(fresh.seed), 'Run again plays a new random course: ' + fresh.seed);
+      // the Daily Run is the same course all day already: it shows no course number and offers no second button
+      await t.game('act', 'menu', 'daily'); await t.game('act', 'menu', 'go');
+      t.expect(await t.page.evaluate(() => !!window.__CR.run.daily), 'a Daily Run is running');
+      await lose();
+      text = await t.page.evaluate(() => document.querySelector('.panel').textContent);
+      t.expect(!/Course d/.test(text) && !(await t.page.$('[data-act="sameCourse"]')), 'the Daily Run panel has no course line and no second button');
+    },
+  },
 ];

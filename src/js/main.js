@@ -216,7 +216,7 @@ function levelDone(run) {
     persist();
     if (daily) { earn('daily1'); if (daily.streak >= 7) earn('daily7'); }
     checkDerived();
-    screens.show('over', { res: { ...res, rows }, rank, entry, newBest, daily, earned: App.earned.slice(), cause: run.p.cause });
+    screens.show('over', { res: { ...res, rows }, rank, entry, newBest, daily, earned: App.earned.slice(), cause: run.p.cause, seed: run.daily ? null : run.seed });
     App.pendingScore = rank >= 0 ? entry : null;
     setEnabled(false); sfx(newBest ? 'best' : 'fail');
     return;
@@ -321,6 +321,7 @@ App.onMenu = (act, d = {}) => {
     case 'map': App.scene = 'title'; App.run = null; hud.show(false); showTitle(); playTheme('map', 'meadow'); return screens.show('map', { levels: LEVELS });
     case 'quit': return App.run && App.run.mode === 'endless' ? screens.show('confirmQuit', { from: 'pause' }) : App.onMenu('map');
     case 'quitYes': return showTitle();
+    case 'sameCourse': return App.run && App.run.mode === 'endless' && !App.run.daily ? startEndless({ seed: App.run.seed, intro: false, grace: true }) : undefined; // the Over panel's "Run this course again" (S6-17)
     case 'saveScore': commitScore(); return screens.show('scores');
     case 'back': {
       const from = screens.data.from;

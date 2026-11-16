@@ -189,16 +189,17 @@ const TEMPLATES = {
       <nav class="menu row">${btn('restart', 'Try again', 'autofocus', 'btn primary')}${offerAssist ? btn('assistOn', 'Try with Assist', 'aria-describedby="assist-why"') : ''}${btn('map', 'Farm map', 'data-back')}</nav>
     </div>`,
 
-  over: (app, { res, rank, newBest, daily, earned = [], cause }) => `
+  over: (app, { res, rank, newBest, daily, earned = [], cause, seed = null }) => `
     <div class="panel" role="dialog" aria-label="Moonlight Run over">
       <h2>Run over!</h2>
       <p class="lead">${res.rows} rows · ${res.score.toLocaleString('en-US')} points. ${causeText(cause, app.run && app.run.steps)}</p>
       <p class="tip">${tipFor(cause)}</p>
       ${newBest ? '<p><span class="newbest">New personal best!</span></p>' : ''}
+      ${seed != null ? `<p class="course">Course ${seed}. The same number is always the same night.</p>` : ''}
       ${daily ? `<p class="dailyline">Daily Run, ${esc(dayLabel(daily.key))}: best today ${daily.best.rows} rows, ${daily.best.score.toLocaleString('en-US')} points${daily.newBest && !daily.first ? ' · new best today!' : ''}. ${daily.streak}-day streak.</p>` : ''}
       ${earned.length ? `<p class="found">★ Achievement${earned.length > 1 ? 's' : ''}: ${earned.map((a) => esc(achName(a))).join(', ')}</p>` : ''}
       ${rank >= 0 ? `<form class="initials" data-form="initials"><label for="ini">Top ten! Your initials</label><input id="ini" maxlength="3" autocomplete="off" spellcheck="false" value="${esc(app.save.lastInitials || '')}" aria-describedby="ini-help"><small id="ini-help">Up to 3 letters</small>${btn('saveScore', 'Save score', '', 'btn primary')}</form>` : ''}
-      <nav class="menu row">${btn(daily ? 'daily' : 'endless', 'Run again', rank >= 0 ? '' : 'autofocus', rank >= 0 ? 'btn' : 'btn primary')}${btn('scores', 'High scores')}${btn('title', 'Title', 'data-back')}</nav>
+      <nav class="menu row">${btn(daily ? 'daily' : 'endless', 'Run again', rank >= 0 ? '' : 'autofocus', rank >= 0 ? 'btn' : 'btn primary')}${seed != null ? btn('sameCourse', 'Run this course again') : ''}${btn('scores', 'High scores')}${btn('title', 'Title', 'data-back')}</nav>
     </div>`,
 
   scores: (app) => `
