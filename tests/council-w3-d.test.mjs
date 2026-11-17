@@ -198,16 +198,19 @@ export const tests = [
     async run(t) {
       await gesture(t);
       await t.game('newGame', { level: 'l1' }); await t.game('pause');
-      const die = async (cause) => {
+      // A gator starting a jaw warning in the same step adds a hiss of its own after the death cue, so the death cue is counted, not taken as the last one.
+      const die = async (cause, cue) => {
+        const before = count(await cues(t), cue);
         await t.page.evaluate((c) => { const r = window.__CR.run; r.ev.push({ k: 'die', cause: c, x: r.p.x, row: r.p.row }); }, cause);
         await t.game('step', 1);
-        return (await cues(t)).slice(-1)[0];
+        return count(await cues(t), cue) - before;
       };
-      t.equal(await die('swept'), 'sweep', 'swept away: a rush of current');
-      t.equal(await die('caught'), 'hum', 'caught by the lantern: a hum');
-      t.equal(await die('spotted'), 'spotted', 'spotted by the flashlight keeps its pings');
-      t.equal(await die('splash'), 'splash', 'splash keeps the splash');
-      t.equal(await die('chomp'), 'chomp', 'chomp keeps the chomp');
+      t.equal(await die('swept', 'sweep'), 1, 'swept away: a rush of current');
+      t.equal(await die('caught', 'hum'), 1, 'caught by the lantern: a hum');
+      t.equal(await die('spotted', 'spotted'), 1, 'spotted by the flashlight keeps its pings');
+      t.equal(await die('splash', 'splash'), 1, 'splash keeps the splash');
+      t.equal(await die('chomp', 'chomp'), 1, 'chomp keeps the chomp');
+      t.equal(await die('swept', 'hum'), 0, 'and being swept away does not hum');
       await t.game('scene', 'help'); await t.waitFrames(3);
       const txt = await t.page.evaluate(() => document.querySelector('.panel').textContent.replace(/\s+/g, ' '));
       t.expect(/Listen for the warning pop before a gator bites\./.test(txt), 'Help has the line about the warning pop');
