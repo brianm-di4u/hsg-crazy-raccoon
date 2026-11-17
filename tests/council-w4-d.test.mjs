@@ -5,7 +5,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const SHOTS = path.resolve('..', '_council', 'hsg-crazy-raccoon', 'wave-4', 'shots');
+const SHOTS = path.resolve('..', '_council', 'hsg-crazy-raccoon', 'wave-4b', 'shots');
 const keep = async (t, id, what, opt) => { const r = await t.shot(`${id}-${what}`, opt); if (fs.existsSync(SHOTS)) fs.copyFileSync(path.resolve(r.file), path.join(SHOTS, `${id}-${what}-${t.viewport}.png`)); return r; };
 
 // the lines a button's own text is painted on: distinct tops of the text's client rectangles
@@ -204,6 +204,34 @@ export const tests = [
         t.expect(r.bottom <= r.h + 1 || r.more, w + 'x' + h + ': the last menu button is on screen (' + r.bottom.toFixed(0) + ' of ' + r.h + '), or the page says scroll for more');
         if (w === 844) await keep(t, 'C4-03', 'title-844x390');
       }
+      await t.page.setViewportSize({ width: t.vp.width, height: t.vp.height });
+    },
+  },
+  // ------------------------------------------------------------------ K-04
+  {
+    name: 'K-04 the unlocked Moonlight Run and Daily Run buttons are one line at normal text on a narrow or sideways phone, and stay inside their buttons at 150% text',
+    viewports: ['desktop', 'mobile'],
+    async run(t) {
+      await t.game('act', 'unlockAll');
+      for (const scale of [1, 1.5]) {
+        await t.game('setState', { settings: { textScale: scale } });
+        for (const [w, h] of [[320, 568], [360, 640], [667, 375], [844, 390]]) {
+          await t.page.setViewportSize({ width: w, height: h });
+          await t.game('scene', 'title'); await t.waitFrames(2);
+          const bs = await lines(t, '.title-wrap [data-act="endless"], .title-wrap [data-act="daily"]');
+          const at = `${w}x${h} at ${scale * 100}%`;
+          t.equal(bs.length, 2, `${at}: both buttons are on the title`);
+          for (const b of bs) {
+            // at 150% "Moonlight Run" may break between its two words, which is one clean line each; it may not break inside a word or spill out
+            if (scale === 1) t.equal(b.lines, 1, `${at}: "${b.text}" is on one line`);
+            else t.expect(b.lines <= 2, `${at}: "${b.text}" is on at most two lines (${b.lines})`);
+            t.expect(b.inside, `${at}: "${b.text}" stays inside its button`);
+          }
+          if (scale === 1.5 && w === 320) await keep(t, 'K-04', 'title-unlocked-150pct-320x568');
+          if (scale === 1 && w === 360) await keep(t, 'K-04', 'title-unlocked-360x640');
+        }
+      }
+      await t.game('setState', { settings: { textScale: 1 } });
       await t.page.setViewportSize({ width: t.vp.width, height: t.vp.height });
     },
   },
