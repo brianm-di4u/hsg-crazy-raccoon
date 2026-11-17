@@ -336,6 +336,21 @@ export const tests = [
       const d0 = await draws();
       await t.page.waitForFunction((n) => window.__game.getState().title.draws >= n + 5, d0, { timeout: 10000 });
       t.expect(true, 'the title keeps being drawn');
+      // the live loop honours the cap: over two seconds of the browser's own frame clock (the time the loop paces by), the title is drawn at most
+      // 36 times a second, and, where the screen really runs near 60 frames a second, at least 24. Slow frames under load only draw fewer, so the cap is
+      // the check that cannot be met by chance: with the in-loop hold removed it draws every frame, about 60 a second.
+      const live = await t.page.evaluate(() => new Promise((res) => {
+        const d1 = window.__game.getState().title.draws; let first = 0, n = 0;
+        const tick = (now) => {
+          if (!first) first = now; n++;
+          if (now - first >= 2000) res({ span: now - first, frames: n, draws: window.__game.getState().title.draws - d1 });
+          else requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      }));
+      const perSec = live.draws * 1000 / live.span, framesPerSec = live.frames * 1000 / live.span;
+      t.expect(perSec <= 36, `the live title draws at most 36 a second: ${perSec.toFixed(1)} (${live.draws} draws, ${live.frames} frames in ${Math.round(live.span)} ms)`);
+      t.expect(framesPerSec < 55 || perSec >= 24, `and about half the frames of a 60 Hz screen are drawn: ${perSec.toFixed(1)} a second at ${framesPerSec.toFixed(0)} frames a second`);
       // a minute with no input: the game's own clock is moved on, so no time is waited
       await t.game('act', 'clock', 0); await t.page.waitForFunction(() => window.__CR.time === 0, null, { timeout: 5000 }); // a frame must have read the clock before the key press is stamped with it
       await t.page.keyboard.press('Shift');
