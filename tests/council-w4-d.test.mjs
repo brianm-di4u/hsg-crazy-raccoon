@@ -85,18 +85,25 @@ export const tests = [
     url: 'index.html?art=0',
     async run(t) {
       t.equal((await t.state()).art, false, 'no art');
-      await t.game('newGame', { level: 'l3', seed: 3 }); await t.game('pause'); await t.waitFrames(4);
-      const r = await t.page.evaluate(() => {
+      await t.game('newGame', { level: 'l3', seed: 3 }); await t.game('pause');
+      // the arrival fade (a dark wash over the whole scene) and the camera move end on their own; read the pixels only after both
+      await t.page.waitForFunction(() => { const R = window.__CR.renderer; return R.arrive === 0 && Math.abs(R.camT - R.cam) <= 0.002 && window.__CR.run.p.state === 'idle' && window.__CR.run.p.invT <= 0; }, null, { timeout: 10000 });
+      const sample = () => t.page.evaluate(() => {
         const A = window.__CR, R = A.renderer, c = document.querySelector('#view'), g = c.getContext('2d'), d = c.width / R.w;
         const [cx, cy] = R.playerScreen(A.run), x0 = Math.round((cx + R.tile * 0.36) * d), x1 = Math.round((cx + R.tile * 0.8) * d), y0 = Math.round((cy - R.tile * 0.6) * d), y1 = Math.round((cy + R.tile * 0.2) * d);
         const px = g.getImageData(x0, y0, x1 - x0, y1 - y0).data; let ring = 0;
         for (let i = 0; i < px.length; i += 4) {
           if (Math.abs(px[i] - 43) < 9 && Math.abs(px[i + 1] - 42) < 9 && Math.abs(px[i + 2] - 46) < 9) ring++;
         }
-        return { ring, area: (x1 - x0) * (y1 - y0), facing: A.run.p.facing };
+        return { ring, area: (x1 - x0) * (y1 - y0), facing: A.run.p.facing, arrive: R.arrive };
       });
-      t.equal(r.facing, 'up', 'Bandit faces up on the start row');
-      t.expect(r.ring > r.area * 0.01, 'dark tail rings show beside the body: ' + r.ring + ' of ' + r.area + ' px');
+      // several frames, each of which must show the rings (the tail sways a little from frame to frame)
+      for (let i = 0; i < 4; i++) {
+        await t.waitFrames(2);
+        const r = await sample();
+        t.equal(r.facing, 'up', 'Bandit faces up on the start row');
+        t.expect(r.ring > r.area * 0.01, 'frame ' + i + ': dark tail rings show beside the body: ' + r.ring + ' of ' + r.area + ' px (arrive ' + r.arrive + ')');
+      }
       await keep(t, 'S4-13', 'vector-raccoon');
     },
   },
