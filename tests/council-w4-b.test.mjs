@@ -123,7 +123,7 @@ export const tests = [
       t.expect(await t.page.evaluate(() => !!window.__CR.run.daily), 'a Daily Run is running');
       await lose();
       text = await t.page.evaluate(() => document.querySelector('.panel').textContent);
-      t.expect(!/Course d/.test(text) && !(await t.page.$('[data-act="sameCourse"]')), 'the Daily Run panel has no course line and no second button');
+      t.expect(!/Course \d+/.test(text) && !(await t.page.$('[data-act="sameCourse"]')), 'the Daily Run panel has no course line and no second button');
     },
   },
   // ------------------------------------------------------------------ S6-03 a lighter picture for slow devices
