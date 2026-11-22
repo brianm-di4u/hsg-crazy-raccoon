@@ -19,8 +19,8 @@ const sinceWin = async (t) => { const c = await cues(t); return c.slice(c.lastIn
 const vibes = (t) => t.page.evaluate(() => window.__vib.slice());
 const mockVibrate = () => { window.__vib = []; Object.defineProperty(navigator, 'vibrate', { configurable: true, value: (p) => { window.__vib.push(p); return true; } }); };
 const noVibrate = () => { Object.defineProperty(navigator, 'vibrate', { configurable: true, value: undefined }); };
-const SHOTS = path.resolve('..', '_council', 'hsg-crazy-raccoon', 'wave-3', 'shots');
-const keep = async (t, id, what, opt) => { const r = await t.shot(`${id}-${what}`, opt); if (fs.existsSync(SHOTS)) fs.copyFileSync(path.resolve(r.file), path.join(SHOTS, `${id}-${what}-${t.viewport}.png`)); return r; };
+const SHOTS = path.resolve('screenshots', 'council', 'wave-3', 'shots');
+const keep = async (t, id, what, opt) => { const r = await t.shot(`${id}-${what}`, opt); fs.mkdirSync(SHOTS, { recursive: true }); fs.copyFileSync(path.resolve(r.file), path.join(SHOTS, `${id}-${what}-${t.viewport}.png`)); return r; };
 
 // 16-bit stereo WAV (base64) to mono floats, and a direct-sum energy in a band of frequencies
 function samples(b64) {

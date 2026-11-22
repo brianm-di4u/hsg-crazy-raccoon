@@ -370,8 +370,8 @@ export const tests = [
       const mus = await render('night', 20, false);
       t.expect(mus.peak + ach.peak + 0.07 < 0.95, 'loudest music + ambience + the cue stay under 0.95');
       t.equal(JSON.stringify((await t.state()).audio), live, 'rendering leaves the live audio alone');
-      const dir = path.resolve('..', '_council', 'hsg-crazy-raccoon', 'wave-2', 'audio');
-      if (fs.existsSync(dir)) { fs.writeFileSync(path.join(dir, 'cue-achievement.wav'), Buffer.from(ach.wav, 'base64')); fs.writeFileSync(path.join(dir, 'cue-finale.wav'), Buffer.from(fin.wav, 'base64')); }
+      const dir = path.resolve('screenshots', 'council', 'wave-2', 'audio');
+      fs.mkdirSync(dir, { recursive: true }); fs.writeFileSync(path.join(dir, 'cue-achievement.wav'), Buffer.from(ach.wav, 'base64')); fs.writeFileSync(path.join(dir, 'cue-finale.wav'), Buffer.from(fin.wav, 'base64'));
       let bad = null; try { await render('cue:nope', 1); } catch (e) { bad = e; }
       t.expect(bad, 'an unknown cue is an error, not silence');
     },

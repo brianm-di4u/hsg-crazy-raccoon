@@ -48,6 +48,17 @@ generation against the approved style pilot. Prompts are logged in `art-src/PROM
 
 Only `index.html` and `assets/` ship to the website.
 
+## Paths outside this repo
+
+The game and its build use files inside this repo; the fact check (`tools/check-facts.mjs`, run by `npm test` and `npm run sim`) also reads two shared files. The tools below can also use shared material from the Hot
+Springs Games workspace (`reference/`, `research/`, or a sibling checkout in `repos/`). They find the workspace through the
+`HSG_WORKSPACE` environment variable; when it is unset, the workspace is this repo's grandparent, which is right when the
+repo sits at `<workspace>/repos/<repo>`. When the workspace copy is not there, each tool falls back to a path in this repo or
+skips that step with a message.
+
+- `tools/check-facts.mjs`: bank facts against `repos/hsg-trivia/data/questions.json`, research facts against `research/alligator-farm.md`; each part is skipped, with a message, when its file is not there.
+- Council-era tests write their extra captures to `screenshots/council/` (git-ignored).
+
 ## Layout
 | Path | What |
 |---|---|

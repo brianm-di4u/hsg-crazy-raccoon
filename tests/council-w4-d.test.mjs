@@ -5,8 +5,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const SHOTS = path.resolve('..', '_council', 'hsg-crazy-raccoon', 'wave-4b', 'shots');
-const keep = async (t, id, what, opt) => { const r = await t.shot(`${id}-${what}`, opt); if (fs.existsSync(SHOTS)) fs.copyFileSync(path.resolve(r.file), path.join(SHOTS, `${id}-${what}-${t.viewport}.png`)); return r; };
+const SHOTS = path.resolve('screenshots', 'council', 'wave-4b', 'shots');
+const keep = async (t, id, what, opt) => { const r = await t.shot(`${id}-${what}`, opt); fs.mkdirSync(SHOTS, { recursive: true }); fs.copyFileSync(path.resolve(r.file), path.join(SHOTS, `${id}-${what}-${t.viewport}.png`)); return r; };
 
 // the lines a button's own text is painted on: distinct tops of the text's client rectangles
 const lines = (t, sel) => t.page.evaluate((s) => [...document.querySelectorAll(s)].map((b) => {
