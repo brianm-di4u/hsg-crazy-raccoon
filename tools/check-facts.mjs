@@ -9,8 +9,12 @@ import { fileURLToPath } from 'node:url';
 
 const game = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const facts = JSON.parse(fs.readFileSync(path.join(game, 'data/facts.json'), 'utf8'));
-const bankFile = path.join(game, '../trivia/data/questions.json');
-const corpusFile = path.join(game, '../../research/alligator-farm.md');
+// Both inputs live outside this repo: the audited bank in the sibling checkout <workspace>/repos/hsg-trivia/, the corpus in
+// <workspace>/research/. The workspace is $HSG_WORKSPACE, else this repo's grandparent (the workspace root when the repo sits
+// in <workspace>/repos/). Either check is skipped, with a message, when its file is not there.
+const workspace = process.env.HSG_WORKSPACE || path.resolve(game, '..', '..');
+const bankFile = path.join(workspace, 'repos', 'hsg-trivia', 'data', 'questions.json');
+const corpusFile = path.join(workspace, 'research', 'alligator-farm.md');
 let bad = 0, n = 0;
 const fail = (id, msg) => { bad++; console.log(`FAIL ${id}: ${msg}`); };
 
@@ -24,7 +28,7 @@ if (fs.existsSync(bankFile)) {
     else if (q.source !== f.source) fail(f.id, `source differs: bank "${q.source}"`);
     else console.log(`ok   ${f.id}  ${q.answer}`);
   }
-} else console.log('skip bank facts: games/trivia/data/questions.json not found (standalone repo)');
+} else console.log(`skip bank facts: ${bankFile} not found (set HSG_WORKSPACE to the workspace root)`);
 
 if (fs.existsSync(corpusFile)) {
   const corpus = fs.readFileSync(corpusFile, 'utf8');
@@ -33,7 +37,7 @@ if (fs.existsSync(corpusFile)) {
     if (!f.sourceUrl || !corpus.includes(f.sourceUrl)) fail(f.id, `URL not cited in research/alligator-farm.md: ${f.sourceUrl}`);
     else console.log(`ok   ${f.id}  ${f.source}`);
   }
-} else console.log('skip research facts: research/alligator-farm.md not found (standalone repo)');
+} else console.log(`skip research facts: ${corpusFile} not found (set HSG_WORKSPACE to the workspace root)`);
 
 const ids = [...facts.bank, ...facts.research].map((f) => f.id);
 if (new Set(ids).size !== ids.length) fail('*', 'duplicate fact ids');

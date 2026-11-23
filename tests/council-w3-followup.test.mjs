@@ -4,8 +4,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const SHOTS = path.resolve('..', '_council', 'hsg-crazy-raccoon', 'wave-3', 'shots');
-const keep = async (t, id, what) => { const r = await t.shot(`${id}-${what}`); if (fs.existsSync(SHOTS)) fs.copyFileSync(path.resolve(r.file), path.join(SHOTS, `${id}-${what}-${t.viewport}.png`)); return r; };
+const SHOTS = path.resolve('screenshots', 'council', 'wave-3', 'shots');
+const keep = async (t, id, what) => { const r = await t.shot(`${id}-${what}`); fs.mkdirSync(SHOTS, { recursive: true }); fs.copyFileSync(path.resolve(r.file), path.join(SHOTS, `${id}-${what}-${t.viewport}.png`)); return r; };
 const CAUSES = { chomp: /^Chomped!/, splash: /^Splash!/, swept: /^Swept off the edge!/, spotted: /^Spotted by the keeper!/, caught: /^The lantern caught up!/ };
 const lead = (t) => t.page.evaluate(() => (document.querySelector('.panel .lead') || {}).textContent || '');
 const failLine = async (t, cause, steps) => {
