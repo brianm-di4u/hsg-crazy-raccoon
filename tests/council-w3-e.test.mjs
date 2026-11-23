@@ -11,8 +11,8 @@ const render = (t, name, seconds, o, wav) => t.page.evaluate(([n, s, w, opt]) =>
 const median = (a) => [...a].sort((x, y) => x - y)[a.length >> 1];
 const cues = async (t) => (await t.state()).audio.cues;
 const gesture = async (t) => { await t.page.mouse.click(3, 3); await t.page.waitForFunction(() => window.__game.getState().audio.started, null, { timeout: 5000 }); };
-const SHOTS = path.resolve('..', '_council', 'hsg-crazy-raccoon', 'wave-3', 'shots');
-const keep = async (t, id, what, opt) => { const r = await t.shot(`${id}-${what}`, opt); if (fs.existsSync(SHOTS)) fs.copyFileSync(path.resolve(r.file), path.join(SHOTS, `${id}-${what}-${t.viewport}.png`)); return r; };
+const SHOTS = path.resolve('screenshots', 'council', 'wave-3', 'shots');
+const keep = async (t, id, what, opt) => { const r = await t.shot(`${id}-${what}`, opt); fs.mkdirSync(SHOTS, { recursive: true }); fs.copyFileSync(path.resolve(r.file), path.join(SHOTS, `${id}-${what}-${t.viewport}.png`)); return r; };
 const KEY = 'hsg-crazy-raccoon-v1';
 const panelText = (t) => t.page.evaluate(() => (document.querySelector('.panel') || {}).textContent || '');
 

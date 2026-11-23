@@ -6,8 +6,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const SHOTS = path.resolve('..', '_council', 'hsg-crazy-raccoon', 'wave-4', 'shots');
-const keep = async (t, id, what, opt) => { const r = await t.shot(`${id}-${what}`, opt); if (fs.existsSync(SHOTS)) fs.copyFileSync(path.resolve(r.file), path.join(SHOTS, `${id}-${what}-${t.viewport}.png`)); return r; };
+const SHOTS = path.resolve('screenshots', 'council', 'wave-4', 'shots');
+const keep = async (t, id, what, opt) => { const r = await t.shot(`${id}-${what}`, opt); fs.mkdirSync(SHOTS, { recursive: true }); fs.copyFileSync(path.resolve(r.file), path.join(SHOTS, `${id}-${what}-${t.viewport}.png`)); return r; };
 const render = (t, name, seconds, o, wav) => t.page.evaluate(([n, s, w, opt]) => window.__game.audioRender(n, s, w, opt), [name, seconds, !!wav, o || {}]);
 const median = (a) => [...a].sort((x, y) => x - y)[a.length >> 1];
 const cues = async (t) => (await t.state()).audio.cues;

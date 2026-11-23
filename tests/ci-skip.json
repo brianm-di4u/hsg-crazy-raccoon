@@ -1,0 +1,10 @@
+[
+  {
+    "test": "S1-12 the live loop hands the renderer how far between steps",
+    "why": "reads frame pacing; a shared runner drops frames between steps"
+  },
+  {
+    "test": "S4-13 the phone level card sits under the sky of its level",
+    "why": "samples header pixels during play at a fixed moment; the frame lags on a shared runner"
+  }
+]
